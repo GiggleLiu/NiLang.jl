@@ -15,16 +15,16 @@ end
     grad(y) += val(x) * grad(out!)
 end
 
-@i function ⊖(/)(out!::GVar, x::GVar, y::GVar)
-    val(out!) -= val(x) / val(y)
-    grad(x) += grad(out!) / val(y)
-    grad(y) += val(x) * grad(out!)
-end
-
-@i function ⊖(/)(out!::GVar, x::GVar, y::GVar)
-    val(out!) -= val(x) / val(y)
-    grad(x) += grad(out!) / val(y)
-    grad(y) += val(x) * grad(out!)
+@i function ⊖(/)(out!::GVar{T}, x::GVar, y::GVar) where T
+    val(out!) -= val(x)/val(y)
+    grad(x) += grad(out!)/val(y)
+    @anc a1::T
+    @anc a2::T
+    a1 += val(x)*grad(out!)
+    a2 += val(a1)/val(y)
+    grad(y) -= a2/val(y)
+    a2 -= val(a1)/val(y)
+    a1 -= val(x)*grad(out!)
 end
 
 #=
