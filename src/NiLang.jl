@@ -1,5 +1,11 @@
 module NiLang
 
-greet() = print("Hello World!")
+using Reexport
+@reexport using NiLangCore
+import NiLangCore: ⊕, ⊖
 
+include("instructs.jl")
+include("autodiff/autodiff.jl")
+
+export AD
 end # module
