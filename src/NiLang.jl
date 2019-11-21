@@ -4,7 +4,10 @@ using Reexport
 @reexport using NiLangCore
 import NiLangCore: ⊕, ⊖
 
+include("utils.jl")
 include("instructs.jl")
+include("functions.jl")
+
 include("autodiff/autodiff.jl")
 
 export AD
