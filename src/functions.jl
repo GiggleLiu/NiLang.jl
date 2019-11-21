@@ -51,6 +51,7 @@ end
         end
     end
 
+    # uncompute k
     for j=1:Nout
         for i=Nin-1:-1:j
             k ⊖ 1
