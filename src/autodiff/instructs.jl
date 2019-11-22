@@ -20,6 +20,35 @@ end
     grad(y) += val(x)' * grad(out!)
 end
 
+@i function ⊖(exp)(out!::GVar, x::GVar{T}) where T
+    val(out!) -= exp(val(x))
+    @anc anc1::T
+    anc1 += exp(val(x))
+    grad(x) += grad(out!) * anc1
+    anc1 -= exp(val(x))
+end
+
+@i function ⊖(log)(out!::GVar, x::GVar{T}) where T
+    val(out!) -= log(val(x))
+    grad(x) += grad(out!) / val(x)
+end
+
+@i function ⊖(sin)(out!::GVar, x::GVar{T}) where T
+    val(out!) -= sin(val(x))
+    @anc anc1::T
+    anc1 += cos(val(x))
+    grad(x) += grad(out!) * anc1
+    anc1 -= cos(val(x))
+end
+
+@i function ⊖(cos)(out!::GVar, x::GVar{T}) where T
+    val(out!) -= cos(val(x))
+    @anc anc1::T
+    anc1 -= sin(val(x))
+    grad(x) += grad(out!) * anc1
+    anc1 += sin(val(x))
+end
+
 @i function ⊖(/)(out!::GVar{T}, x::GVar, y::GVar) where T
     val(out!) -= val(x)/val(y)
     grad(x) += grad(out!)/val(y)

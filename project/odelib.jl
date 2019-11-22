@@ -1,5 +1,6 @@
 using NiLang
 
+"""A field function is called as `f(field_out, x, params...), it should be reversible.`"""
 struct LeapFrog{FT} <: Function
     f::FT
     function LeapFrog(f::FT) where FT
@@ -10,7 +11,7 @@ end
 Base.zero(::Dup{T}) where T = Dup(zero(T))
 
 # the integrater
-@i function (lf::LeapFrog)(x, params, Nt::Int, dt::Float64)
+@i function (lf::LeapFrog)(x, params; Nt::Int, dt::Float64)
     # move ks for half step
     @anc fout::Float64
     Dup(x)
@@ -28,54 +29,53 @@ Base.zero(::Dup{T}) where T = Dup(zero(T))
     end
 end
 
-using Test
-@testset "leapfrog" begin
-    function f(F, y0, N, dt)
-        y = y0
-        for i=1:N
-           y += F(y)*dt
-        end
-        return y
-    end
-    x = 0.8
-    @instr LeapFrog(⊕(sin))(x, (), 10000, 0.0001)
-    truth = f(sin, 0.8, 10000, 0.0001)
-    @test isapprox(x, truth; atol=1e-3)
+@i function update_field(x, field_out, dt)
+    xs += field_out * dt
 end
 
-@i function flow_step(field, args, dt)
-    # compute update of x
-    field(field_out, k, θ)
+@i function update_field(x::PVar, y::GVar, field_out, dt)
     xs += field_out * dt
+    # update logp
+    logp(x) -= grad(y) * dt
+end
 
-    if (logp !== nothing, ~)
-        # compute gradient
-        GVar(ks)
-        GVar(θ)
-        GVar(Loss(field_out))
-        grad(field_out) ⊕ 1.0
-        (~field)(field_out, ks, θ)
-        # update logp
-        logp -= grad(ks) * dt
-        # recover gradient memory
-        field(field_out, ks, θ)
-        grad(field_out) ⊖ 1.0
-        (~GVar)(Loss(field_out))
-        (~GVar)(θ)
-        (~GVar)(ks)
-    end
+@i function run_field(field, field_out, x, args...; kwargs...)
+    # compute update of x
+    field(field_out, x, args...; kwargs...)
+end
 
-    # recover forward pass
-    (~field)(field_out, ks, θ)
-
-    field(field_out, xs, θ)
-    ks += field_out * dt
-    (~field)(field_out, xs, θ)
+@i function run_field(field, field_out, x::PVar, y::GVar, args...; kwargs...)
+    field(field_out, x, args...; kwargs...)
+    GVar(ks)
+    GVar(θ)
+    GVar(Loss(field_out))
+    grad(field_out) ⊕ 1.0
+    (~field)(field_out, y, args...; kwargs...)
 end
 
 using Distributions, StatsBase, LinearAlgebra
 using DelimitedFiles
 using UnicodePlots
+
+@i function normal_logpdf(out, x, μ, σ)
+    @anc anc1 = 0.0
+    @anc anc2 = 0.0
+    @anc anc3 = 0.0
+
+    @routine ri begin
+        anc1 ⊕ x
+        anc1 ⊖ μ
+        anc2 += anc1 / σ  # (x- μ)/σ
+        anc3 += anc2 * anc2 # (x-μ)^2/σ^2
+    end
+
+    out -= anc3 * 0.5 # -(x-μ)^2/2σ^2
+    out -= log(σ) # -(x-μ)^2/2σ^2 - log(σ)
+    out ⊖ log(2π)/2 # -(x-μ)^2/2σ^2 - log(σ) - log(2π)/2
+
+    ~@routine ri
+end
+
 @i function ode_loss!(μ, σ, logp, target_xs, ks, field, ode!, logpdf, jacobian_out, field_out, loss_out, θ, Nt, dt)
     @anc loss_temp = 0.0
     # backward run, drive target xs to source distribution space.
@@ -119,26 +119,6 @@ function forward_sample(μ, σ, field, θ; nsample=100, Nt=100, dt=0.01, xlim=[-
 
     play!(tape)
     analyze_flow(xs0, logp0, v_xs[], v_logp[]; xlim=xlim)
-end
-
-@invfunc inv_normal_logpdf!(out, x, μ, σ) begin
-    @ancilla inv_normal_temp1 = 0.0
-    @ancilla inv_normal_temp2 = 0.0
-    @ancilla inv_normal_temp3 = 0.0
-
-    add!(inv_normal_temp1, x)
-    sub!(inv_normal_temp1, μ)  # x- μ
-    div!(inv_normal_temp2, inv_normal_temp1, σ)  # (x- μ)/σ
-    infer!(*, inv_normal_temp3, inv_normal_temp2, inv_normal_temp2) # (x-μ)^2/σ^2
-
-    ~infer!(*, out, inv_normal_temp3, 0.5) # -(x-μ)^2/2σ^2
-    ~infer!(log, out, σ) # -(x-μ)^2/2σ^2 - log(σ)
-    sub!(out, log(2π)/2) # -(x-μ)^2/2σ^2 - log(σ) - log(2π)/2
-
-    ~infer!(*, inv_normal_temp3, inv_normal_temp2, inv_normal_temp2) # (x-μ)^2/σ^2
-    ~div!(inv_normal_temp2, inv_normal_temp1, σ)  # (x- μ)/σ
-    ~sub!(inv_normal_temp1, μ)  # x
-    ~add!(inv_normal_temp1, x)  # 0  # temp 2 uncomputed
 end
 
 @invfunc inv_normal_logpdf2d!(out, x, μ, σ) begin
