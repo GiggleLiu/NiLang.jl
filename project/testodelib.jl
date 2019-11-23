@@ -1,5 +1,6 @@
-include("odelib.jl")
+include("nnlib.jl")
 using Test, Random
+using Distributions, StatsBase, LinearAlgebra
 
 @testset "leapfrog" begin
     function f(F, y0, N, dt)
@@ -15,6 +16,25 @@ using Test, Random
     @test isapprox(x, truth; atol=1e-3)
 end
 
+@testset "normal log pdf" begin
+    out = 0.0
+    x = 1.0
+    μ = 0.3
+    σ = 1.5
+    l1 = normal_logpdf(out, x, μ, σ)
+    distri = Normal(μ, σ)
+    l2 = logpdf(distri, x)
+    @test l1[1] ≈ l2
+    @test check_inv(normal_logpdf, (out, x, μ, σ))
+    x2 = [0.2, 0.9]
+    μ2 = [0.0, 0.2]
+    σ = 1.0
+    distri = MultivariateNormal(μ2, [σ 0; 0 σ])
+    @test check_inv(normal_logpdf2d, (out, x2, μ2, σ))
+    @test logpdf(distri, x2) ≈ normal_logpdf2d(0.0, x2, μ2, σ)[1]
+end
+
+#=
 @testset "neural ode" begin
     Random.seed!(2)
     θ = 0.5
@@ -27,19 +47,12 @@ end
     logp0 = max.(logpdf.(source_distri, xs0), -1000)
 
     # solving the ode, and obtain the probability change
-    @newvar v_xs = copy(xs0)
-    @newvar v_ks = copy(xs0)
-    @newvar v_logp = copy(logp0)
-    @newvar v_θ = θ
-    @newvar field_out = 0.0
+    v_xs = copy(xs0)
+    v_ks = copy(xs0)
+    v_logp = copy(logp0)
+    v_θ = θ
+    field_out = 0.0
     tape = ode_with_logp!(v_xs, v_ks, v_logp, field, field_out, v_θ, Nt, dt)
-    resetreg(tape)
     @test check_inv(tape; verbose=true, atol=1e-3)
 end
-
-@testset "logpdf" begin
-    @newvar out = 0.0
-    tape = normal_logpdf(out, 2.3, 1.0, 1.0)
-    play!(tape)
-    out[] == logpdf(Normal(1.0, 1.0), 2.3)
-end
+=#

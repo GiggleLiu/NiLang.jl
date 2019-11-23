@@ -1,4 +1,4 @@
-using NiLang
+using NiLang, NiLang.AD
 
 """A field function is called as `f(field_out, x, params...), it should be reversible.`"""
 struct LeapFrog{FT} <: Function
@@ -29,52 +29,39 @@ Base.zero(::Dup{T}) where T = Dup(zero(T))
     end
 end
 
-@i function update_field(x, field_out, dt)
-    xs += field_out * dt
-end
-
-@i function update_field(x::PVar, y::GVar, field_out, dt)
-    xs += field_out * dt
-    # update logp
-    logp(x) -= grad(y) * dt
-end
-
-@i function run_field(field, field_out, x, args...; kwargs...)
-    # compute update of x
-    field(field_out, x, args...; kwargs...)
-end
-
-@i function run_field(field, field_out, x::PVar, y::GVar, args...; kwargs...)
-    field(field_out, x, args...; kwargs...)
-    GVar(ks)
-    GVar(θ)
-    GVar(Loss(field_out))
-    grad(field_out) ⊕ 1.0
-    (~field)(field_out, y, args...; kwargs...)
-end
-
-using Distributions, StatsBase, LinearAlgebra
-using DelimitedFiles
-using UnicodePlots
-
-@i function normal_logpdf(out, x, μ, σ)
-    @anc anc1 = 0.0
-    @anc anc2 = 0.0
-    @anc anc3 = 0.0
+@i function normal_logpdf(out, x::T, μ, σ) where T
+    @anc anc1::T
+    @anc anc2::T
+    @anc anc3::T
 
     @routine ri begin
-        anc1 ⊕ x
-        anc1 ⊖ μ
+        anc1 += x
+        anc1 -= μ
         anc2 += anc1 / σ  # (x- μ)/σ
         anc3 += anc2 * anc2 # (x-μ)^2/σ^2
     end
 
     out -= anc3 * 0.5 # -(x-μ)^2/2σ^2
     out -= log(σ) # -(x-μ)^2/2σ^2 - log(σ)
-    out ⊖ log(2π)/2 # -(x-μ)^2/2σ^2 - log(σ) - log(2π)/2
+    out -= log(2π)/2 # -(x-μ)^2/2σ^2 - log(σ) - log(2π)/2
 
     ~@routine ri
 end
+
+@i function normal_logpdf2d(out::T, x, μ, σ) where T
+    @anc temp1::T
+    @anc temp2::T
+    normal_logpdf(temp1, x[1], μ[1], σ)
+    normal_logpdf(out, x[2], μ[2], σ)
+    out += temp1
+    (~normal_logpdf)(temp1, x[1], μ[1], σ)
+end
+
+using Test
+
+#=
+using DelimitedFiles
+using UnicodePlots
 
 @i function ode_loss!(μ, σ, logp, target_xs, ks, field, ode!, logpdf, jacobian_out, field_out, loss_out, θ, Nt, dt)
     @anc loss_temp = 0.0
@@ -121,16 +108,6 @@ function forward_sample(μ, σ, field, θ; nsample=100, Nt=100, dt=0.01, xlim=[-
     analyze_flow(xs0, logp0, v_xs[], v_logp[]; xlim=xlim)
 end
 
-@invfunc inv_normal_logpdf2d!(out, x, μ, σ) begin
-    @ancilla temp1 = 0.0
-    @ancilla temp2 = 0.0
-    inv_normal_logpdf!(temp1, x[1], μ, σ)
-    inv_normal_logpdf!(temp2, x[2], μ, σ)
-    infer!(out, *, temp2, temp1)
-    ~inv_normal_logpdf!(temp1, x[2], μ, σ)
-    ~inv_normal_logpdf!(temp2, x[2], μ, σ)
-end
-
 function get_loss_gradient!(forward, loss_out, θ)
     reset_grad!(forward)
     resetreg(forward)
@@ -167,3 +144,26 @@ function train(xs_target, θ; niter=100, Nt=100, dt=0.01, lr=0.1)
     end
     return ll, forward
 end
+
+export softmax_cross_entropy!
+@invfunc softmax_cross_entropy!(x, p, imax, xmax, Z, out) begin
+    @ancilla logZ::Float64
+    @ancilla i::Int
+    @ancilla N::Int
+    # subtract maximum
+    infer!(argmax, imax, x)  # trade off space of xmax to time
+    add!(xmax, x[imax])
+    sub!.(x, xmax)
+
+    # accumulate exp(x) to Z, and finally get logZ
+    infer!.(exp, Z, x)
+    infer!(log, logZ, Z)
+    sub!.(x, logZ)
+    neg!.(x)
+    ~infer!(log, logZ, Z)
+
+    infer!(length, N, x)
+    infer!.(*, out, x, p)
+    ~infer!(length, N, x)
+end
+=#
