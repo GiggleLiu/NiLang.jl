@@ -1,19 +1,54 @@
 include("nnlib.jl")
+include("fields.jl")
 using Test, Random
 using Distributions, StatsBase, LinearAlgebra
 
-@testset "leapfrog" begin
-    function f(F, y0, N, dt)
-        y = y0
-        for i=1:N
-           y += F(y)*dt
-        end
-        return y
+@testset "field" begin
+    lf = LinearField(0.5)
+    out, x = 0.0, 2.0
+    @instr get_field(lf, out, x)
+    @test out == 1.0
+
+    x = 2.0
+    y = 0.5
+    θ = 0.5
+    @instr update_field(LinearField(θ), y, x; dt=0.1)
+    @test y === 0.6
+    @test check_inv(update_field, (LinearField(θ), y, x); kwargs=Dict(:dt=>0.1))
+
+    x = 2.0
+    y = PVar(0.5)
+    θ = 0.5
+    @instr update_field(LinearField(θ), y, x; dt=0.1)
+    @test val(y) === 0.6
+    @test y.logp ≈ -0.05
+end
+
+@i function get_field(ps::typeof(⊕(sin)), field_out, y)
+    field_out += sin(y)
+end
+
+function f(F, y0, N, dt)
+    y = y0
+    for i=1:N
+       y += F(y)*dt
     end
+    return y
+end
+@testset "leapfrog" begin
     x = 0.8
-    @instr LeapFrog(⊕(sin))(x, (); Nt=10000, dt=0.0001)
     truth = f(sin, 0.8, 10000, 0.0001)
+    field = ⊕(sin)
+    @instr leapfrog(field, x; Nt=10000, dt=0.0001)
     @test isapprox(x, truth; atol=1e-3)
+
+    # integrate sin(θ), get -log(det(∂cos(θ)/∂θ))
+    lf = LinearField(0.5)
+    x = PVar(0.8)
+    @instr leapfrog(lf, x; Nt=1000, dt=0.001)
+    @show x
+    @test isapprox(val(x), truth; atol=1e-3)
+    #@test isapprox(val(x), truth; atol=1e-3)
 end
 
 @testset "normal log pdf" begin

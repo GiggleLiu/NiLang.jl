@@ -22,7 +22,7 @@ end
     @anc k::Int
     for j=1:Nout
         for i=Nin-1:-1:j
-            k ⊕ 1
+            k += 1
             ROT(x[i], x[i+1], θ[k])
         end
     end
@@ -30,7 +30,7 @@ end
     # uncompute k
     for j=1:Nout
         for i=Nin-1:-1:j
-            k ⊖ 1
+            k -= 1
         end
     end
 end

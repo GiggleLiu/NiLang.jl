@@ -12,9 +12,6 @@ end
 const _add = ⊕
 const _sub = ⊖
 @dual _add _sub
-@ignore ⊕(a!::Nothing, b)
-@ignore ⊕(a!::Nothing, b::Nothing)
-@ignore ⊕(a!, b::Nothing)
 
 function XOR(a!, b)
     @assign val(a!) xor(val(a!), val(b))

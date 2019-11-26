@@ -1,31 +1,17 @@
 using NiLang, NiLang.AD
 
-"""A field function is called as `f(field_out, x, params...), it should be reversible.`"""
-struct LeapFrog{FT} <: Function
-    f::FT
-    function LeapFrog(f::FT) where FT
-        isreversible(f) || throw(InvertibilityError("Input function $f is not reversible."))
-        new{FT}(f)
-    end
-end
 Base.zero(::Dup{T}) where T = Dup(zero(T))
 
 # the integrater
-@i function (lf::LeapFrog)(x, params; Nt::Int, dt::Float64)
+@i function leapfrog(field, x; Nt::Int, dt::Float64)
+    @safe isreversible(field) || throw(InvertibilityError("Input function $f is not reversible."))
     # move ks for half step
     @anc fout::Float64
     Dup(x)
-    lf.f(fout, x.x, params...)
-    x.twin += fout * (dt/2)
-    (~lf.f)(fout, x.x, params...)
+    update_field(field, x.twin, x.x; dt=dt/2)
     for i=1:Nt
-        lf.f(fout, x.twin, params...)
-        x.x += fout * dt
-        (~lf.f)(fout, x.twin, params...)
-
-        lf.f(fout, x.x, params...)
-        x.twin += fout * dt
-        (~lf.f)(fout, x.x, params...)
+        update_field(field, x.x, x.twin; dt=dt)
+        update_field(field, x.twin, x.x; dt=dt)
     end
 end
 
@@ -57,26 +43,26 @@ end
     (~normal_logpdf)(temp1, x[1], μ[1], σ)
 end
 
+@i function ode_loss(μ, σ, field, xs, loss_out::LT; Nt=Nt, dt=dt) where LT
+    # backward run, drive target xs to source distribution space.
+    # so that we can get `logp`.
+    (~leapfrog).(Ref(field), xs; Nt=Nt, dt=dt)
+    # then we evolve the `logp` to target space.
+    normal_logpdf.(logp, xs, Ref(μ), Ref(σ))
+
+    PVar.(xs)
+    leapfrog.(Ref(field), x; Nt=Nt, dt=dt)
+    # with logp, we compute log-likelihood
+    for i=1:length(xs)
+        loss_out += x.logp[i] / length(target_xs)
+    end
+end
+
 using Test
 
 #=
 using DelimitedFiles
 using UnicodePlots
-
-@i function ode_loss!(μ, σ, logp, target_xs, ks, field, ode!, logpdf, jacobian_out, field_out, loss_out, θ, Nt, dt)
-    @anc loss_temp = 0.0
-    # backward run, drive target xs to source distribution space.
-    # so that we can get `logp`.
-    ~ode!(target_xs, ks, nothing, field, field_out, θ, Nt, dt)
-    # then we evolve the `logp` to target space.
-    logpdf.(logp, target_xs, Ref(μ), Ref(σ))
-
-    ode!(target_xs, ks, logp, field, field_out, θ, Nt, dt)
-    # with logp, we compute log-likelihood
-    add!.(loss_temp, logp)
-    infer!(*, loss_out, loss_temp, 1/length(target_xs))
-    ~(add!.(loss_temp, logp))
-end
 
 function analyze_flow(xs0, logp0, xs, logp; xlim=[-5,5], ylim=[0,1])
     order = sortperm(xs0)[1:10:end]

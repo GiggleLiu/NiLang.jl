@@ -5,15 +5,6 @@ using Test
     x, y = 0.2, 0.5
     @instr x ⊕ y
     @test x == 0.7 && y==0.5
-    x, y = nothing, 0.5
-    @instr x ⊕ y
-    @test x == nothing && y==0.5
-    x, y = 0.2, nothing
-    @instr x ⊕ y
-    @test x == 0.2 && y==nothing
-    x, y = nothing, nothing
-    @instr x ⊕ y
-    @test x == nothing && y==nothing
 end
 
 @testset "*, /" begin

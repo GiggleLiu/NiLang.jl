@@ -1,7 +1,15 @@
-import ..NiLang: ⊕, ⊖, NEG, CONJ, ROT, IROT
+import ..NiLang: ⊕, ⊖, NEG, CONJ, ROT, IROT, SWAP
 @i function ⊖(a!::GVar, b::GVar)
     val(a!) ⊖ val(b)
     grad(b) ⊕ grad(a!)
+end
+
+@i function ⊖(identity)(a!::GVar, b::GVar)
+    ⊖(a!, b)
+end
+
+@i function ⊖(GVar{Float64,Float64})(a!::GVar, b::T) where T
+    val(a!) ⊖ val(b)
 end
 
 @i function NEG(a!::GVar)
@@ -12,6 +20,11 @@ end
 @i function CONJ(a!::GVar)
     CONJ(val(a!))
     CONJ(grad(a!))
+end
+
+@i function SWAP(a!::GVar, b!::GVar)
+    SWAP(val(b!), val(a!))
+    SWAP(grad(b!), grad(a!))
 end
 
 @i function ⊖(*)(out!::GVar, x::GVar, y::GVar)
@@ -91,5 +104,4 @@ function _render_type(ex)
 end
 
 @nograd XOR(a!, b)
-@nograd SWAP(a!, b!)
 =#
