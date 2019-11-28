@@ -35,6 +35,7 @@ function f(F, y0, N, dt)
     end
     return y
 end
+
 @testset "leapfrog" begin
     x = 0.8
     truth = f(sin, 0.8, 10000, 0.0001)
@@ -45,10 +46,21 @@ end
     # integrate sin(θ), get -log(det(∂cos(θ)/∂θ))
     lf = LinearField(0.5)
     x = PVar(0.8)
+    truth = val(x)
+    for i=1:1000
+        truth += 0.001*truth*lf.θ
+    end
     @instr leapfrog(lf, x; Nt=1000, dt=0.001)
-    @show x
     @test isapprox(val(x), truth; atol=1e-3)
-    #@test isapprox(val(x), truth; atol=1e-3)
+
+
+    @test isapprox(x.x.logp, -0.5, atol=1e03) # TODO: manual check
+
+    lf = LinearField(0.5)
+    xs = randn(10)
+    μ, σ = 0.0, 1.0
+    loss_out = 0.0
+    @show ode_loss(μ, σ, lf, xs, loss_out; Nt=100, dt=0.01)
 end
 
 @testset "normal log pdf" begin

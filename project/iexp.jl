@@ -1,57 +1,72 @@
 using NiLang, NiLang.AD
 
-@i function iexp(out!, x::T; niter::Int=30) where T
+@i function iexp(out!, x::T; atol::Float64=1e-14) where T
     @anc anc1::T
     @anc anc2::T
     @anc anc3::T
     @anc iplus::T
 
-    out! += T(1.0)
-    if (val(x) != 0.0, val(out!)!=1.0)
-        anc1 += T(1.0)
-        for i=1:niter
-            iplus += T(1.0)
-            anc2 += anc1 * x
-            anc3 += anc2 / iplus
-            out! += anc3
-            # speudo inverse
-            anc1 -= anc2 / x
-            anc2 -= anc3 * iplus
-            SWAP(anc1, anc3)
-        end
-
-        ~(for i=1:niter
-            iplus += T(1.0)
-            anc2 += anc1 * x
-            anc3 += anc2 / iplus
-            # speudo inverse
-            anc1 -= anc2 / x
-            anc2 -= anc3 * iplus
-            SWAP(anc1, anc3)
-        end)
-        anc1 -= T(1.0)
+    out! += 1.0
+    anc1 += 1.0
+    while (val(anc1) > atol, !isapprox(iplus, 0.0))
+        iplus += 1.0
+        anc2 += anc1 * x
+        anc3 += anc2 / iplus
+        out! += anc3
+        # speudo inverse
+        anc1 -= anc2 / x
+        anc2 -= anc3 * iplus
+        SWAP(anc1, anc3)
     end
+
+    ~(while (val(anc1) > atol, !isapprox(iplus, 0.0))
+        iplus += 1.0
+        anc2 += anc1 * x
+        anc3 += anc2 / iplus
+        # speudo inverse
+        anc1 -= anc2 / x
+        anc2 -= anc3 * iplus
+        SWAP(anc1, anc3)
+    end)
+    anc1 -= 1.0
 end
 
 using Test
+# NOTE: to allow high performance use of f += T(x).
+# Now, this kind of use is a performance killer.
 @testset "iexp" begin
     out = 0.0
-    x = 1.0
-    @instr iexp(out, x; niter=30)
+    x = 1.3
+    @instr iexp(out, x)
     res = exp(x)
     @test check_inv(iexp,(out, x))
-    @test isapprox(out, res, atol=0.01)
+    @test out ≈ res
+
+    out = 0.0
+    x = 1e-9
+    @instr iexp(out, x)
+    res = exp(x)
+    @test check_inv(iexp,(out, x))
+    @test out ≈ res
+
+    out = 0.0
+    x = 1.0
+
+    @instr iexp(out, x)
+    res = exp(x)
+    @test check_inv(iexp,(out, x))
+    @test out ≈ res
 end
 
 @testset "iexp grad" begin
     out = 0.0
     x = 1.6
     gres = exp(x)
-    @test check_inv(iexp, (Loss(out), x); kwargs=(:niter=>20,), verbose=true)
-    @test check_grad(iexp, (Loss(out), x); kwargs=(:niter=>20,), verbose=true)
+    @test check_inv(iexp, (Loss(out), x); verbose=true)
+    @test check_grad(iexp, (Loss(out), x); verbose=true)
 
     out = 0.0
     x = 1.6
-    @instr iexp'(Loss(out), x; niter=20)
+    @instr iexp'(Loss(out), x)
     @test grad(x) ≈ gres
 end

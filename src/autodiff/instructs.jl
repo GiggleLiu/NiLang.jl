@@ -4,14 +4,6 @@ import ..NiLang: ⊕, ⊖, NEG, CONJ, ROT, IROT, SWAP
     grad(b) ⊕ grad(a!)
 end
 
-@i function ⊖(identity)(a!::GVar, b::GVar)
-    ⊖(a!, b)
-end
-
-@i function ⊖(GVar{Float64,Float64})(a!::GVar, b::T) where T
-    val(a!) ⊖ val(b)
-end
-
 @i function NEG(a!::GVar)
     NEG(val(a!))
     NEG(grad(a!))
@@ -85,6 +77,11 @@ end
     NEG(val(θ))
     ROT(grad(a), grad(b), π/2)
 end
+
+@i function ⊖(identity)(a!::GVar, b::GVar)
+    ⊖(a!, b)
+end
+
 #=
 macro nograd(ex)
     @match ex begin
@@ -105,3 +102,8 @@ end
 
 @nograd XOR(a!, b)
 =#
+
+# ugly patch
+@i function ⊖(GVar{Float64,Float64})(a!::GVar, b::T) where T
+    val(a!) ⊖ val(b)
+end

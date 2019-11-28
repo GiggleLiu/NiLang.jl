@@ -60,6 +60,8 @@ end
 
 using Test
 
+
+
 #=
 using DelimitedFiles
 using UnicodePlots
@@ -131,25 +133,60 @@ function train(xs_target, θ; niter=100, Nt=100, dt=0.01, lr=0.1)
     return ll, forward
 end
 
-export softmax_cross_entropy!
-@invfunc softmax_cross_entropy!(x, p, imax, xmax, Z, out) begin
-    @ancilla logZ::Float64
-    @ancilla i::Int
-    @ancilla N::Int
-    # subtract maximum
-    infer!(argmax, imax, x)  # trade off space of xmax to time
-    add!(xmax, x[imax])
-    sub!.(x, xmax)
-
-    # accumulate exp(x) to Z, and finally get logZ
-    infer!.(exp, Z, x)
-    infer!(log, logZ, Z)
-    sub!.(x, logZ)
-    neg!.(x)
-    ~infer!(log, logZ, Z)
-
-    infer!(length, N, x)
-    infer!.(*, out, x, p)
-    ~infer!(length, N, x)
-end
 =#
+
+export softmax_cross_entropy
+
+@i function softmax_cross_entropy(x, p, imax, xmax, Z, out::T) where T
+    @anc logZ::T
+    @anc yi::T
+    # subtract maximum
+    imax += argmax(x)  # trade off space of xmax to time
+    xmax += x[imax]
+    # accumulate exp(x) to Z, and finally get logZ
+    for i=1:length(x)
+        x[i] -= xmax
+        Z += exp(x[i])
+    end
+    logZ += log(Z)
+    for i=1:length(x)
+        yi += logZ
+        yi -= x[i]
+        out += yi * p[i]
+        yi += x[i]
+        yi -= logZ
+    end
+    logZ -= log(Z)
+end
+
+function _sce(x::AbstractArray{T,N}, p) where {T,N}
+    x = x .- maximum(x; dims=N)  # avoid data overflow
+    rho = exp.(x)
+    Z = sum(rho; dims=N)
+    return dropdims(sum((log.(Z) .- x) .* p; dims=N), dims=N)
+end
+
+
+using Random, Test
+@testset "softmax_crossentropy" begin
+    Random.seed!(2)
+    x = randn(10)
+    x0 = copy(x)
+    p = randn(10); p=p./maximum(p)
+    res = _sce(x, p)
+    imax = 0
+    Z = 0.0
+    out = 0.0
+    xmax = 0.0
+    x_ = x
+    p_ = p
+    @instr softmax_cross_entropy(x_, p_, imax, xmax, Z, out)
+    @show Z
+    @test isapprox(imax, argmax(x0), atol=1e-8)
+    @test isapprox(out, res[], atol=1e-8)
+    @instr (~softmax_cross_entropy)(x_, p_, imax, xmax, Z, out)
+    args = x_, p_, imax, xmax, Z, out
+    @test check_inv(softmax_cross_entropy, args)
+    args = x_, p_, imax, xmax, Z, Loss(out)
+    @test check_grad(softmax_cross_entropy, args; verbose=true)
+end
