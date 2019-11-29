@@ -82,6 +82,50 @@ end
     ⊖(a!, b)
 end
 
+@i function ⊖(^)(out!::GVar, x::GVar{T}, n::Int) where T
+    ⊖(^)(val(out!), val(x), n)
+    @anc anc1::T
+    @anc jac::T
+    if (n != 0, ~)
+        @routine getjac begin
+            n -= 1
+            anc1 += val(x)^n
+            n += 1
+            jac += anc1 * n
+        end
+        grad(x) += grad(out!) * jac
+        ~@routine getjac
+    end
+end
+
+@i function ⊖(^)(out!::GVar, x::GVar{T}, n::GVar) where T
+    @anc anc1::T
+    @anc anc2::T
+    @anc jac::T
+
+    ⊖(^)(val(out!), val(x), val(n))
+
+    if (val(n) != 0.0, ~)
+        @routine getjac begin
+            val(n) -= 1.0
+            anc1 += val(x)^val(n)
+            val(n) += 1.0
+            jac += anc1 * val(n)
+        end
+        grad(x) += grad(out!) * jac
+        ~@routine getjac
+    end
+
+    # get jac of n
+    @routine getnjac begin
+        anc1 += log(val(x))
+        anc2 += val(x) ^ val(n)
+        jac += anc1*anc2
+    end
+    grad(n) += grad(out!) * jac
+    ~@routine getnjac
+end
+
 #=
 macro nograd(ex)
     @match ex begin

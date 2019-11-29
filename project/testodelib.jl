@@ -50,6 +50,7 @@ end
     for i=1:1000
         truth += 0.001*truth*lf.θ
     end
+    @instr Dup(x)
     @instr leapfrog(lf, x; Nt=1000, dt=0.001)
     @test isapprox(val(x), truth; atol=1e-3)
 
@@ -60,6 +61,8 @@ end
     xs = randn(10)
     μ, σ = 0.0, 1.0
     loss_out = 0.0
+    @instr PVar.(xs)
+    @instr Dup.(xs)
     @show ode_loss(μ, σ, lf, xs, loss_out; Nt=100, dt=0.01)
 end
 

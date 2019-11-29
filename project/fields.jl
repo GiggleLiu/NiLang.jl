@@ -5,6 +5,7 @@ struct PVar{T} <: Bundle{T}
 end
 PVar(x) = PVar(x, 0.0)
 PVar{T}(x) where T = PVar(T(x), zero(T))
+PVar{T}(x::Dup) where T = Dup(PVar{T}(x.x), PVar{T}(x.twin))
 (_::Inv{<:PVar})(x::PVar) = (@invcheck x.logp ≈ 0.0; x.x)
 NiLangCore.isreversible(::PVar) = true
 Base.zero(x::PVar) = PVar(zero(x.x))

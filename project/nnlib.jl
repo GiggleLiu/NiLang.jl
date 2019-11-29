@@ -3,11 +3,10 @@ using NiLang, NiLang.AD
 Base.zero(::Dup{T}) where T = Dup(zero(T))
 
 # the integrater
-@i function leapfrog(field, x; Nt::Int, dt::Float64)
+@i function leapfrog(field, x::Dup; Nt::Int, dt::Float64)
     @safe isreversible(field) || throw(InvertibilityError("Input function $f is not reversible."))
     # move ks for half step
     @anc fout::Float64
-    Dup(x)
     update_field(field, x.twin, x.x; dt=dt/2)
     for i=1:Nt
         update_field(field, x.x, x.twin; dt=dt)
@@ -43,12 +42,17 @@ end
     (~normal_logpdf)(temp1, x[1], μ[1], σ)
 end
 
-@i function ode_loss(μ, σ, field, xs, loss_out::LT; Nt=Nt, dt=dt) where LT
+@i function ode_loss(μ, σ, field, xs::AbstractVector{<:Dup}, loss_out::LT; Nt=Nt, dt=dt) where LT
     # backward run, drive target xs to source distribution space.
     # so that we can get `logp`.
-    (~leapfrog).(Ref(field), xs; Nt=Nt, dt=dt)
+    for i=1:length(xs)
+        (~leapfrog)(field, xs[i]; Nt=Nt, dt=dt)
+    end
     # then we evolve the `logp` to target space.
-    normal_logpdf.(logp, xs, Ref(μ), Ref(σ))
+    PVar.(xs)
+    for i=1:length(xs)
+        normal_logpdf.(xs[i].x.logp[i], xs[i], μ, σ)
+    end
 
     PVar.(xs)
     leapfrog.(Ref(field), x; Nt=Nt, dt=dt)
@@ -57,10 +61,6 @@ end
         loss_out += x.logp[i] / length(target_xs)
     end
 end
-
-using Test
-
-
 
 #=
 using DelimitedFiles
@@ -134,59 +134,3 @@ function train(xs_target, θ; niter=100, Nt=100, dt=0.01, lr=0.1)
 end
 
 =#
-
-export softmax_cross_entropy
-
-@i function softmax_cross_entropy(x, p, imax, xmax, Z, out::T) where T
-    @anc logZ::T
-    @anc yi::T
-    # subtract maximum
-    imax += argmax(x)  # trade off space of xmax to time
-    xmax += x[imax]
-    # accumulate exp(x) to Z, and finally get logZ
-    for i=1:length(x)
-        x[i] -= xmax
-        Z += exp(x[i])
-    end
-    logZ += log(Z)
-    for i=1:length(x)
-        yi += logZ
-        yi -= x[i]
-        out += yi * p[i]
-        yi += x[i]
-        yi -= logZ
-    end
-    logZ -= log(Z)
-end
-
-function _sce(x::AbstractArray{T,N}, p) where {T,N}
-    x = x .- maximum(x; dims=N)  # avoid data overflow
-    rho = exp.(x)
-    Z = sum(rho; dims=N)
-    return dropdims(sum((log.(Z) .- x) .* p; dims=N), dims=N)
-end
-
-
-using Random, Test
-@testset "softmax_crossentropy" begin
-    Random.seed!(2)
-    x = randn(10)
-    x0 = copy(x)
-    p = randn(10); p=p./maximum(p)
-    res = _sce(x, p)
-    imax = 0
-    Z = 0.0
-    out = 0.0
-    xmax = 0.0
-    x_ = x
-    p_ = p
-    @instr softmax_cross_entropy(x_, p_, imax, xmax, Z, out)
-    @show Z
-    @test isapprox(imax, argmax(x0), atol=1e-8)
-    @test isapprox(out, res[], atol=1e-8)
-    @instr (~softmax_cross_entropy)(x_, p_, imax, xmax, Z, out)
-    args = x_, p_, imax, xmax, Z, out
-    @test check_inv(softmax_cross_entropy, args)
-    args = x_, p_, imax, xmax, Z, Loss(out)
-    @test check_grad(softmax_cross_entropy, args; verbose=true)
-end
