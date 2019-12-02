@@ -3,8 +3,8 @@ export softmax_cross_entropy
 # TODO: error on `scalar .+ vector`
 # TODO: allow docstring
 @i function softmax_cross_entropy(x, p, imax, xmax, Z, out::T) where T
-    @anc logZ::T
-    @anc yi::T
+    @anc logZ = zero(T)
+    @anc yi = zero(T)
     # subtract maximum
     imax += argmax(x)  # trade off space of xmax to time
     xmax += x[imax]

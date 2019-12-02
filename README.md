@@ -19,10 +19,10 @@ It features
 1. a unitary matrix multiplication operation, parametrized by at most `N*(N+1)/2` parameters (θ).
 ```julia
 @i function umm!(x, θ, Nin::Int, Nout::Int)
-    @anc k::Int
+    @anc k = 0
     for j=1:Nout
         for i=Nin-1:-1:j
-            k ⊕ 1
+            k += 1
             ROT(x[i], x[i+1], θ[k])
         end
     end
@@ -30,16 +30,16 @@ It features
     # uncompute k
     for j=1:Nout
         for i=Nin-1:-1:j
-            k ⊖ 1
+            k -= 1
         end
     end
 end
 ```
 
 Notes:
-* `⊕` and `⊖` are inplace `+` and `-` operations.
+* `+=` and `-=` are inplace `+` and `-` operations.
 In fact, all instructions/function in `NiLang` are (effectively) inplace.
-* `@anc x::T` declares an ancilla register of type `T`.
+* `@anc x = val` declares an ancilla register with initial value `val`.
 At the end of computation, this ancilla register must be reset to `0` and return to system,
 otherwise raises `InvertibilityError`.
 * control flow `for start:step:stop ... end` looks quite similar to traditional computation,
@@ -51,12 +51,12 @@ These two conditions should match, otherwise errors.
 ```julia
 # compute `((a.+b).*b)[1] -> out`
 @i function test1(a, b)
-    a .⊕ b
+    a .+= b
 end
 @i function test2(a, b, out, loss)
-    a .⊕ b
+    a .+= b
     out .+= (a .* b)
-    loss ⊕ out[1]
+    loss += out[1]
 end
 
 x = [3, 1.0]

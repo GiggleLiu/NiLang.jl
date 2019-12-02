@@ -27,7 +27,7 @@ end
 
 @i function ⊖(exp)(out!::GVar, x::GVar{T}) where T
     val(out!) -= exp(val(x))
-    @anc anc1::T
+    @anc anc1 = zero(T)
     anc1 += exp(val(x))
     grad(x) += grad(out!) * anc1
     anc1 -= exp(val(x))
@@ -40,7 +40,7 @@ end
 
 @i function ⊖(sin)(out!::GVar, x::GVar{T}) where T
     val(out!) -= sin(val(x))
-    @anc anc1::T
+    @anc anc1 = zero(T)
     anc1 += cos(val(x))
     grad(x) += grad(out!) * anc1
     anc1 -= cos(val(x))
@@ -48,7 +48,7 @@ end
 
 @i function ⊖(cos)(out!::GVar, x::GVar{T}) where T
     val(out!) -= cos(val(x))
-    @anc anc1::T
+    @anc anc1 = zero(T)
     anc1 -= sin(val(x))
     grad(x) += grad(out!) * anc1
     anc1 += sin(val(x))
@@ -57,8 +57,8 @@ end
 @i function ⊖(/)(out!::GVar{T}, x::GVar, y::GVar) where T
     val(out!) -= val(x)/val(y)
     grad(x) += grad(out!)/val(y)
-    @anc a1::T
-    @anc a2::T
+    @anc a1 = zero(T)
+    @anc a2 = zero(T)
     a1 += val(x)*grad(out!)
     a2 += val(a1)/val(y)
     grad(y) -= a2/val(y)
@@ -84,8 +84,8 @@ end
 
 @i function ⊖(^)(out!::GVar, x::GVar{T}, n::Int) where T
     ⊖(^)(val(out!), val(x), n)
-    @anc anc1::T
-    @anc jac::T
+    @anc anc1 = zero(T)
+    @anc jac = zero(T)
     if (n != 0, ~)
         @routine getjac begin
             n -= 1
@@ -99,9 +99,9 @@ end
 end
 
 @i function ⊖(^)(out!::GVar, x::GVar{T}, n::GVar) where T
-    @anc anc1::T
-    @anc anc2::T
-    @anc jac::T
+    @anc anc1 = zero(T)
+    @anc anc2 = zero(T)
+    @anc jac = zero(T)
 
     ⊖(^)(val(out!), val(x), val(n))
 
