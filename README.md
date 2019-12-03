@@ -15,6 +15,12 @@ It features
 [![Build Status](https://travis-ci.com/GiggleLiu/NiLang.jl.svg?branch=master)](https://travis-ci.com/GiggleLiu/NiLang.jl)
 [![Codecov](https://codecov.io/gh/GiggleLiu/NiLang.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/GiggleLiu/NiLang.jl)
 
+## To Start
+```
+pkg> dev git@github.com:GiggleLiu/NiLangCore.jl.git
+pkg> dev git@github.com:GiggleLiu/NiLang.jl.git
+```
+
 ## Examples
 1. a unitary matrix multiplication operation, parametrized by at most `N*(N+1)/2` parameters (θ).
 ```julia
