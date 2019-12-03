@@ -6,6 +6,8 @@ end
 PVar(x) = PVar(x, 0.0)
 PVar{T}(x) where T = PVar(T(x), zero(T))
 PVar{T}(x::Dup) where T = Dup(PVar{T}(x.x), PVar{T}(x.twin))
+PVar(x::Dup{T}) where T = PVar{T}(x)
+PVar{T}(x::PVar{T}) where T = x
 (_::Inv{<:PVar})(x::PVar) = (@invcheck x.logp ≈ 0.0; x.x)
 NiLangCore.isreversible(::PVar) = true
 Base.zero(x::PVar) = PVar(zero(x.x))
@@ -13,7 +15,7 @@ Base.zero(x::PVar) = PVar(zero(x.x))
 # x += field(y) * dt
 # TODO: support documentation
 @i function update_field(field, x::T, y; dt) where T
-    @anc field_out::T
+    @anc field_out = zero(T)
     get_field(field, field_out, y)
     x += field_out * dt
     (~get_field)(field, field_out, y)
@@ -21,7 +23,7 @@ end
 
 # x += field(y) * dt, and update logp.
 @i function update_field(field, x::PVar{T}, y; dt) where T
-    @anc field_out::T
+    @anc field_out = zero(T)
     get_field(field, field_out, val(y))
     # update x
     x += field_out * dt

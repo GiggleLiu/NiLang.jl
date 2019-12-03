@@ -1,12 +1,12 @@
 using NiLang, NiLang.AD
 
 Base.zero(::Dup{T}) where T = Dup(zero(T))
+Base.zero(::Type{Dup{T}}) where T = Dup(zero(T))
 
 # the integrater
 @i function leapfrog(field, x::Dup; Nt::Int, dt::Float64)
     @safe isreversible(field) || throw(InvertibilityError("Input function $f is not reversible."))
     # move ks for half step
-    @anc fout::Float64
     update_field(field, x.twin, x.x; dt=dt/2)
     for i=1:Nt
         update_field(field, x.x, x.twin; dt=dt)
@@ -15,9 +15,9 @@ Base.zero(::Dup{T}) where T = Dup(zero(T))
 end
 
 @i function normal_logpdf(out, x::T, μ, σ) where T
-    @anc anc1::T
-    @anc anc2::T
-    @anc anc3::T
+    @anc anc1 = zero(T)
+    @anc anc2 = zero(T)
+    @anc anc3 = zero(T)
 
     @routine ri begin
         anc1 += x
@@ -34,31 +34,30 @@ end
 end
 
 @i function normal_logpdf2d(out::T, x, μ, σ) where T
-    @anc temp1::T
-    @anc temp2::T
+    @anc temp1 = zero(T)
+    @anc temp2 = zero(T)
     normal_logpdf(temp1, x[1], μ[1], σ)
     normal_logpdf(out, x[2], μ[2], σ)
     out += temp1
     (~normal_logpdf)(temp1, x[1], μ[1], σ)
 end
 
-@i function ode_loss(μ, σ, field, xs::AbstractVector{<:Dup}, loss_out::LT; Nt=Nt, dt=dt) where LT
+@i function ode_loss(μ, σ, field, xs::AbstractVector{TX}, loss_out::LT; Nt=Nt, dt=dt) where {LT,TX<:Dup}
     # backward run, drive target xs to source distribution space.
     # so that we can get `logp`.
+    @anc anc_x = 0.0
     for i=1:length(xs)
         (~leapfrog)(field, xs[i]; Nt=Nt, dt=dt)
     end
     # then we evolve the `logp` to target space.
     PVar.(xs)
     for i=1:length(xs)
-        normal_logpdf.(xs[i].x.logp[i], xs[i], μ, σ)
-    end
-
-    PVar.(xs)
-    leapfrog.(Ref(field), x; Nt=Nt, dt=dt)
-    # with logp, we compute log-likelihood
-    for i=1:length(xs)
-        loss_out += x.logp[i] / length(target_xs)
+        anc_x += xs[i].x.x
+        normal_logpdf(xs[i].x.logp, anc_x, μ, σ)
+        anc_x -= xs[i].x.x
+        leapfrog(field, xs[i]; Nt=Nt, dt=dt)
+        # with logp, we compute log-likelihood
+        loss_out += xs[i].x.logp / length(xs)
     end
 end
 

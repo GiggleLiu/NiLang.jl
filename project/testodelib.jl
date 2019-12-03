@@ -40,6 +40,7 @@ end
     x = 0.8
     truth = f(sin, 0.8, 10000, 0.0001)
     field = ⊕(sin)
+    @instr Dup(x)
     @instr leapfrog(field, x; Nt=10000, dt=0.0001)
     @test isapprox(x, truth; atol=1e-3)
 
@@ -61,9 +62,9 @@ end
     xs = randn(10)
     μ, σ = 0.0, 1.0
     loss_out = 0.0
-    @instr PVar.(xs)
     @instr Dup.(xs)
-    @show ode_loss(μ, σ, lf, xs, loss_out; Nt=100, dt=0.01)
+    @instr ode_loss(μ, σ, lf, xs, loss_out; Nt=100, dt=0.01)
+    @show loss_out
 end
 
 @testset "normal log pdf" begin

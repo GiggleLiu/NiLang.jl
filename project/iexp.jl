@@ -1,10 +1,10 @@
 using NiLang, NiLang.AD
 
 @i function iexp(out!, x::T; atol::Float64=1e-14) where T
-    @anc anc1::T
-    @anc anc2::T
-    @anc anc3::T
-    @anc iplus::T
+    @anc anc1 = zero(T)
+    @anc anc2 = zero(T)
+    @anc anc3 = zero(T)
+    @anc iplus = zero(T)
 
     out! += 1.0
     anc1 += 1.0

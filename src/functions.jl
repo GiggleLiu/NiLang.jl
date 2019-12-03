@@ -19,6 +19,7 @@ end
     end
 end
 
+# NOTE: also define the multiplication between two matrices
 @i function umm!(x, θ, Nin::Int, Nout::Int)
     @anc k = 0
     for j=1:Nout
