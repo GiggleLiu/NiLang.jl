@@ -6,13 +6,13 @@ using NiLang, NiLang.AD
     @anc anc3 = zero(T)
     @anc iplus = zero(T)
 
-    out! += 1.0
-    anc1 += 1.0
+    out! ⊕ 1.0
+    anc1 ⊕ 1.0
     while (val(anc1) > atol, !isapprox(iplus, 0.0))
-        iplus += 1.0
+        iplus ⊕ 1.0
         anc2 += anc1 * x
         anc3 += anc2 / iplus
-        out! += anc3
+        out! ⊕ anc3
         # speudo inverse
         anc1 -= anc2 / x
         anc2 -= anc3 * iplus
@@ -20,7 +20,7 @@ using NiLang, NiLang.AD
     end
 
     ~(while (val(anc1) > atol, !isapprox(iplus, 0.0))
-        iplus += 1.0
+        iplus ⊕ 1.0
         anc2 += anc1 * x
         anc3 += anc2 / iplus
         # speudo inverse
@@ -28,7 +28,7 @@ using NiLang, NiLang.AD
         anc2 -= anc3 * iplus
         SWAP(anc1, anc3)
     end)
-    anc1 -= 1.0
+    anc1 ⊖ 1.0
 end
 
 using Test

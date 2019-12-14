@@ -24,10 +24,10 @@ end
     @anc anc_dot = zeros(T, size(A,2))
     @anc ri = zeros(T, size(A,1))
     for col = 1:size(A, 1)
-        ri .+= A[:,col]
+        ri .⊕ A[:,col]
         for precol = 1:col-1
             idot(anc_dot[precol], Q[:,precol], ri)
-            R[precol,col] += anc_dot[precol]
+            R[precol,col] ⊕ anc_dot[precol]
             for row = 1:size(Q,1)
                 ri[row] -= anc_dot[precol] * Q[row, precol]
             end
@@ -39,7 +39,7 @@ end
             Q[row,col] += ri[row] / R[col, col]
         end
 
-        ~(ri .+= A[:,col];
+        ~(ri .⊕ A[:,col];
         for precol = 1:col-1
             idot(anc_dot[precol], Q[:,precol], ri)
             for row = 1:size(Q,1)
@@ -70,11 +70,11 @@ using Test, Random
 
     @i function test1(out, q, r, A)
         iqr(q, r, A)
-        out += q[1,2]
+        out ⊕ q[1,2]
     end
     @i function test2(out, q, r, A)
         iqr(q, r, A)
-        out += r[1,2]
+        out ⊕ r[1,2]
     end
     @test check_grad(test1, (Loss(0.0), q, r, A); atol=0.05, verbose=true)
     @test check_grad(test2, (Loss(0.0), q, r, A); atol=0.05, verbose=true)

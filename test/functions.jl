@@ -60,7 +60,7 @@ end
     x = randn(20)
     out = 0.0
     @test_throws InvertibilityError MapFoldl(exp, +)
-    @instr MapFoldl(exp, ⊕)(out, x)
+    @instr MapFoldl(exp, ⊕(identity))(out, x)
     @test out ≈ sum(exp.(x))
-    @test check_inv(MapFoldl(exp, ⊕), (out, x))
+    @test check_inv(MapFoldl(exp, ⊕(identity)), (out, x))
 end
