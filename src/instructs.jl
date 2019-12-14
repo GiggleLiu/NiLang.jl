@@ -1,48 +1,36 @@
-export ⊕, ⊖, XOR, SWAP, NEG, CONJ
+export XOR, SWAP, NEG, CONJ
 export ROT, IROT
 
-function ⊕(a!, b)
-    @assign val(a!) val(a!) + val(b)
-    a!, b
-end
-function ⊖(a!, b)
-    @assign val(a!) val(a!) - val(b)
-    a!, b
-end
-const _add = ⊕
-const _sub = ⊖
-@dual _add _sub
-
 function XOR(a!, b)
-    @assign val(a!) xor(val(a!), val(b))
+    @assign value(a!) xor(value(a!), value(b))
     a!, b
 end
 @selfdual XOR
 
 function SWAP(a!, b!)
-    va = val(a!)
-    @assign val(a!) val(b!)
-    @assign val(b!) va
+    va = value(a!)
+    @assign value(a!) value(b!)
+    @assign value(b!) va
     a!, b!
 end
 @selfdual SWAP
 
 function NEG(a!)
-    @assign val(a!) -val(a!)
+    @assign value(a!) -value(a!)
     a!
 end
 @selfdual NEG
 
 function CONJ(x)
-    @assign val(x) conj(val(x))
+    @assign value(x) conj(value(x))
     x
 end
 @selfdual CONJ
 
 function ROT(i, j, θ)
-    a, b = rot(val(i), val(j), val(θ))
-    @assign val(i) a
-    @assign val(j) b
+    a, b = rot(value(i), value(j), value(θ))
+    @assign value(i) a
+    @assign value(j) b
     i, j, θ
 end
 function IROT(i, j, θ)

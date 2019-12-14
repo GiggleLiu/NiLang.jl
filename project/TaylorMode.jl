@@ -34,4 +34,14 @@ function hessian(f, args; kwargs=(), η=1e-5)
     return res
 end
 
+g = HeissianGrid(...)
+
+@i function ⊕(*)(out!::TaylorVar{N}, a::TaylorVar{N}, b::TaylorVar{N}) where N
+    ⊕(*)(out!.x, a.x, b.x)
+    global_tape[a.index] .*= b.x
+    global_tape[a.index] .*= b.x
+    global_tape[b.index] .*= a.x
+end
+
+
 nhessian(⊕(*), (Loss(0.0), 1.0, 2.0))

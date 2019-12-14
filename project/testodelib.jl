@@ -3,6 +3,8 @@ include("fields.jl")
 using Test, Random
 using Distributions, StatsBase, LinearAlgebra
 
+Base.broadcastable(x::LinearField) = Ref(x)
+
 @testset "field" begin
     lf = LinearField(0.5)
     out, x = 0.0, 2.0
@@ -15,6 +17,7 @@ using Distributions, StatsBase, LinearAlgebra
     @instr update_field(LinearField(θ), y, x; dt=0.1)
     @test y === 0.6
     @test check_inv(update_field, (LinearField(θ), y, x); kwargs=Dict(:dt=>0.1))
+    @test check_grad(update_field, (LinearField(θ), Loss(y), x); kwargs=Dict(:dt=>0.1), verbose=true)
 
     x = 2.0
     y = PVar(0.5)
@@ -63,6 +66,8 @@ end
     μ, σ = 0.0, 1.0
     loss_out = 0.0
     @instr Dup.(xs)
+    #@test check_grad(ode_loss, (Loss(μ), σ, lf, xs, loss_out); kwargs=Dict(:Nt=>100, :dt=>0.01))
+    @test check_grad(ode_loss, (μ, σ, lf, xs, Loss(loss_out)); kwargs=Dict(:Nt=>100, :dt=>0.01))
     @instr ode_loss(μ, σ, lf, xs, loss_out; Nt=100, dt=0.01)
     @show loss_out
 end
