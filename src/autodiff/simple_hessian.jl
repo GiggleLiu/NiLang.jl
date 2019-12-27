@@ -1,4 +1,4 @@
-using NiLang, NiLang.AD
+export simple_hessian, nhessian
 
 function (_::Type{Inv{GVar}})(x::GVar{<:GVar,<:GVar})
     Partial{:x}(x)
@@ -12,7 +12,7 @@ end
     ⊕(identity)(value(out!), value(x))
 end
 
-@i function hessian1(f, args; index::Int)
+@i function hessian1(f, args; kwargs, index::Int)
     @safe @assert count(x -> x isa Loss, args) == 1
     @anc iloss = 0
     @routine getiloss begin
@@ -24,7 +24,7 @@ end
     end
 
     # forward
-    f'(args...)
+    f'(args...; kwargs...)
 
     (~Loss)(args[iloss])
     for i = 1:length(args)
@@ -34,32 +34,32 @@ end
     grad(grad(args[index])) ⊕ 1.0
     # backward#2
     (Loss)(args[iloss])
-    (~f')(args...)
+    (~f')(args...; kwargs...)
 
     ~@routine getiloss
 end
 
-function hessian(f, args::Tuple)
+function simple_hessian(f, args::Tuple; kwargs=())
     N = length(args)
     hmat = zeros(N, N)
     for i=1:N
-        res = hessian1(f, args; index=i)
-        @show res[2]
+        res = hessian1(f, args; kwargs=kwargs, index=i)
         hmat[:,i] .= map(x->x isa Loss ? grad(value(value(x))) :  grad(value(x)), res[2])
     end
     hmat
 end
 
-
-#hvar(x::GVar) = GVar(GVar(x.x), GVar(x.g))
-#(_::Inv{typeof(hvar)})(x::GVar) = GVar((~GVar)(x.x), (~GVar)(x.g))
-
-#Base.adjoint(gv::GVar) = GVar(gv.x', gv.g')
-#Base.conj(gv::GVar) = GVar(conj(gv.x), conj(gv.g))
-hessian(0.0, 2.0, 3.0)
-
-hmat = zeros(3,3)
-hessian1(⊕(*), (Loss(0.0), 2.0, 3.0); index=2)
-hessian(⊕(*), (Loss(0.0), 2.0, 3.0))
-
-# (x) -> (y, 1) -> (x, dL/dx=dL/dy*dy/dx)
+function nhessian(f, args; kwargs=(), η=1e-5)
+    largs = Any[args...]
+    narg = length(largs)
+    res = zeros(narg, narg)
+    for i = 1:narg
+        @instr value(largs[i]) ⊕ η/2
+        gpos = gradient(f, (largs...,); kwargs=kwargs)
+        @instr value(largs[i]) ⊖ η
+        gneg = gradient(f, (largs...,); kwargs=kwargs)
+        @instr value(largs[i]) ⊕ η/2
+        res[:,i] .= (gpos .- gneg)./η
+    end
+    return res
+end

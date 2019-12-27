@@ -13,6 +13,7 @@ NiLangCore.ADCore.GVar(x::Dup) = Dup(GVar(x.x), GVar(x.twin))
 
 include("basicinstructs.jl")
 include("instructs.jl")
+include("simple_hessian.jl")
 
 for op in [:>, :<, :>=, :<=, :isless]
     @eval Base.$op(a::Bundle, b::Bundle) = $op(value(a), value(b))
