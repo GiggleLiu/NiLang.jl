@@ -27,40 +27,38 @@ end
     anc1 += sin(value(x))
 end
 
-@i function IROT(a::GVar, b::GVar, θ::GVar)
-    IROT(value(a), value(b), value(θ))
+for op in [:exp, :log, :sin, :cos]
+    @eval @nograd ⊖($op)(out!, x::GVar)
+    @eval @nograd ⊖($op)(out!::GVar, x)
+end
+
+@i function IROT(a!::GVar, b!::GVar, θ::GVar)
+    IROT(value(a!), value(b!), value(θ))
     NEG(value(θ))
     value(θ) ⊖ π/2
-    ROT(grad(a), grad(b), value(θ))
-    grad(θ) += value(a) * grad(a)
-    grad(θ) += value(b) * grad(b)
+    ROT(grad(a!), grad(b!), value(θ))
+    grad(θ) += value(a!) * grad(a!)
+    grad(θ) += value(b!) * grad(b!)
     value(θ) ⊕ π/2
     NEG(value(θ))
-    ROT(grad(a), grad(b), π/2)
+    ROT(grad(a!), grad(b!), π/2)
 end
+
+@i function IROT(a!::GVar, b!::GVar, θ)
+    IROT(value(a!), value(b!), θ)
+    NEG(θ)
+    θ ⊖ π/2
+    ROT(grad(a!), grad(b!), θ)
+    θ ⊕ π/2
+    NEG(θ)
+    ROT(grad(a!), grad(b!), π/2)
+end
+
+@nograd IROT(a!, b!, θ::GVar)
 
 #=
-macro nograd(ex)
-    @match ex begin
-        :($f($(args...))) => :(
-            @i function $f($(_render_type.(args)...))
-            end
-        )
-    end
-end
-
-function _render_type(ex)
-    @match ex begin
-        :($x::$tp) => :($x::GVar{$tp})
-        :($x) => :($x::GVar)
-        _=>error("expect argument like `x::T` or `x`, got $ex")
-    end
-end
-
-@nograd XOR(a!, b)
-=#
-
 # ugly patch
 @i function ⊖(GVar{Float64,Float64})(a!::GVar, b::T) where T
     value(a!) ⊖ value(b)
 end
+=#

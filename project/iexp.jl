@@ -8,7 +8,7 @@ using NiLang, NiLang.AD
 
     out! ⊕ 1.0
     anc1 ⊕ 1.0
-    while (val(anc1) > atol, !isapprox(iplus, 0.0))
+    while (value(anc1) > atol, !isapprox(iplus, 0.0))
         iplus ⊕ 1.0
         anc2 += anc1 * x
         anc3 += anc2 / iplus
@@ -19,7 +19,7 @@ using NiLang, NiLang.AD
         SWAP(anc1, anc3)
     end
 
-    ~(while (val(anc1) > atol, !isapprox(iplus, 0.0))
+    ~(while (value(anc1) > atol, !isapprox(iplus, 0.0))
         iplus ⊕ 1.0
         anc2 += anc1 * x
         anc3 += anc2 / iplus
@@ -62,7 +62,7 @@ end
     out = 0.0
     x = 1.6
     gres = exp(x)
-    @test check_inv(iexp, (Loss(out), x); verbose=true)
+    @test check_inv(iexp, (out, x); verbose=true)
     @test check_grad(iexp, (Loss(out), x); verbose=true)
 
     out = 0.0

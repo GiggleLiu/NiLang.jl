@@ -9,14 +9,13 @@ end
 
 # the integrater
 @i function leapfrog(field, x::Dup; Nt::Int, dt::Float64)
-    @safe isreversible(field) || throw(InvertibilityError("Input function $f is not reversible."))
+    @safe isreversible(field) || throw(InvertibilityError("Input function $field is not reversible."))
     # move ks for half step
     update_field(field, x.twin, x.x; dt=dt/2)
     for i=1:Nt
         update_field(field, x.x, x.twin; dt=dt)
         update_field(field, x.twin, x.x; dt=dt)
     end
-    @safe @show field, x
 end
 
 @i function normal_logpdf(out, x::T, μ, σ) where T
@@ -25,8 +24,8 @@ end
     @anc anc3 = zero(T)
 
     @routine ri begin
-        anc1 += x
-        anc1 -= μ
+        anc1 ⊕ x
+        anc1 ⊖ μ
         anc2 += anc1 / σ  # (x- μ)/σ
         anc3 += anc2 * anc2 # (x-μ)^2/σ^2
     end
@@ -43,7 +42,7 @@ end
     @anc temp2 = zero(T)
     normal_logpdf(temp1, x[1], μ[1], σ)
     normal_logpdf(out, x[2], μ[2], σ)
-    out += temp1
+    out ⊕ temp1
     (~normal_logpdf)(temp1, x[1], μ[1], σ)
 end
 
@@ -58,9 +57,9 @@ end
     # then we evolve the `logp` to target space.
     PVar.(xs)
     for i=1:length(xs)
-        anc_x += xs[i].x.x
+        anc_x ⊕ xs[i].x.x
         normal_logpdf(xs[i].x.logp, anc_x, μ, σ)
-        anc_x -= xs[i].x.x
+        anc_x ⊖ xs[i].x.x
         leapfrog(field, xs[i]; Nt=Nt, dt=dt)
         # with logp, we compute log-likelihood
         loss_out += xs[i].x.logp / length(xs)

@@ -7,6 +7,10 @@ using Reexport
 using MLStyle
 
 import ..NiLang: ⊕, ⊖, NEG, CONJ, ROT, IROT, SWAP
+
+NiLangCore.ADCore.GVar(x::Dup) = Dup(GVar(x.x), GVar(x.twin))
+(invg::Type{Inv{GVar}})(x::Dup) = Dup(invg(x.x), invg(x.twin))
+
 include("basicinstructs.jl")
 include("instructs.jl")
 
