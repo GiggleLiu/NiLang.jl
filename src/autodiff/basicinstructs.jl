@@ -31,26 +31,13 @@ end
 end
 
 @i function ⊖(*)(out!::GVar, x, y::GVar)
-    @anc xg = GVar(zero(x))
-    xg ⊕ x
-    value(out!) -= value(xg) * value(y)
-    grad(xg) += grad(out!) * value(y)
-    grad(y) += value(xg) * grad(out!)
-    xg ⊖ x
-end
-
-@i function ⊖(*)(out!::GVar, x, y::GVar)
     value(out!) -= value(x) * value(y)
     grad(y) += value(x) * grad(out!)
 end
 
 @i function ⊖(*)(out!::GVar, x::GVar, y)
-    @anc yg = GVar(zero(y))
-    yg ⊕ y
-    value(out!) -= value(x) * value(yg)
-    grad(x) += grad(out!) * value(yg)
-    grad(yg) += value(x) * grad(out!)
-    yg ⊖ y
+    value(out!) -= value(x) * value(y)
+    grad(x) += grad(out!) * value(y)
 end
 
 @i function ⊖(/)(out!::GVar{T}, x::GVar, y::GVar) where T

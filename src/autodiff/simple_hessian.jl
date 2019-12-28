@@ -17,7 +17,7 @@ end
     @anc iloss = 0
     @routine getiloss begin
         for i=1:length(args)
-            if (args[i] isa Loss, iloss==i)
+            if (tget(args,i) isa Loss, iloss==i)
                 iloss += identity(i)
             end
         end
@@ -26,14 +26,14 @@ end
     # forward
     f'(args...; kwargs...)
 
-    (~Loss)(args[iloss])
+    (~Loss)(tget(args,iloss))
     for i = 1:length(args)
-        GVar(grad(args[i]))
-        GVar(value(args[i]))
+        GVar(grad(tget(args,i)))
+        GVar(value(tget(args,i)))
     end
-    grad(grad(args[index])) ⊕ 1.0
+    grad(grad(tget(args,index))) ⊕ 1.0
     # backward#2
-    (Loss)(args[iloss])
+    (Loss)(tget(args,iloss))
     (~f')(args...; kwargs...)
 
     ~@routine getiloss
