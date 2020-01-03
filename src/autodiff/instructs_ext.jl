@@ -55,10 +55,3 @@ end
 end
 
 @nograd IROT(a!, b!, θ::GVar)
-
-#=
-# ugly patch
-@i function ⊖(GVar{Float64,Float64})(a!::GVar, b::T) where T
-    value(a!) ⊖ value(b)
-end
-=#
