@@ -69,4 +69,10 @@ end
     x = 1.6
     @instr iexp'(Loss(out), x)
     @test grad(x) ≈ gres
+
+    h = taylor_hessian(iexp, (Loss(0.0), 1.6))
+    nh = nhessian(iexp, (Loss(0.0), 1.6))
+    @test h ≈ nh
 end
+
+Base.zero(x::Type{HessianData{T}}) where T = zero(T)

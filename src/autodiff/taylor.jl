@@ -1,4 +1,4 @@
-export HessianData, taylor_hessian
+export HessianData, taylor_hessian, local_hessian
 
 struct HessianData{T}
     x::T
@@ -36,6 +36,8 @@ end
     for i=1:size_paramspace(out!)
         hrow(x)[i] += y.x * hrow(out!)[i]
         hrow(y)[i] += x.x * hrow(out!)[i]
+    end
+    for i=1:size_paramspace(out!)
         hcol(x)[i] += y.x * hcol(out!)[i]
         hcol(y)[i] += x.x * hcol(out!)[i]
     end
@@ -49,16 +51,56 @@ end
     grad(y) += value(x) * grad(out!)
 end
 
+@i function NEG(x!::HessianData)
+    NEG(x!.x)
+    # hessian from hessian
+    for i=1:size_paramspace(x!)
+        NEG(hrow(x!)[i])
+        NEG(hcol(x!)[i])
+    end
+
+    # update gradients
+    NEG(grad(x!))
+end
+
+@i function CONJ(x!::HessianData)
+    CONJ(x!.x)
+    # hessian from hessian
+    for i=1:size_paramspace(x!)
+        CONJ(hrow(x!)[i])
+        CONJ(hcol(x!)[i])
+    end
+
+    # update gradients
+    CONJ(grad(x!))
+end
+
 @i function ⊖(identity)(out!::HessianData, x::HessianData)
     ⊖(identity)(out!.x, x.x)
     # hessian from hessian
     for i=1:size_paramspace(out!)
         hrow(x)[i] ⊕ hrow(out!)[i]
+    end
+    for i=1:size_paramspace(out!)
         hcol(x)[i] ⊕ hcol(out!)[i]
     end
 
     # update gradients
     grad(x) ⊕ grad(out!)
+end
+
+@i function SWAP(x!::HessianData, y!::HessianData)
+    SWAP(x!.x, y!.x)
+    # hessian from hessian
+    for i=1:size_paramspace(x!)
+        SWAP(hrow(x!)[i], hrow(y!)[i])
+    end
+    for i=1:size_paramspace(x!)
+        SWAP(hcol(x!)[i], hcol(y!)[i])
+    end
+
+    # update gradients
+    SWAP(grad(x!), grad(y!))
 end
 
 @i function ⊖(/)(out!::HessianData{T}, x::HessianData{T}, y::HessianData{T}) where T
@@ -86,6 +128,8 @@ end
     for i=1:size_paramspace(out!)
         hrow(x)[i] += xjac * hrow(out!)[i]
         hrow(y)[i] += yjac * hrow(out!)[i]
+    end
+    for i=1:size_paramspace(out!)
         hcol(x)[i] += xjac * hcol(out!)[i]
         hcol(y)[i] += yjac * hcol(out!)[i]
     end
@@ -95,7 +139,6 @@ end
     out!.hessian[x.index, y.index] += xyjac*grad(out!)
     out!.hessian[y.index, x.index] += xyjac*grad(out!)
 
-    @safe @show grad(out!), xjac, yjac, grad(x), grad(y)
     # update gradients
     grad(x) += grad(out!) * xjac
     grad(y) += yjac * grad(out!)
@@ -113,6 +156,8 @@ end
     @anc xjac = zero(T)
     @anc njac = zero(T)
     @anc hxn = zero(T)
+    @anc hxx = zero(T)
+    @anc hnn = zero(T)
     @anc nminus1 = zero(T)
 
     # compute jacobians
@@ -134,30 +179,108 @@ end
         anc2 += xjac/x
         hxn ⊕ anc1
         hxn += xjac * logx
+        hxx += anc2 * nminus1
+        hnn += logx2 * powerxn
     end
 
     # hessian from hessian
     for i=1:size_paramspace(out!)
         hcol(x)[i] += hcol(out!)[i] * xjac
+        hcol(n)[i] += hcol(out!)[i] * njac
+    end
+    for i=1:size_paramspace(out!)
         hrow(x)[i] += hrow(out!)[i] * xjac
         hrow(n)[i] += hrow(out!)[i] * njac
-        hcol(n)[i] += hcol(out!)[i] * njac
     end
 
     # hessian from jacobian
     # Dnn = x^n*log(x)^2
     # Dxx = (-1 + n)*n*x^(-2 + n)
     # Dxn = Dnx = x^(-1 + n) + n*x^(-1 + n)*log(x)
-    out!.hessian[x.index, x.index] += anc2 * nminus1
-    out!.hessian[n.index, n.index] += logx2 * powerxn
-    out!.hessian[x.index, n.index] ⊕ hxn
-    out!.hessian[n.index, x.index] ⊕ hxn
+    out!.hessian[x.index, x.index] += hxx * grad(out!)
+    out!.hessian[n.index, n.index] += hnn * grad(out!)
+    out!.hessian[x.index, n.index] += hxn * grad(out!)
+    out!.hessian[n.index, x.index] += hxn * grad(out!)
 
     # update gradients
     grad(x) += grad(out!) * xjac
     grad(n) += grad(out!) * njac
 
     ~@routine getjac
+end
+
+@i function IROT(a!::HessianData{T}, b!::HessianData{T}, θ::HessianData{T}) where T
+    @anc s = zero(T)
+    @anc c = zero(T)
+    @anc ca = zero(T)
+    @anc sb = zero(T)
+    @anc sa = zero(T)
+    @anc cb = zero(T)
+    @anc θ2 = zero(T)
+    IROT(value(a!), value(b!), value(θ))
+
+    @routine temp begin
+        θ2 ⊖ value(θ)
+        θ2 ⊖ π/2
+        s += sin(value(θ))
+        c += cos(value(θ))
+        ca += c * value(a!)
+        sb += s * value(b!)
+        sa += s * value(a!)
+        cb += c * value(b!)
+    end
+
+    # update gradient, #1
+    for i=1:size_paramspace(a!)
+        ROT(hcol(a!)[i], hcol(b!)[i], θ2)
+        hcol(θ)[i] += value(a!) * hcol(a!)[i]
+        hcol(θ)[i] += value(b!) * hcol(b!)[i]
+        ROT(hcol(a!)[i], hcol(b!)[i], π/2)
+    end
+    for i=1:size_paramspace(a!)
+        ROT(hrow(a!)[i], hrow(b!)[i], θ2)
+        hrow(θ)[i] += value(a!) * hrow(a!)[i]
+        hrow(θ)[i] += value(b!) * hrow(b!)[i]
+        ROT(hrow(a!)[i], hrow(b!)[i], π/2)
+    end
+
+    # update local hessian
+    a!.hessian[a!.index, θ.index] -= s * grad(a!)
+    a!.hessian[b!.index, θ.index] -= c * grad(a!)
+    a!.hessian[θ.index, a!.index] -= s * grad(a!)
+    a!.hessian[θ.index, b!.index] -= c * grad(a!)
+    a!.hessian[θ.index, θ.index] -= ca * grad(a!)
+    a!.hessian[θ.index, θ.index] += sb * grad(a!)
+
+    a!.hessian[a!.index, θ.index] += c * grad(b!)
+    a!.hessian[b!.index, θ.index] -= s * grad(b!)
+    a!.hessian[θ.index, a!.index] += c * grad(b!)
+    a!.hessian[θ.index, b!.index] -= s * grad(b!)
+    a!.hessian[θ.index, θ.index] -= sa * grad(b!)
+    a!.hessian[θ.index, θ.index] -= cb * grad(b!)
+
+    # update gradients
+    ROT(grad(a!), grad(b!), θ2)
+    grad(θ) += value(a!) * grad(a!)
+    grad(θ) += value(b!) * grad(b!)
+    ROT(grad(a!), grad(b!), π/2)
+
+    ~@routine temp
+end
+
+function local_hessian(f, args; kwargs=())
+    nargs = length(args)
+    hes = zeros(nargs,nargs,nargs)
+    @instr f(args...)
+    for j=1:nargs
+        gdata = zeros(nargs)
+        gdata[j] += 1
+        hdata = zeros(nargs,nargs)
+        largs = [HessianData(arg, gdata, hdata, i) for (i, arg) in enumerate(args)]
+        @instr (~f)(largs...)
+        hes[:,:,j] .= largs[1].hessian
+    end
+    hes
 end
 
 function taylor_hessian(f, args::Tuple; kwargs=Dict())
@@ -178,48 +301,4 @@ function taylor_hessian(f, args::Tuple; kwargs=Dict())
     args = [HessianData(x, grad, hess, i) for (i,x) in enumerate(args)]
     @instr (~f)(args...)
     args[1].hessian
-end
-
-@i function IROT(a!::HessianData{T}, b!::HessianData{T}, θ::HessianData{T}) where T
-    @anc s = zero(T)
-    @anc c = zero(T)
-    IROT(value(a!), value(b!), value(θ))
-
-    NEG(value(θ))
-    value(θ) ⊖ π/2
-
-    # update gradient and hessian, #1
-    ROT(grad(a!), grad(b!), value(θ))
-    grad(θ) += value(a!) * grad(a!)
-    grad(θ) += value(b!) * grad(b!)
-    for i=1:size_paramspace(a!)
-        ROT(hcol(a!)[i], hcol(b!)[i], value(θ))
-        ROT(hrow(a!)[i], hrow(b!)[i], value(θ))
-        hcol(θ)[i] += value(a!) * hcol(a!)[i]
-        hrow(θ)[i] += value(a!) * hrow(a!)[i]
-        hcol(θ)[i] += value(b!) * hcol(b!)[i]
-        hrow(θ)[i] += value(b!) * hrow(b!)[i]
-    end
-
-    value(θ) ⊕ π/2
-    NEG(value(θ))
-
-    # update gradient and hessian, #2
-    ROT(grad(a!), grad(b!), π/2)
-    for i=1:size_paramspace(a!)
-        ROT(hcol(a!)[i], hcol(b!)[i], π/2)
-        ROT(hrow(a!)[i], hrow(b!)[i], π/2)
-    end
-
-    # update local hessian
-    s += sin(value(θ))
-    c += cos(value(θ))
-    a!.hessian[a!.index, θ.index] ⊖ s
-    a!.hessian[b!.index, θ.index] ⊖ c
-    a!.hessian[θ.index, a!.index] ⊖ s
-    a!.hessian[θ.index, b!.index] ⊖ c
-    a!.hessian[θ.index, θ.index] -= c * value(a!)
-    a!.hessian[θ.index, θ.index] += s * value(b!)
-    s -= sin(value(θ))
-    c -= cos(value(θ))
 end

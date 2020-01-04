@@ -1,4 +1,4 @@
-export simple_hessian, nhessian
+export simple_hessian, nhessian, jacobian, local_nhessian
 
 function (_::Type{Inv{GVar}})(x::GVar{<:GVar,<:GVar})
     Partial{:x}(x)
@@ -60,6 +60,29 @@ function nhessian(f, args; kwargs=(), η=1e-5)
         gneg = gradient(f, (largs...,); kwargs=kwargs)
         @instr value(largs[i]) ⊕ η/2
         res[:,i] .= (gpos .- gneg)./η
+    end
+    return res
+end
+
+function local_nhessian(f, args; kwargs=())
+    nargs = length(args)
+    hes = zeros(nargs,nargs,nargs)
+    for j=1:nargs
+        @instr Loss(tget(args, j))
+        hes[:,:,j] .= nhessian(f, args; kwargs=kwargs)
+        @instr (~Loss)(tget(args, j))
+    end
+    hes
+end
+
+"""J(in, out)"""
+function jacobian(f, args; kwargs=())
+    narg = length(args)
+    res = zeros(narg, narg)
+    for i = 1:narg
+        @instr Loss(tget(args, i))
+        res[:,i] .= gradient(f, args; kwargs=kwargs)
+        @instr (~Loss)(tget(args, i))
     end
     return res
 end

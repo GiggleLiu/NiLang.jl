@@ -21,75 +21,78 @@ using Test
     @test hdata == [0 0 1; 0 0 2; 1 2 3.0]
 end
 
-@testset "hessian /" begin
-    hdata = zeros(3,3)
-    gdata = [1.0, 0, 0.0]
-    out! = HessianData(0.0, gdata, hdata, 1)
-    a = HessianData(0.5, gdata, hdata, 2)
-    b = HessianData(0.2, gdata, hdata, 3)
-    @instr ⊖(/)(out!, a, b)
-    @test out!.x == -2.5
-    @test out!.gradient == [1, 5.0, -12.5]
-    @test out!.hessian == [0 0 0; 0 0 -25; 0 -25 125.0]
-end
-
-@testset "hessian ^" begin
-    hdata = zeros(3,3)
-    gdata = [1.0, 0, 0]
-    out! = HessianData(0.0, gdata, hdata, 1)
-    a = HessianData(2.0, gdata, hdata, 2)
-    b = HessianData(3.0, gdata, hdata, 3)
-    @instr ⊖(^)(out!, a, b)
-    @test out!.x == -8
-    @test out!.gradient == [1, 12.0, log(2.0)*8]
-    @test out!.hessian == [0 0 0; 0 12 4+4*3*log(2.0); 0 4+4*3*log(2.0) 8*log(2.0)^2]
-end
-
-@testset "hessian *" begin
-    hdata = zeros(3,3)
-    gdata = [1.0, 0, 0]
-    out! = HessianData(6.0, gdata, hdata, 1)
-    a = HessianData(2.0, gdata, hdata, 2)
-    b = HessianData(3.0, gdata, hdata, 3)
-    @instr ⊖(*)(out!, a, b)
-    @test out!.x == 0
-    @test out!.gradient == [1, 3.0, 2.0]
-    @test out!.hessian == [0 0 0; 0 0 1; 0 1 0.0]
-end
-
-@testset "hessian +" begin
-    hdata = zeros(2,2)
-    gdata = [1.0, 0]
-    out! = HessianData(3.0, gdata, hdata, 1)
-    a = HessianData(2.0, gdata, hdata, 2)
-    @instr ⊖(identity)(out!, a)
-    @test out!.x == 1
-    @test out!.gradient == [1, 1.0]
-    @test out!.hessian == [0 0; 0 0]
-end
-
-@testset "hessian ROT" begin
-    hdata = zeros(3,3)
-    gdata = [1.0, 0, 0]
-    a! = 0.8
-    b! = 1.5
-    θ = 1.0
-    res = taylor_hessian(ROT, (Loss(a!), b!, θ))
-    @test res ≈ nhessian(ROT, (Loss(a!),b!,θ))
-end
-
 @testset "hessian" begin
     h1 = taylor_hessian(⊕(*), (Loss(0.0), 2.0, 3.0))
     h2 = nhessian(⊕(*), (Loss(0.0), 2.0, 3.0))
     @test h1 ≈ h2
 
-    @i function test(a,b,c,d)
+    @i function test(a,b,c)
         a += b*c
-        a += b^d
-        ROT(a, c, d)
+        c += b^a
+        ROT(a, b, c)
     end
-    h1 = taylor_hessian(test, (Loss(0.0), 2.0, 1.0, 3.0))
-    h2 = nhessian(test, (Loss(0.0), 2.0, 1.0, 3.0))
+    h1 = taylor_hessian(test, (Loss(0.0), 2.0, 0.5))
+    h2 = nhessian(test, (Loss(0.0), 2.0, 0.5))
     @show h2
-    @test h1 ≈ h2
+    @test isapprox(h1, h2, atol=1e-5)
+end
+
+using TensorOperations
+function hessian_propagate(h, f, args; kwargs=())
+    jac = jacobian(f, args; kwargs=kwargs)
+    @tensor out[i,j,o] := jac[i,a]*h[a,b,o]*jac[j,b]
+end
+
+function hessian_propagate2(h, f, args; kwargs=())
+    nargs = length(args)
+    hes = zeros(nargs,nargs,nargs)
+    @instr f(args...)
+    for j=1:nargs
+        gdata = zeros(nargs)
+        hdata = h[:,:,j]
+        largs = [HessianData(arg, gdata, hdata, i) for (i, arg) in enumerate(args)]
+        @instr (~f)(largs...)
+        hes[:,:,j] .= hdata
+    end
+    hes
+end
+
+function rand_hes(n)
+    h = randn(n,n,n)
+    h + permutedims(h, (2,1,3))
+end
+
+@testset "hessian propagate" begin
+    for op in [⊕(*), ⊕(/), ⊕(^), ROT]
+        h1 = local_hessian(op, (0.3, 0.4, 2.0))
+        h2 = local_nhessian(op, (0.3, 0.4, 2.0))
+        @test h1 ≈ h2
+
+        h = rand_hes(3)
+        h1 = hessian_propagate(copy(h), op, (0.3, 0.4, 2.0))
+        h2 = hessian_propagate2(copy(h), op, (0.3, 0.4, 2.0))
+        @test h1 ≈ h2
+    end
+
+    for op in [⊕(identity), SWAP]
+        h1 = local_hessian(op, (0.3, 0.4))
+        h2 = local_nhessian(op, (0.3, 0.4))
+        @test h1 ≈ h2
+
+        h = rand_hes(2)
+        h1 = hessian_propagate(copy(h), op, (0.3, 0.4))
+        h2 = hessian_propagate2(copy(h), op, (0.3, 0.4))
+        @test h1 ≈ h2
+    end
+
+    for op in [NEG, CONJ]
+        h1 = local_hessian(op, (0.3,))
+        h2 = local_nhessian(op, (0.3,))
+        @test h1 ≈ h2
+
+        h = rand_hes(1)
+        h1 = hessian_propagate(copy(h), op, (0.3,))
+        h2 = hessian_propagate2(copy(h), op, (0.3,))
+        @test h1 ≈ h2
+    end
 end
