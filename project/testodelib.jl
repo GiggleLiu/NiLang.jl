@@ -3,24 +3,38 @@ include("fields.jl")
 using Test, Random
 using Distributions, StatsBase, LinearAlgebra
 
+#Base.broadcastable(x::LinearField) = Ref(x)
+
 @testset "field" begin
     lf = LinearField(0.5)
     out, x = 0.0, 2.0
     @instr get_field(lf, out, x)
     @test out == 1.0
+    @test check_inv(PVar, (Dup(0.5),))
 
     x = 2.0
     y = 0.5
     θ = 0.5
     @instr update_field(LinearField(θ), y, x; dt=0.1)
     @test y === 0.6
-    @test check_inv(update_field, (LinearField(θ), y, x); kwargs=Dict(:dt=>0.1))
+    @i function gf(θ, y, x)
+        LinearField(θ)
+        get_field(θ, y, x)
+    end
 
-    x = 2.0
+    @i function uf(θ, y, x; dt)
+        LinearField(θ)
+        update_field(θ, y, x; dt=dt)
+    end
+    @test check_inv(update_field, (LinearField(θ), y, x), kwargs=(dt=0.1,))
+    @test check_grad(gf, (θ, Loss(y), x); verbose=true)
+    @test check_grad(uf, (θ, Loss(y), x); kwargs=(dt=0.1,), verbose=true)
+
+    x = PVar(2.0)
     y = PVar(0.5)
     θ = 0.5
     @instr update_field(LinearField(θ), y, x; dt=0.1)
-    @test val(y) === 0.6
+    @test value(y) === 0.6
     @test y.logp ≈ -0.05
 end
 
@@ -47,22 +61,28 @@ end
     # integrate sin(θ), get -log(det(∂cos(θ)/∂θ))
     lf = LinearField(0.5)
     x = PVar(0.8)
-    truth = val(x)
+    truth = value(x)
     for i=1:1000
         truth += 0.001*truth*lf.θ
     end
     @instr Dup(x)
+    @test check_inv(leapfrog, (lf, x); kwargs=(Nt=1000, dt=0.001))
     @instr leapfrog(lf, x; Nt=1000, dt=0.001)
-    @test isapprox(val(x), truth; atol=1e-3)
-
-
+    @test isapprox(value(x), truth; atol=1e-3)
     @test isapprox(x.x.logp, -0.5, atol=1e03) # TODO: manual check
+end
 
+Base.adjoint(gv::GVar) = GVar(gv.x', gv.g')
+Base.conj(gv::GVar) = GVar(conj(gv.x), conj(gv.g))
+@testset "ode loss" begin
+    Random.seed!(3)
     lf = LinearField(0.5)
     xs = randn(10)
     μ, σ = 0.0, 1.0
     loss_out = 0.0
     @instr Dup.(xs)
+    @test check_inv(ode_loss, (μ, σ, lf, xs, loss_out); kwargs=Dict(:Nt=>10, :dt=>0.1), verbose=true)
+    @test check_grad(ode_loss, (μ, σ, lf, xs, Loss(loss_out)); kwargs=Dict(:Nt=>100, :dt=>0.01), verbose=true)
     @instr ode_loss(μ, σ, lf, xs, loss_out; Nt=100, dt=0.01)
     @show loss_out
 end

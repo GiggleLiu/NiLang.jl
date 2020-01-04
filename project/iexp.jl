@@ -6,21 +6,21 @@ using NiLang, NiLang.AD
     @anc anc3 = zero(T)
     @anc iplus = zero(T)
 
-    out! += 1.0
-    anc1 += 1.0
-    while (val(anc1) > atol, !isapprox(iplus, 0.0))
-        iplus += 1.0
+    out! ⊕ 1.0
+    anc1 ⊕ 1.0
+    while (value(anc1) > atol, !isapprox(iplus, 0.0))
+        iplus ⊕ 1.0
         anc2 += anc1 * x
         anc3 += anc2 / iplus
-        out! += anc3
+        out! ⊕ anc3
         # speudo inverse
         anc1 -= anc2 / x
         anc2 -= anc3 * iplus
         SWAP(anc1, anc3)
     end
 
-    ~(while (val(anc1) > atol, !isapprox(iplus, 0.0))
-        iplus += 1.0
+    ~(while (value(anc1) > atol, !isapprox(iplus, 0.0))
+        iplus ⊕ 1.0
         anc2 += anc1 * x
         anc3 += anc2 / iplus
         # speudo inverse
@@ -28,7 +28,7 @@ using NiLang, NiLang.AD
         anc2 -= anc3 * iplus
         SWAP(anc1, anc3)
     end)
-    anc1 -= 1.0
+    anc1 ⊖ 1.0
 end
 
 using Test
@@ -62,11 +62,17 @@ end
     out = 0.0
     x = 1.6
     gres = exp(x)
-    @test check_inv(iexp, (Loss(out), x); verbose=true)
+    @test check_inv(iexp, (out, x); verbose=true)
     @test check_grad(iexp, (Loss(out), x); verbose=true)
 
     out = 0.0
     x = 1.6
     @instr iexp'(Loss(out), x)
     @test grad(x) ≈ gres
+
+    h = taylor_hessian(iexp, (Loss(0.0), 1.6))
+    nh = nhessian(iexp, (Loss(0.0), 1.6))
+    @test h ≈ nh
 end
+
+Base.zero(x::Type{HessianData{T}}) where T = zero(T)

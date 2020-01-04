@@ -3,7 +3,7 @@ using Test
 
 @testset "check grad" begin
     for opm in [⊕, ⊖]
-        @test check_grad(opm, (Loss(1.0), 2.0); verbose=true)
+        @test check_grad(opm(identity), (Loss(1.0), 2.0); verbose=true)
         @test check_grad(opm(*), (Loss(1.0), 2.0, 2.0); verbose=true)
         @test check_grad(opm(^), (Loss(1.0), 2.0, 2); verbose=true)
         @test check_grad(opm(^), (Loss(1.0), 2.0, 2.0); verbose=true)

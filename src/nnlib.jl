@@ -7,19 +7,19 @@ export softmax_cross_entropy
     @anc yi = zero(T)
     # subtract maximum
     imax += argmax(x)  # trade off space of xmax to time
-    xmax += x[imax]
+    xmax ⊕ x[imax]
     # accumulate exp(x) to Z, and finally get logZ
     for i=1:length(x)
-        x[i] -= xmax
+        x[i] ⊖ xmax
         Z += exp(x[i])
     end
     logZ += log(Z)
     for i=1:length(x)
-        yi += logZ
-        yi -= x[i]
+        yi ⊕ logZ
+        yi ⊖ x[i]
         out += yi * p[i]
-        yi += x[i]
-        yi -= logZ
+        yi ⊕ x[i]
+        yi ⊖ logZ
     end
     logZ -= log(Z)
 end
