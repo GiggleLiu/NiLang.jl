@@ -10,16 +10,6 @@ end
 size_paramspace(hd::HessianData) = length(hd.gradient)
 NiLang.AD.grad(hd::HessianData) = hd.gradient[hd.index]
 NiLang.value(hd::HessianData) = hd.x
-hrow(hd::HessianData) = view(hd.hessian, hd.index, :)
-hcol(hd::HessianData) = view(hd.hessian, :, hd.index)
-function NiLang.chfield(hd::HessianData, ::typeof(hrow), val)
-    hrow(hd) .= val
-    hd
-end
-function NiLang.chfield(hd::HessianData, ::typeof(hcol), val)
-    hcol(hd) .= val
-    hd
-end
 function NiLang.chfield(hd::HessianData, ::typeof(value), val)
     chfield(hd, Val(:x), val)
 end
@@ -31,20 +21,21 @@ end
 # dL^2/dx/dy = ∑(dL^2/da/db)*da/dx*db/dy
 # https://arxiv.org/abs/1206.6464
 @i function ⊖(*)(out!::HessianData, x::HessianData, y::HessianData)
+    @anc hdata = out!.hessian
     ⊖(*)(out!.x, x.x, y.x)
     # hessian from hessian
     for i=1:size_paramspace(out!)
-        hrow(x)[i] += y.x * hrow(out!)[i]
-        hrow(y)[i] += x.x * hrow(out!)[i]
+        hdata[x.index, i] += y.x * hdata[out!.index, i]
+        hdata[y.index, i] += x.x * hdata[out!.index, i]
     end
     for i=1:size_paramspace(out!)
-        hcol(x)[i] += y.x * hcol(out!)[i]
-        hcol(y)[i] += x.x * hcol(out!)[i]
+        hdata[i, x.index] += y.x * hdata[i, out!.index]
+        hdata[i, y.index] += x.x * hdata[i, out!.index]
     end
 
     # hessian from jacobian
-    out!.hessian[x.index, y.index] ⊕ grad(out!)
-    out!.hessian[y.index, x.index] ⊕ grad(out!)
+    hdata[x.index, y.index] ⊕ grad(out!)
+    hdata[y.index, x.index] ⊕ grad(out!)
 
     # update gradients
     grad(x) += grad(out!) * value(y)
@@ -52,11 +43,12 @@ end
 end
 
 @i function NEG(x!::HessianData)
+    @anc hdata = x!.hessian
     NEG(x!.x)
     # hessian from hessian
     for i=1:size_paramspace(x!)
-        NEG(hrow(x!)[i])
-        NEG(hcol(x!)[i])
+        NEG(hdata[x!.index, i])
+        NEG(hdata[i, x!.index])
     end
 
     # update gradients
@@ -64,11 +56,12 @@ end
 end
 
 @i function CONJ(x!::HessianData)
+    @anc hdata = x!.hessian
     CONJ(x!.x)
     # hessian from hessian
     for i=1:size_paramspace(x!)
-        CONJ(hrow(x!)[i])
-        CONJ(hcol(x!)[i])
+        CONJ(hdata[x!.index, i])
+        CONJ(hdata[i, x!.index])
     end
 
     # update gradients
@@ -76,13 +69,14 @@ end
 end
 
 @i function ⊖(identity)(out!::HessianData, x::HessianData)
+    @anc hdata = out!.hessian
     ⊖(identity)(out!.x, x.x)
     # hessian from hessian
     for i=1:size_paramspace(out!)
-        hrow(x)[i] ⊕ hrow(out!)[i]
+        hdata[x.index, i] ⊕ hdata[out!.index, i]
     end
     for i=1:size_paramspace(out!)
-        hcol(x)[i] ⊕ hcol(out!)[i]
+        hdata[i, x.index] ⊕ hdata[i, out!.index]
     end
 
     # update gradients
@@ -90,13 +84,14 @@ end
 end
 
 @i function SWAP(x!::HessianData, y!::HessianData)
+    @anc hdata = x!.hessian
     SWAP(x!.x, y!.x)
     # hessian from hessian
     for i=1:size_paramspace(x!)
-        SWAP(hrow(x!)[i], hrow(y!)[i])
+        SWAP(hdata[x!.index, i], hdata[y!.index, i])
     end
     for i=1:size_paramspace(x!)
-        SWAP(hcol(x!)[i], hcol(y!)[i])
+        SWAP(hdata[i, x!.index], hdata[i, y!.index])
     end
 
     # update gradients
@@ -105,6 +100,7 @@ end
 
 @i function ⊖(/)(out!::HessianData{T}, x::HessianData{T}, y::HessianData{T}) where T
     ⊖(/)(out!.x, x.x, y.x)
+    @anc hdata = out!.hessian
     @anc binv = zero(T)
     @anc binv2 = zero(T)
     @anc binv3 = zero(T)
@@ -126,12 +122,12 @@ end
     end
     # hessian from hessian
     for i=1:size_paramspace(out!)
-        hrow(x)[i] += xjac * hrow(out!)[i]
-        hrow(y)[i] += yjac * hrow(out!)[i]
+        hdata[x.index, i] += xjac * hdata[out!.index, i]
+        hdata[y.index, i] += yjac * hdata[out!.index, i]
     end
     for i=1:size_paramspace(out!)
-        hcol(x)[i] += xjac * hcol(out!)[i]
-        hcol(y)[i] += yjac * hcol(out!)[i]
+        hdata[i, x.index] += xjac * hdata[i, out!.index]
+        hdata[i, y.index] += yjac * hdata[i, out!.index]
     end
 
     # hessian from jacobian
@@ -148,6 +144,7 @@ end
 
 @i function ⊖(^)(out!::HessianData{T}, x::HessianData{T}, n::HessianData{T}) where T
     ⊖(^)(out!.x, x.x, n.x)
+    @anc hdata = out!.hessian
     @anc logx = zero(T)
     @anc logx2 = zero(T)
     @anc powerxn = zero(T)
@@ -185,12 +182,12 @@ end
 
     # hessian from hessian
     for i=1:size_paramspace(out!)
-        hcol(x)[i] += hcol(out!)[i] * xjac
-        hcol(n)[i] += hcol(out!)[i] * njac
+        hdata[i, x.index] += hdata[i, out!.index] * xjac
+        hdata[i, n.index] += hdata[i, out!.index] * njac
     end
     for i=1:size_paramspace(out!)
-        hrow(x)[i] += hrow(out!)[i] * xjac
-        hrow(n)[i] += hrow(out!)[i] * njac
+        hdata[x.index, i] += hdata[out!.index, i] * xjac
+        hdata[n.index, i] += hdata[out!.index, i] * njac
     end
 
     # hessian from jacobian
@@ -210,6 +207,7 @@ end
 end
 
 @i function IROT(a!::HessianData{T}, b!::HessianData{T}, θ::HessianData{T}) where T
+    @anc hdata = a!.hessian
     @anc s = zero(T)
     @anc c = zero(T)
     @anc ca = zero(T)
@@ -232,16 +230,16 @@ end
 
     # update gradient, #1
     for i=1:size_paramspace(a!)
-        ROT(hcol(a!)[i], hcol(b!)[i], θ2)
-        hcol(θ)[i] += value(a!) * hcol(a!)[i]
-        hcol(θ)[i] += value(b!) * hcol(b!)[i]
-        ROT(hcol(a!)[i], hcol(b!)[i], π/2)
+        ROT(hdata[i, a!.index], hdata[i, b!.index], θ2)
+        hdata[i, θ.index] += value(a!) * hdata[i, a!.index]
+        hdata[i, θ.index] += value(b!) * hdata[i, b!.index]
+        ROT(hdata[i, a!.index], hdata[i, b!.index], π/2)
     end
     for i=1:size_paramspace(a!)
-        ROT(hrow(a!)[i], hrow(b!)[i], θ2)
-        hrow(θ)[i] += value(a!) * hrow(a!)[i]
-        hrow(θ)[i] += value(b!) * hrow(b!)[i]
-        ROT(hrow(a!)[i], hrow(b!)[i], π/2)
+        ROT(hdata[a!.index, i], hdata[b!.index, i], θ2)
+        hdata[θ.index, i] += value(a!) * hdata[a!.index, i]
+        hdata[θ.index, i] += value(b!) * hdata[b!.index, i]
+        ROT(hdata[a!.index, i], hdata[b!.index, i], π/2)
     end
 
     # update local hessian

@@ -1,6 +1,7 @@
 using NiLang, NiLang.AD
-using NiLang.AD: hrow, hcol, size_paramspace
+using NiLang.AD: size_paramspace
 using Test
+using TensorOperations
 
 @testset "HessianData" begin
     hdata = zeros(3,3)
@@ -15,10 +16,6 @@ using Test
     @test chfield(out!, value, 0.6) == HessianData(0.6, gdata, hdata, 1)
     chfield(a, grad, 0.5)
     @test gdata == [1.0,0.5,0.0]
-    chfield(b, hrow, [1,2,3.0])
-    @test hdata == [0 0 0; 0 0 0; 1.0 2.0 3.0]
-    chfield(b, hcol, [1,2,3.0])
-    @test hdata == [0 0 1; 0 0 2; 1 2 3.0]
 end
 
 @testset "hessian" begin
@@ -37,7 +34,6 @@ end
     @test isapprox(h1, h2, atol=1e-5)
 end
 
-using TensorOperations
 function hessian_propagate(h, f, args; kwargs=())
     jac = jacobian(f, args; kwargs=kwargs)
     @tensor out[i,j,o] := jac[i,a]*h[a,b,o]*jac[j,b]
@@ -64,6 +60,7 @@ end
 
 @testset "hessian propagate" begin
     for op in [⊕(*), ⊕(/), ⊕(^), ROT]
+        @show op
         h1 = local_hessian(op, (0.3, 0.4, 2.0))
         h2 = local_nhessian(op, (0.3, 0.4, 2.0))
         @test h1 ≈ h2
