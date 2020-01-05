@@ -5,30 +5,26 @@ using NiLang, NiLang.AD
     @anc anc2 = zero(T)
     @anc anc3 = zero(T)
     @anc iplus = 0
+    @anc expout = zero(T)
 
     out! ⊕ 1.0
-    anc1 ⊕ 1.0
-    while (value(anc1) > atol, iplus != 0)
-        iplus ⊕ 1
-        anc2 += anc1 * x
-        anc3 += anc2 / iplus
-        out! ⊕ anc3
-        # speudo inverse
-        anc1 -= anc2 / x
-        anc2 -= anc3 * iplus
-        SWAP(anc1, anc3)
+    @routine r1 begin
+        anc1 ⊕ 1.0
+        while (value(anc1) > atol, iplus != 0)
+            iplus ⊕ 1
+            anc2 += anc1 * x
+            anc3 += anc2 / iplus
+            expout ⊕ anc3
+            # speudo inverse
+            anc1 -= anc2 / x
+            anc2 -= anc3 * iplus
+            SWAP(anc1, anc3)
+        end
     end
 
-    ~(while (value(anc1) > atol, iplus != 0)
-        iplus ⊕ 1
-        anc2 += anc1 * x
-        anc3 += anc2 / iplus
-        # speudo inverse
-        anc1 -= anc2 / x
-        anc2 -= anc3 * iplus
-        SWAP(anc1, anc3)
-    end)
-    anc1 ⊖ 1.0
+    out! ⊕ expout
+
+    ~@routine r1
 end
 
 using Test

@@ -108,6 +108,91 @@ end
     grad(x) ⊕ grad(out!)
 end
 
+@i function ⊖(exp)(out!::BeijingRing{T}, x::BeijingRing) where T
+    @anc expx = zero(T)
+    expx += exp(x.x)
+    out!.x ⊕ expx
+    # hessian from hessian
+    for i=1:nrings()
+        hdata((x.index, i)) += expx * hdata((out!.index, i))
+    end
+    for i=1:nrings()
+        hdata((i, x.index)) += expx * hdata((i, out!.index))
+    end
+    hdata((x, x)) += expx * grad(out!)
+
+    # update gradients
+    grad(x) += expx * grad(out!)
+    expx -= exp(x.x)
+end
+
+@i function ⊖(log)(out!::BeijingRing{T}, x::BeijingRing) where T
+    @anc g = zero(T)
+    @anc h = zero(T)
+    out!.x += log(x.x)
+
+    @routine r1 begin
+        g += 1.0/x.x
+        h += g/x.x
+        NEG(h)
+    end
+    # hessian from hessian
+    for i=1:nrings()
+        hdata((x.index, i)) += g * hdata((out!.index, i))
+    end
+    for i=1:nrings()
+        hdata((i, x.index)) += g * hdata((i, out!.index))
+    end
+    hdata((x, x)) += h * grad(out!)
+
+    # update gradients
+    grad(x) += g * grad(out!)
+
+    ~@routine r1
+end
+
+@i function ⊖(sin)(out!::BeijingRing{T}, x::BeijingRing) where T
+    @anc sinx = zero(T)
+    @anc cosx = zero(T)
+    sinx += sin(x.x)
+    cosx += cos(x.x)
+    out!.x ⊕ sinx
+    # hessian from hessian
+    for i=1:nrings()
+        hdata((x.index, i)) += cosx * hdata((out!.index, i))
+    end
+    for i=1:nrings()
+        hdata((i, x.index)) += cosx * hdata((i, out!.index))
+    end
+    hdata((x, x)) -= sinx * grad(out!)
+
+    # update gradients
+    grad(x) += cosx * grad(out!)
+    sinx -= sin(x.x)
+    cosx -= cos(x.x)
+end
+
+@i function ⊖(cos)(out!::BeijingRing{T}, x::BeijingRing) where T
+    @anc sinx = zero(T)
+    @anc cosx = zero(T)
+    sinx += sin(x.x)
+    cosx += cos(x.x)
+    out!.x ⊕ cosx
+    # hessian from hessian
+    for i=1:nrings()
+        hdata((x.index, i)) -= sinx * hdata((out!.index, i))
+    end
+    for i=1:nrings()
+        hdata((i, x.index)) -= sinx * hdata((i, out!.index))
+    end
+    hdata((x, x)) -= cosx * grad(out!)
+
+    # update gradients
+    grad(x) -= sinx * grad(out!)
+    sinx -= sin(x.x)
+    cosx -= cos(x.x)
+end
+
 @i function SWAP(x!::BeijingRing, y!::BeijingRing)
     SWAP(x!.x, y!.x)
     # hessian from hessian

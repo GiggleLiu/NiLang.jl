@@ -79,7 +79,7 @@ end
         @test h1 ≈ h2
     end
 
-    for op in [⊕(identity), SWAP]
+    for op in [⊕(identity), SWAP, ⊕(exp), ⊕(log), ⊕(sin), ⊕(cos)]
         h1 = local_hessian(op, (0.3, 0.4))
         h2 = local_nhessian(op, (0.3, 0.4))
         @test h1 ≈ h2
