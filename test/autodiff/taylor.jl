@@ -1,21 +1,24 @@
 using NiLang, NiLang.AD
-using NiLang.AD: size_paramspace
 using Test
 using TensorOperations
 
 @testset "HessianData" begin
-    hdata = zeros(3,3)
-    gdata = [1.0, 0, 0]
-    out! = HessianData(6.0, gdata, hdata, 1)
-    a = HessianData(2.0, gdata, hdata, 2)
-    b = HessianData(3.0, gdata, hdata, 3)
+    rings_init()
+    out! = beijingring(6.0)
+    a = beijingring(2.0)
+    b = beijingring(3.0)
 
-    @test size_paramspace(out!) == 3
+    @test nrings() == 3
 
-    @test chfield(out!, Val(:x), 0.5) == HessianData(0.5, gdata, hdata, 1)
-    @test chfield(out!, value, 0.6) == HessianData(0.6, gdata, hdata, 1)
-    chfield(a, grad, 0.5)
-    @test gdata == [1.0,0.5,0.0]
+    @test chfield(out!, Val(:x), 0.5).x == 0.5
+    @test chfield(out!, value, 0.6).x == 0.6
+    @test grad(chfield(a, grad, 0.5)) == 0.5
+
+    @test hdata((out!, a)) == 0.0
+    @instr hdata((out!, a)) ⊕ 0.5
+    @instr hdata((a, out!)) ⊕ 0.5
+    @test hdata((out!, a)) == 0.5
+    @test hdata((a, out!)) == 0.5
 end
 
 @testset "hessian" begin
@@ -44,11 +47,15 @@ function hessian_propagate2(h, f, args; kwargs=())
     hes = zeros(nargs,nargs,nargs)
     @instr f(args...)
     for j=1:nargs
-        gdata = zeros(nargs)
-        hdata = h[:,:,j]
-        largs = [HessianData(arg, gdata, hdata, i) for (i, arg) in enumerate(args)]
+        # init rings
+        rings_init()
+        largs = [beijingring(x) for x in args]
+        for i=1:nargs
+            NiLang.AD.rings[i][1:i] .= h[1:i,i,j]
+            NiLang.AD.rings[i][end:-1:end-i+1] .= h[i,1:i,j]
+        end
         @instr (~f)(largs...)
-        hes[:,:,j] .= hdata
+        hes[:,:,j] .= collect_hessian()
     end
     hes
 end
@@ -68,6 +75,7 @@ end
         h = rand_hes(3)
         h1 = hessian_propagate(copy(h), op, (0.3, 0.4, 2.0))
         h2 = hessian_propagate2(copy(h), op, (0.3, 0.4, 2.0))
+        @show h1 - h2
         @test h1 ≈ h2
     end
 

@@ -1,106 +1,137 @@
-export HessianData, taylor_hessian, local_hessian
+export BeijingRing, taylor_hessian, local_hessian, hdata
+export rings_init, nrings, beijingring, collect_hessian
 
-struct HessianData{T}
+const rings = Vector{Float64}[]
+rings_init() = empty!(rings)
+nrings() = length(rings)
+
+function collect_hessian()
+    N = nrings()
+    hess = [hdata((i,j)) for i=1:N, j=1:N]
+end
+
+function beijingring(x::Float64)
+    nr = length(rings)+1
+    r = zeros(Float64, nr*2-1)
+    push!(rings, r)
+    BeijingRing(x, 0.0, nr)
+end
+
+struct BeijingRing{T}
     x::T
-    gradient::AbstractVector{T}
-    hessian::AbstractArray{T}
+    g::T
     index::Int
 end
 
-size_paramspace(hd::HessianData) = length(hd.gradient)
-NiLang.AD.grad(hd::HessianData) = hd.gradient[hd.index]
-NiLang.value(hd::HessianData) = hd.x
-function NiLang.chfield(hd::HessianData, ::typeof(value), val)
+NiLang.AD.grad(hd::BeijingRing) = hd.g
+NiLang.value(hd::BeijingRing) = hd.x
+
+function hdata(h::Tuple{Int,Int})
+    i1, i2 = h
+    i1 > i2 ? rings[i1][i2] : rings[i2][end-i1+1]
+end
+
+hdata(h::Tuple{BeijingRing{T},BeijingRing{T}}) where T = hdata((h[1].index, h[2].index))
+
+function NiLang.chfield(h::Tuple{Int, Int}, ::typeof(hdata), val)
+    i1, i2 = h
+    if i1 > i2
+        rings[i1][i2] = val
+    else
+        rings[i2][end-i1+1] = val
+    end
+    h
+end
+
+function NiLang.chfield(h::Tuple{BeijingRing{T}, BeijingRing{T}}, ::typeof(hdata), val) where T
+    NiLang.chfield((h[1].index, h[2].index), hdata, val)
+    h
+end
+
+function NiLang.chfield(hd::BeijingRing, ::typeof(value), val)
     chfield(hd, Val(:x), val)
 end
-function NiLang.chfield(hd::HessianData, ::typeof(grad), val)
-    hd.gradient[hd.index] = val
-    hd
+function NiLang.chfield(hd::BeijingRing, ::typeof(grad), val)
+    chfield(hd, Val(:g), val)
 end
 
 # dL^2/dx/dy = ∑(dL^2/da/db)*da/dx*db/dy
 # https://arxiv.org/abs/1206.6464
-@i function ⊖(*)(out!::HessianData, x::HessianData, y::HessianData)
-    @anc hdata = out!.hessian
+@i function ⊖(*)(out!::BeijingRing, x::BeijingRing, y::BeijingRing)
     ⊖(*)(out!.x, x.x, y.x)
     # hessian from hessian
-    for i=1:size_paramspace(out!)
-        hdata[x.index, i] += y.x * hdata[out!.index, i]
-        hdata[y.index, i] += x.x * hdata[out!.index, i]
+    for i=1:nrings()
+        hdata((x.index, i)) += y.x * hdata((out!.index, i))
+        hdata((y.index, i)) += x.x * hdata((out!.index, i))
     end
-    for i=1:size_paramspace(out!)
-        hdata[i, x.index] += y.x * hdata[i, out!.index]
-        hdata[i, y.index] += x.x * hdata[i, out!.index]
+    for i=1:nrings()
+        hdata((i, x.index)) += y.x * hdata((i, out!.index))
+        hdata((i, y.index)) += x.x * hdata((i, out!.index))
     end
 
     # hessian from jacobian
-    hdata[x.index, y.index] ⊕ grad(out!)
-    hdata[y.index, x.index] ⊕ grad(out!)
+    hdata((x, y)) ⊕ grad(out!)
+    hdata((y, x)) ⊕ grad(out!)
 
     # update gradients
     grad(x) += grad(out!) * value(y)
     grad(y) += value(x) * grad(out!)
 end
 
-@i function NEG(x!::HessianData)
-    @anc hdata = x!.hessian
+@i function NEG(x!::BeijingRing)
     NEG(x!.x)
     # hessian from hessian
-    for i=1:size_paramspace(x!)
-        NEG(hdata[x!.index, i])
-        NEG(hdata[i, x!.index])
+    for i=1:nrings()
+        NEG(hdata((x!.index, i)))
+        NEG(hdata((i, x!.index)))
     end
 
     # update gradients
     NEG(grad(x!))
 end
 
-@i function CONJ(x!::HessianData)
-    @anc hdata = x!.hessian
+@i function CONJ(x!::BeijingRing)
     CONJ(x!.x)
     # hessian from hessian
-    for i=1:size_paramspace(x!)
-        CONJ(hdata[x!.index, i])
-        CONJ(hdata[i, x!.index])
+    for i=1:nrings()
+        CONJ(hdata((x!.index, i)))
+        CONJ(hdata((i, x!.index)))
     end
 
     # update gradients
     CONJ(grad(x!))
 end
 
-@i function ⊖(identity)(out!::HessianData, x::HessianData)
-    @anc hdata = out!.hessian
+@i function ⊖(identity)(out!::BeijingRing, x::BeijingRing)
     ⊖(identity)(out!.x, x.x)
     # hessian from hessian
-    for i=1:size_paramspace(out!)
-        hdata[x.index, i] ⊕ hdata[out!.index, i]
+    for i=1:nrings()
+        hdata((x.index, i)) ⊕ hdata((out!.index, i))
     end
-    for i=1:size_paramspace(out!)
-        hdata[i, x.index] ⊕ hdata[i, out!.index]
+    for i=1:nrings()
+        hdata((i, x.index)) ⊕ hdata((i, out!.index))
     end
 
     # update gradients
     grad(x) ⊕ grad(out!)
 end
 
-@i function SWAP(x!::HessianData, y!::HessianData)
-    @anc hdata = x!.hessian
+@i function SWAP(x!::BeijingRing, y!::BeijingRing)
     SWAP(x!.x, y!.x)
     # hessian from hessian
-    for i=1:size_paramspace(x!)
-        SWAP(hdata[x!.index, i], hdata[y!.index, i])
+    for i=1:nrings()
+        SWAP(hdata((x!.index, i)), hdata((y!.index, i)))
     end
-    for i=1:size_paramspace(x!)
-        SWAP(hdata[i, x!.index], hdata[i, y!.index])
+    for i=1:nrings()
+        SWAP(hdata((i, x!.index)), hdata((i, y!.index)))
     end
 
     # update gradients
     SWAP(grad(x!), grad(y!))
 end
 
-@i function ⊖(/)(out!::HessianData{T}, x::HessianData{T}, y::HessianData{T}) where T
+@i function ⊖(/)(out!::BeijingRing{T}, x::BeijingRing{T}, y::BeijingRing{T}) where T
     ⊖(/)(out!.x, x.x, y.x)
-    @anc hdata = out!.hessian
     @anc binv = zero(T)
     @anc binv2 = zero(T)
     @anc binv3 = zero(T)
@@ -121,19 +152,19 @@ end
         xyjac ⊖ binv2
     end
     # hessian from hessian
-    for i=1:size_paramspace(out!)
-        hdata[x.index, i] += xjac * hdata[out!.index, i]
-        hdata[y.index, i] += yjac * hdata[out!.index, i]
+    for i=1:nrings()
+        hdata((x.index, i)) += xjac * hdata((out!.index, i))
+        hdata((y.index, i)) += yjac * hdata((out!.index, i))
     end
-    for i=1:size_paramspace(out!)
-        hdata[i, x.index] += xjac * hdata[i, out!.index]
-        hdata[i, y.index] += yjac * hdata[i, out!.index]
+    for i=1:nrings()
+        hdata((i, x.index)) += xjac * hdata((i, out!.index))
+        hdata((i, y.index)) += yjac * hdata((i, out!.index))
     end
 
     # hessian from jacobian
-    out!.hessian[y.index, y.index] += yyjac*grad(out!)
-    out!.hessian[x.index, y.index] += xyjac*grad(out!)
-    out!.hessian[y.index, x.index] += xyjac*grad(out!)
+    hdata((y.index, y.index)) += yyjac*grad(out!)
+    hdata((x.index, y.index)) += xyjac*grad(out!)
+    hdata((y.index, x.index)) += xyjac*grad(out!)
 
     # update gradients
     grad(x) += grad(out!) * xjac
@@ -142,9 +173,8 @@ end
     ~@routine jacs
 end
 
-@i function ⊖(^)(out!::HessianData{T}, x::HessianData{T}, n::HessianData{T}) where T
+@i function ⊖(^)(out!::BeijingRing{T}, x::BeijingRing{T}, n::BeijingRing{T}) where T
     ⊖(^)(out!.x, x.x, n.x)
-    @anc hdata = out!.hessian
     @anc logx = zero(T)
     @anc logx2 = zero(T)
     @anc powerxn = zero(T)
@@ -181,23 +211,23 @@ end
     end
 
     # hessian from hessian
-    for i=1:size_paramspace(out!)
-        hdata[i, x.index] += hdata[i, out!.index] * xjac
-        hdata[i, n.index] += hdata[i, out!.index] * njac
+    for i=1:nrings()
+        hdata((i, x.index)) += hdata((i, out!.index)) * xjac
+        hdata((i, n.index)) += hdata((i, out!.index)) * njac
     end
-    for i=1:size_paramspace(out!)
-        hdata[x.index, i] += hdata[out!.index, i] * xjac
-        hdata[n.index, i] += hdata[out!.index, i] * njac
+    for i=1:nrings()
+        hdata((x.index, i)) += hdata((out!.index, i)) * xjac
+        hdata((n.index, i)) += hdata((out!.index, i)) * njac
     end
 
     # hessian from jacobian
     # Dnn = x^n*log(x)^2
     # Dxx = (-1 + n)*n*x^(-2 + n)
     # Dxn = Dnx = x^(-1 + n) + n*x^(-1 + n)*log(x)
-    out!.hessian[x.index, x.index] += hxx * grad(out!)
-    out!.hessian[n.index, n.index] += hnn * grad(out!)
-    out!.hessian[x.index, n.index] += hxn * grad(out!)
-    out!.hessian[n.index, x.index] += hxn * grad(out!)
+    hdata((x, x)) += hxx * grad(out!)
+    hdata((n, n)) += hnn * grad(out!)
+    hdata((x, n)) += hxn * grad(out!)
+    hdata((n, x)) += hxn * grad(out!)
 
     # update gradients
     grad(x) += grad(out!) * xjac
@@ -206,8 +236,7 @@ end
     ~@routine getjac
 end
 
-@i function IROT(a!::HessianData{T}, b!::HessianData{T}, θ::HessianData{T}) where T
-    @anc hdata = a!.hessian
+@i function IROT(a!::BeijingRing{T}, b!::BeijingRing{T}, θ::BeijingRing{T}) where T
     @anc s = zero(T)
     @anc c = zero(T)
     @anc ca = zero(T)
@@ -229,33 +258,33 @@ end
     end
 
     # update gradient, #1
-    for i=1:size_paramspace(a!)
-        ROT(hdata[i, a!.index], hdata[i, b!.index], θ2)
-        hdata[i, θ.index] += value(a!) * hdata[i, a!.index]
-        hdata[i, θ.index] += value(b!) * hdata[i, b!.index]
-        ROT(hdata[i, a!.index], hdata[i, b!.index], π/2)
+    for i=1:nrings()
+        ROT(hdata((i, a!.index)), hdata((i, b!.index)), θ2)
+        hdata((i, θ.index)) += value(a!) * hdata((i, a!.index))
+        hdata((i, θ.index)) += value(b!) * hdata((i, b!.index))
+        ROT(hdata((i, a!.index)), hdata((i, b!.index)), π/2)
     end
-    for i=1:size_paramspace(a!)
-        ROT(hdata[a!.index, i], hdata[b!.index, i], θ2)
-        hdata[θ.index, i] += value(a!) * hdata[a!.index, i]
-        hdata[θ.index, i] += value(b!) * hdata[b!.index, i]
-        ROT(hdata[a!.index, i], hdata[b!.index, i], π/2)
+    for i=1:nrings()
+        ROT(hdata((a!.index, i)), hdata((b!.index, i)), θ2)
+        hdata((θ.index, i)) += value(a!) * hdata((a!.index, i))
+        hdata((θ.index, i)) += value(b!) * hdata((b!.index, i))
+        ROT(hdata((a!.index, i)), hdata((b!.index, i)), π/2)
     end
 
     # update local hessian
-    a!.hessian[a!.index, θ.index] -= s * grad(a!)
-    a!.hessian[b!.index, θ.index] -= c * grad(a!)
-    a!.hessian[θ.index, a!.index] -= s * grad(a!)
-    a!.hessian[θ.index, b!.index] -= c * grad(a!)
-    a!.hessian[θ.index, θ.index] -= ca * grad(a!)
-    a!.hessian[θ.index, θ.index] += sb * grad(a!)
+    hdata((a!, θ)) -= s * grad(a!)
+    hdata((b!, θ)) -= c * grad(a!)
+    hdata((θ, a!)) -= s * grad(a!)
+    hdata((θ, b!)) -= c * grad(a!)
+    hdata((θ, θ)) -= ca * grad(a!)
+    hdata((θ, θ)) += sb * grad(a!)
 
-    a!.hessian[a!.index, θ.index] += c * grad(b!)
-    a!.hessian[b!.index, θ.index] -= s * grad(b!)
-    a!.hessian[θ.index, a!.index] += c * grad(b!)
-    a!.hessian[θ.index, b!.index] -= s * grad(b!)
-    a!.hessian[θ.index, θ.index] -= sa * grad(b!)
-    a!.hessian[θ.index, θ.index] -= cb * grad(b!)
+    hdata((a!, θ)) += c * grad(b!)
+    hdata((b!, θ)) -= s * grad(b!)
+    hdata((θ, a!)) += c * grad(b!)
+    hdata((θ, b!)) -= s * grad(b!)
+    hdata((θ, θ)) -= sa * grad(b!)
+    hdata((θ, θ)) -= cb * grad(b!)
 
     # update gradients
     ROT(grad(a!), grad(b!), θ2)
@@ -271,12 +300,11 @@ function local_hessian(f, args; kwargs=())
     hes = zeros(nargs,nargs,nargs)
     @instr f(args...)
     for j=1:nargs
-        gdata = zeros(nargs)
-        gdata[j] += 1
-        hdata = zeros(nargs,nargs)
-        largs = [HessianData(arg, gdata, hdata, i) for (i, arg) in enumerate(args)]
+        rings_init()
+        largs = [beijingring(arg) for arg in args]
+        @instr grad(largs[j]) ⊕ 1.0
         @instr (~f)(largs...)
-        hes[:,:,j] .= largs[1].hessian
+        hes[:,:,j] .= collect_hessian()
     end
     hes
 end
@@ -294,9 +322,10 @@ function taylor_hessian(f, args::Tuple; kwargs=Dict())
     @instr (~Loss)(tget(args, iloss))
 
     @instr f(args...)
-    grad = zeros(N); grad[iloss] = 1.0
-    hess = zeros(N, N)
-    args = [HessianData(x, grad, hess, i) for (i,x) in enumerate(args)]
+    rings_init()
+    args = [beijingring(x) for x in args]
+    @instr grad(args[iloss]) ⊕ 1.0
     @instr (~f)(args...)
-    args[1].hessian
+    @show args
+    collect_hessian()
 end

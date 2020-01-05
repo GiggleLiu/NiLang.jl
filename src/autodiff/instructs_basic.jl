@@ -42,13 +42,13 @@ end
 
 @i function ⊖(/)(out!::GVar{T}, x::GVar, y::GVar) where T
     value(out!) -= value(x)/value(y)
-    grad(x) += grad(out!)/value(y)
     @anc a1 = zero(T)
     @anc a2 = zero(T)
+    grad(x) += grad(out!)/value(y)
     a1 += value(x)*grad(out!)
-    a2 += value(a1)/value(y)
+    a2 += a1/value(y)
     grad(y) -= a2/value(y)
-    a2 -= value(a1)/value(y)
+    a2 -= a1/value(y)
     a1 -= value(x)*grad(out!)
 end
 
@@ -57,9 +57,9 @@ end
     @anc a1 = zero(T)
     @anc a2 = zero(T)
     a1 += x*grad(out!)
-    a2 += value(a1)/value(y)
+    a2 += a1/value(y)
     grad(y) -= a2/value(y)
-    a2 -= value(a1)/value(y)
+    a2 -= a1/value(y)
     a1 -= x*grad(out!)
 end
 
