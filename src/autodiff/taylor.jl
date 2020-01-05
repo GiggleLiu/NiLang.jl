@@ -55,27 +55,19 @@ function NiLang.chfield(hd::BeijingRing, ::typeof(grad), val)
     chfield(hd, Val(:g), val)
 end
 
-# dL^2/dx/dy = ∑(dL^2/da/db)*da/dx*db/dy
-# https://arxiv.org/abs/1206.6464
-@i function ⊖(*)(out!::BeijingRing, x::BeijingRing, y::BeijingRing)
-    ⊖(*)(out!.x, x.x, y.x)
-    # hessian from hessian
-    for i=1:nrings()
-        hdata((x.index, i)) += y.x * hdata((out!.index, i))
-        hdata((y.index, i)) += x.x * hdata((out!.index, i))
-    end
-    for i=1:nrings()
-        hdata((i, x.index)) += y.x * hdata((i, out!.index))
-        hdata((i, y.index)) += x.x * hdata((i, out!.index))
-    end
+function Base.zero(x::BeijingRing{T}) where T
+    zero(BeijingRing{T})
+end
 
-    # hessian from jacobian
-    hdata((x, y)) ⊕ grad(out!)
-    hdata((y, x)) ⊕ grad(out!)
+function Base.zero(x::Type{BeijingRing{T}}) where T
+    beijingring(zero(T))
+end
 
-    # update gradients
-    grad(x) += grad(out!) * value(y)
-    grad(y) += value(x) * grad(out!)
+
+function NiLangCore.deanc(x::BeijingRing, val::BeijingRing)
+    pop!(NiLang.AD.rings)
+    pop!(NiLang.AD.rings)
+    value(x) == value(val)
 end
 
 @i function NEG(x!::BeijingRing)
@@ -130,8 +122,45 @@ end
     SWAP(grad(x!), grad(y!))
 end
 
-@i function ⊖(/)(out!::BeijingRing{T}, x::BeijingRing{T}, y::BeijingRing{T}) where T
-    ⊖(/)(out!.x, x.x, y.x)
+# dL^2/dx/dy = ∑(dL^2/da/db)*da/dx*db/dy
+# https://arxiv.org/abs/1206.6464
+@i function ⊖(*)(out!::BeijingRing, x, y)
+    ⊖(*)(out!.x, value(x), value(y))
+    # hessian from hessian
+    for i=1:nrings()
+        if (x isa BeijingRing, ~)
+            hdata((x.index, i)) += value(y) * hdata((out!.index, i))
+        end
+        if (y isa BeijingRing, ~)
+            hdata((y.index, i)) += value(x) * hdata((out!.index, i))
+        end
+    end
+    for i=1:nrings()
+        if (x isa BeijingRing, ~)
+            hdata((i, x.index)) += value(y) * hdata((i, out!.index))
+        end
+        if (y isa BeijingRing, ~)
+            hdata((i, y.index)) += value(x) * hdata((i, out!.index))
+        end
+    end
+
+    # hessian from jacobian
+    if (x isa BeijingRing && y isa BeijingRing, ~)
+        hdata((x, y)) ⊕ grad(out!)
+        hdata((y, x)) ⊕ grad(out!)
+    end
+
+    # update gradients
+    if (x isa BeijingRing, ~)
+        grad(x) += grad(out!) * value(y)
+    end
+    if (y isa BeijingRing, ~)
+        grad(y) += value(x) * grad(out!)
+    end
+end
+
+@i function ⊖(/)(out!::BeijingRing{T}, x, y) where T
+    ⊖(/)(out!.x, value(x), value(y))
     @anc binv = zero(T)
     @anc binv2 = zero(T)
     @anc binv3 = zero(T)
@@ -153,28 +182,42 @@ end
     end
     # hessian from hessian
     for i=1:nrings()
-        hdata((x.index, i)) += xjac * hdata((out!.index, i))
-        hdata((y.index, i)) += yjac * hdata((out!.index, i))
+        if (x isa BeijingRing, ~)
+            hdata((x.index, i)) += xjac * hdata((out!.index, i))
+        end
+        if (y isa BeijingRing, ~)
+            hdata((y.index, i)) += yjac * hdata((out!.index, i))
+        end
     end
     for i=1:nrings()
-        hdata((i, x.index)) += xjac * hdata((i, out!.index))
-        hdata((i, y.index)) += yjac * hdata((i, out!.index))
+        if (x isa BeijingRing, ~)
+            hdata((i, x.index)) += xjac * hdata((i, out!.index))
+        end
+        if (y isa BeijingRing, ~)
+            hdata((i, y.index)) += yjac * hdata((i, out!.index))
+        end
     end
 
     # hessian from jacobian
-    hdata((y.index, y.index)) += yyjac*grad(out!)
-    hdata((x.index, y.index)) += xyjac*grad(out!)
-    hdata((y.index, x.index)) += xyjac*grad(out!)
+    if (x isa BeijingRing && y isa BeijingRing, ~)
+        hdata((y.index, y.index)) += yyjac*grad(out!)
+        hdata((x.index, y.index)) += xyjac*grad(out!)
+        hdata((y.index, x.index)) += xyjac*grad(out!)
+    end
 
     # update gradients
-    grad(x) += grad(out!) * xjac
-    grad(y) += yjac * grad(out!)
+    if (x isa BeijingRing, ~)
+        grad(x) += grad(out!) * xjac
+    end
+    if (y isa BeijingRing, ~)
+        grad(y) += yjac * grad(out!)
+    end
 
     ~@routine jacs
 end
 
-@i function ⊖(^)(out!::BeijingRing{T}, x::BeijingRing{T}, n::BeijingRing{T}) where T
-    ⊖(^)(out!.x, x.x, n.x)
+@i function ⊖(^)(out!::BeijingRing{T}, x, n) where T
+    ⊖(^)(out!.x, value(x), value(n))
     @anc logx = zero(T)
     @anc logx2 = zero(T)
     @anc powerxn = zero(T)
@@ -189,21 +232,21 @@ end
 
     # compute jacobians
     @routine getjac begin
-        nminus1 ⊕ n.x
+        nminus1 ⊕ value(n)
         nminus1 ⊖ 1
-        powerxn += x.x^n.x
-        logx += log(x.x)
+        powerxn += value(x)^value(n)
+        logx += log(value(x))
         out!.x ⊕ powerxn
 
         # dout!/dx = n*x^(n-1)
-        anc1 += x^nminus1
+        anc1 += value(x)^nminus1
         xjac += anc1 * value(n)
         # dout!/dn = logx*x^n
         njac += logx*powerxn
 
         # for hessian
         logx2 += logx^2
-        anc2 += xjac/x
+        anc2 += xjac/value(x)
         hxn ⊕ anc1
         hxn += xjac * logx
         hxx += anc2 * nminus1
@@ -212,31 +255,45 @@ end
 
     # hessian from hessian
     for i=1:nrings()
-        hdata((i, x.index)) += hdata((i, out!.index)) * xjac
-        hdata((i, n.index)) += hdata((i, out!.index)) * njac
+        if (x isa BeijingRing, ~)
+            hdata((i, x.index)) += hdata((i, out!.index)) * xjac
+        end
+        if (n isa BeijingRing, ~)
+            hdata((i, n.index)) += hdata((i, out!.index)) * njac
+        end
     end
     for i=1:nrings()
-        hdata((x.index, i)) += hdata((out!.index, i)) * xjac
-        hdata((n.index, i)) += hdata((out!.index, i)) * njac
+        if (x isa BeijingRing, ~)
+            hdata((x.index, i)) += hdata((out!.index, i)) * xjac
+        end
+        if (n isa BeijingRing, ~)
+            hdata((n.index, i)) += hdata((out!.index, i)) * njac
+        end
     end
 
     # hessian from jacobian
     # Dnn = x^n*log(x)^2
     # Dxx = (-1 + n)*n*x^(-2 + n)
     # Dxn = Dnx = x^(-1 + n) + n*x^(-1 + n)*log(x)
-    hdata((x, x)) += hxx * grad(out!)
-    hdata((n, n)) += hnn * grad(out!)
-    hdata((x, n)) += hxn * grad(out!)
-    hdata((n, x)) += hxn * grad(out!)
+    if (x isa BeijingRing && n isa BeijingRing, ~)
+        hdata((x, x)) += hxx * grad(out!)
+        hdata((n, n)) += hnn * grad(out!)
+        hdata((x, n)) += hxn * grad(out!)
+        hdata((n, x)) += hxn * grad(out!)
+    end
 
     # update gradients
-    grad(x) += grad(out!) * xjac
-    grad(n) += grad(out!) * njac
+    if (x isa BeijingRing, ~)
+        grad(x) += grad(out!) * xjac
+    end
+    if (n isa BeijingRing, ~)
+        grad(n) += grad(out!) * njac
+    end
 
     ~@routine getjac
 end
 
-@i function IROT(a!::BeijingRing{T}, b!::BeijingRing{T}, θ::BeijingRing{T}) where T
+@i function IROT(a!::BeijingRing{T}, b!, θ) where T
     @anc s = zero(T)
     @anc c = zero(T)
     @anc ca = zero(T)
@@ -328,4 +385,35 @@ function taylor_hessian(f, args::Tuple; kwargs=Dict())
     @instr (~f)(args...)
     @show args
     collect_hessian()
+end
+
+macro nohess(ex)
+    @match ex begin
+        :($f($(args...))) => begin
+            newargs = []
+            for arg in args
+                push!(newargs, @match arg begin
+                    :($x::BeijingRing) => :($x.x)
+                    :($x::BeijingRing{$tp}) => :($x.x)
+                    _ => arg
+                end
+                )
+            end
+            esc(quote
+                @i function $f($(args...))
+                    $f($(newargs...))
+                end
+            end)
+        end
+        _ => error("expect `f(args...)`, got $ex")
+    end
+end
+
+@nohess ⊖(identity)(out!::BeijingRing, x)
+@nohess ⊖(identity)(out!, x::BeijingRing)
+for op in [:*, :/, :^]
+    @eval @nohess ⊖($op)(out!::BeijingRing, x::Number, y::Number)
+    @eval @nohess ⊖($op)(out!::Number, x, y::BeijingRing)
+    @eval @nohess ⊖($op)(out!::Number, x::BeijingRing, y::BeijingRing)
+    @eval @nohess ⊖($op)(out!::Number, x::BeijingRing, y)
 end

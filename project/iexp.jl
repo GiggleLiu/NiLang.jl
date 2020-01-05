@@ -1,9 +1,9 @@
 using NiLang, NiLang.AD
 
 @i function iexp(out!, x::T; atol::Float64=1e-14) where T
-    @anc anc1 = zero(x)
-    @anc anc2 = zero(x)
-    @anc anc3 = zero(x)
+    @anc anc1 = zero(T)
+    @anc anc2 = zero(T)
+    @anc anc3 = zero(T)
     @anc iplus = 0
 
     out! ⊕ 1.0
@@ -71,41 +71,10 @@ end
     @instr iexp'(Loss(out), x)
     @test grad(x) ≈ gres
 
-    #h1 = taylor_hessian(iexp, (Loss(0.0), 1.6))
-    h2 = simple_hessian(iexp, (Loss(0.0), 1.0))
-    nh = nhessian(iexp, (Loss(0.0), 1.0))
-    #@test h1 ≈ nh
+    h1 = taylor_hessian(iexp, (Loss(0.0), 1.6))
+    h2 = simple_hessian(iexp, (Loss(0.0), 1.6))
+    nh = nhessian(iexp, (Loss(0.0), 1.6))
+    @show h1, h2
+    @test isapprox(h1, nh, atol=1e-3)
     @test isapprox(h2, nh, atol=1e-3)
-end
-
-function Base.zero(x::BeijingRing{T}) where T
-    zero(BeijingRing{T})
-end
-
-function Base.zero(x::Type{BeijingRing{T}}) where T
-    beijingring(zero(T))
-end
-
-function Base.zero(x::T) where T<:Partial
-    zero(T)
-end
-
-function Base.zero(x::Type{<:Partial{FIELD,T}}) where {FIELD, T}
-    Partial{FIELD}(Base.zero(T))
-end
-
-function Base.one(x::T) where T<:Partial
-    one(T)
-end
-
-function Base.one(x::Type{<:Partial{FIELD,T}}) where {FIELD, T}
-    Partial{FIELD}(Base.one(T))
-end
-
-function Base.one(x::T) where T<:GVar
-    one(T)
-end
-
-function Base.one(x::Type{<:GVar{T}}) where {T}
-    GVar(Base.one(T))
 end
