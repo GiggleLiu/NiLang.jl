@@ -1,8 +1,8 @@
 export BeijingRing, taylor_hessian, local_hessian, hdata
-export rings_init, nrings, beijingring, collect_hessian
+export rings_init!, nrings, beijingring!, collect_hessian
 
 const rings = Vector{Float64}[]
-rings_init() = empty!(rings)
+rings_init!() = empty!(rings)
 nrings() = length(rings)
 
 function collect_hessian()
@@ -10,7 +10,7 @@ function collect_hessian()
     hess = [hdata((i,j)) for i=1:N, j=1:N]
 end
 
-function beijingring(x::Float64)
+function beijingring!(x::Float64)
     nr = length(rings)+1
     r = zeros(Float64, nr*2-1)
     push!(rings, r)
@@ -60,7 +60,7 @@ function Base.zero(x::BeijingRing{T}) where T
 end
 
 function Base.zero(x::Type{BeijingRing{T}}) where T
-    beijingring(zero(T))
+    beijingring!(zero(T))
 end
 
 
@@ -106,6 +106,32 @@ end
 
     # update gradients
     grad(x) ⊕ grad(out!)
+end
+
+@i function ⊖(abs)(out!::BeijingRing, x::BeijingRing)
+    ⊖(abs)(out!.x, x.x)
+    # hessian from hessian
+    if (x.x > 0, ~)
+        for i=1:nrings()
+            hdata((x.index, i)) ⊕ hdata((out!.index, i))
+        end
+        for i=1:nrings()
+            hdata((i, x.index)) ⊕ hdata((i, out!.index))
+        end
+
+        # update gradients
+        grad(x) ⊕ grad(out!)
+    else
+        for i=1:nrings()
+            hdata((x.index, i)) ⊖ hdata((out!.index, i))
+        end
+        for i=1:nrings()
+            hdata((i, x.index)) ⊖ hdata((i, out!.index))
+        end
+
+        # update gradients
+        grad(x) ⊖ grad(out!)
+    end
 end
 
 @i function ⊖(exp)(out!::BeijingRing{T}, x::BeijingRing) where T
@@ -442,8 +468,8 @@ function local_hessian(f, args; kwargs=())
     hes = zeros(nargs,nargs,nargs)
     @instr f(args...)
     for j=1:nargs
-        rings_init()
-        largs = [beijingring(arg) for arg in args]
+        rings_init!()
+        largs = [beijingring!(arg) for arg in args]
         @instr grad(largs[j]) ⊕ 1.0
         @instr (~f)(largs...)
         hes[:,:,j] .= collect_hessian()
@@ -451,7 +477,7 @@ function local_hessian(f, args; kwargs=())
     hes
 end
 
-function taylor_hessian(f, args::Tuple; kwargs=Dict())
+function (h::Hessian)(args...; kwargs...)
     @assert count(x -> x isa Loss, args) == 1
     N = length(args)
 
@@ -463,13 +489,13 @@ function taylor_hessian(f, args::Tuple; kwargs=Dict())
     end
     @instr (~Loss)(tget(args, iloss))
 
-    @instr f(args...)
-    rings_init()
-    args = [beijingring(x) for x in args]
+    @instr h.f(args...)
+    rings_init!()
+    args = [beijingring!(x) for x in args]
     @instr grad(args[iloss]) ⊕ 1.0
-    @instr (~f)(args...)
-    @show args
-    collect_hessian()
+    @instr (~h.f)(args...)
+    @instr Loss(tget(args, iloss))
+    args
 end
 
 macro nohess(ex)

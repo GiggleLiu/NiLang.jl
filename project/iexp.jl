@@ -67,7 +67,7 @@ end
     @instr iexp'(Loss(out), x)
     @test grad(x) ≈ gres
 
-    h1 = taylor_hessian(iexp, (Loss(0.0), 1.6))
+    h1 = (iexp''(Loss(0.0), 1.6); collect_hessian())
     h2 = simple_hessian(iexp, (Loss(0.0), 1.6))
     nh = nhessian(iexp, (Loss(0.0), 1.6))
     @show h1, h2

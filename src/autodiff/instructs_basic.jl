@@ -126,6 +126,15 @@ end
     ~@routine getnjac
 end
 
+@i function ⊖(abs)(out!::GVar, x::GVar{T}) where T
+    value(out!) -= abs(value(x))
+    if (x > 0, ~)
+        grad(x) ⊕ grad(out!)
+    else
+        grad(x) ⊖ grad(out!)
+    end
+end
+
 for op in [:*, :/, :^]
     @eval @nograd ⊖($op)(out!::GVar, x, y)
     @eval @nograd ⊖($op)(out!, x, y::GVar)

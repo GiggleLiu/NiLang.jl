@@ -3,10 +3,10 @@ using Test
 using TensorOperations
 
 @testset "HessianData" begin
-    rings_init()
-    out! = beijingring(6.0)
-    a = beijingring(2.0)
-    b = beijingring(3.0)
+    rings_init!()
+    out! = beijingring!(6.0)
+    a = beijingring!(2.0)
+    b = beijingring!(3.0)
 
     @test nrings() == 3
 
@@ -22,7 +22,7 @@ using TensorOperations
 end
 
 @testset "hessian" begin
-    h1 = taylor_hessian(⊕(*), (Loss(0.0), 2.0, 3.0))
+    h1 = (⊕(*)''(Loss(0.0), 2.0, 3.0); collect_hessian())
     h2 = nhessian(⊕(*), (Loss(0.0), 2.0, 3.0))
     @test h1 ≈ h2
 
@@ -31,7 +31,7 @@ end
         c += b^a
         ROT(a, b, c)
     end
-    h1 = taylor_hessian(test, (Loss(0.0), 2.0, 0.5))
+    h1 = (test''(Loss(0.0), 2.0, 0.5); collect_hessian())
     h2 = nhessian(test, (Loss(0.0), 2.0, 0.5))
     @show h2
     @test isapprox(h1, h2, atol=1e-5)
@@ -48,8 +48,8 @@ function hessian_propagate2(h, f, args; kwargs=())
     @instr f(args...)
     for j=1:nargs
         # init rings
-        rings_init()
-        largs = [beijingring(x) for x in args]
+        rings_init!()
+        largs = [beijingring!(x) for x in args]
         for i=1:nargs
             NiLang.AD.rings[i][1:i] .= h[1:i,i,j]
             NiLang.AD.rings[i][end:-1:end-i+1] .= h[i,1:i,j]
@@ -79,7 +79,7 @@ end
         @test h1 ≈ h2
     end
 
-    for op in [⊕(identity), SWAP, ⊕(exp), ⊕(log), ⊕(sin), ⊕(cos)]
+    for op in [⊕(identity), ⊕(abs), SWAP, ⊕(exp), ⊕(log), ⊕(sin), ⊕(cos)]
         h1 = local_hessian(op, (0.3, 0.4))
         h2 = local_nhessian(op, (0.3, 0.4))
         @test h1 ≈ h2
