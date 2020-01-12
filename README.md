@@ -1,7 +1,11 @@
 # NiLang
 
-Note: this project is still in progress, with a lot of unstable features.
+Warning: 
+
+* this project is still in progress, with a lot of unstable features.
 Please read the tests in `NiLangCore.jl` and `NiLang.jl` to figure out the tested features.
+* requires Julia version >= 1.3
+
 
 NiLang.jl (逆lang), is a reversible domain sepecific language (DSL) in Julia.
 It features
