@@ -1,10 +1,13 @@
 using NiLangCore
 
 const GLOBAL_PHASE = Ref(0.0)
+const GLOBAL_AMPLITUDE = Ref(1.0)
 
 export qphase
 qphase() = GLOBAL_PHASE[]
 qphase(θ) = GLOBAL_PHASE[] = θ
+qamplitude() = GLOBAL_AMPLITUDE[]
+qamplitude(x) = GLOBAL_AMPLITUDE[] = x
 
 """
 Rx = cos(θ/2) + im*sin(θ/2)*X

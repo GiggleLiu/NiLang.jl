@@ -7,14 +7,14 @@ using NiLang, NiLang.AD
     @anc iplus = 0
     @anc expout = zero(T)
 
-    out! ⊕ 1.0
+    out! += identity(1.0)
     @routine r1 begin
-        anc1 ⊕ 1.0
+        anc1 += identity(1.0)
         while (value(anc1) > atol, iplus != 0)
-            iplus ⊕ 1
+            iplus += identity(1)
             anc2 += anc1 * x
             anc3 += anc2 / iplus
-            expout ⊕ anc3
+            expout += identity(anc3)
             # speudo inverse
             anc1 -= anc2 / x
             anc2 -= anc3 * iplus
@@ -22,7 +22,7 @@ using NiLang, NiLang.AD
         end
     end
 
-    out! ⊕ expout
+    out! += identity(expout)
 
     ~@routine r1
 end

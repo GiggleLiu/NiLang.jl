@@ -24,7 +24,7 @@ end
     @anc k = 0
     for j=1:Nout
         for i=Nin-1:-1:j
-            k ⊕ 1
+            k += identity(1)
             ROT(x[i], x[i+1], θ[k])
         end
     end
@@ -32,7 +32,7 @@ end
     # uncompute k
     for j=1:Nout
         for i=Nin-1:-1:j
-            k ⊖ 1
+            k -= identity(1)
         end
     end
 end
@@ -40,21 +40,21 @@ end
 @i function idot(out, v1::AbstractVector{T}, v2) where T
     @anc anc1 = zero(T)
     for i = 1:length(v1)
-        anc1 ⊕ v1[i]
+        anc1 += identity(v1[i])
         CONJ(anc1)
         out += v1[i]*v2[i]
         CONJ(anc1)
-        anc1 ⊖ v1[i]
+        anc1 -= identity(v1[i])
     end
 end
 
 @i function inorm2(out, vec::AbstractVector{T}) where T
     @anc anc1 = zero(T)
     for i = 1:length(vec)
-        anc1 ⊕ vec[i]
+        anc1 += identity(vec[i])
         CONJ(anc1)
         out += anc1*vec[i]
         CONJ(anc1)
-        anc1 ⊖ vec[i]
+        anc1 -= identity(vec[i])
     end
 end
