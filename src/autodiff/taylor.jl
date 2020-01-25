@@ -2,14 +2,36 @@ export BeijingRing, taylor_hessian, local_hessian, hdata
 export rings_init!, nrings, beijingring!, collect_hessian
 
 const rings = Vector{Float64}[]
+
+"""
+    rings_init!()
+
+Remove all rings in global storage.
+"""
 rings_init!() = empty!(rings)
+
+"""
+    nrings()
+
+Number of rings in global storage.
+"""
 nrings() = length(rings)
 
+"""
+    collect_hessian()
+
+Collect hessian data to a matrix.
+"""
 function collect_hessian()
     N = nrings()
     hess = [hdata((i,j)) for i=1:N, j=1:N]
 end
 
+"""
+    beijingring!(x::Float64)
+
+Allocated a new Beijing ring, it will allocate memory on a global tape `NiLang.AD.rings`.
+"""
 function beijingring!(x::Float64)
     nr = length(rings)+1
     r = zeros(Float64, nr*2-1)
@@ -17,6 +39,11 @@ function beijingring!(x::Float64)
     BeijingRing(x, 0.0, nr)
 end
 
+"""
+    BeijingRing{T}
+
+The type to access global Hessian data.
+"""
 struct BeijingRing{T}
     x::T
     g::T
@@ -31,6 +58,11 @@ function hdata(h::Tuple{Int,Int})
     i1 > i2 ? rings[i1][i2] : rings[i2][end-i1+1]
 end
 
+"""
+    hdata(h::Tuple{BeijingRing,BeijingRing})
+
+Get he hessian element of w.r.t. two variables.
+"""
 hdata(h::Tuple{BeijingRing{T},BeijingRing{T}}) where T = hdata((h[1].index, h[2].index))
 
 function NiLang.chfield(h::Tuple{Int, Int}, ::typeof(hdata), val)

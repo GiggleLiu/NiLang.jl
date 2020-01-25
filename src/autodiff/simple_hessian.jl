@@ -1,16 +1,13 @@
 export simple_hessian, nhessian, jacobian, local_nhessian
 
-function (_::Type{Inv{GVar}})(x::GVar{<:GVar,<:GVar})
-    Partial{:x}(x)
-end
+# TODEP
+#@i function ⊕(*)(out!::Partial, x::Partial, y::Partial)
+#    ⊕(*)(value(out!), value(x), value(y))
+#end
 
-@i function ⊕(*)(out!::Partial, x::Partial, y::Partial)
-    ⊕(*)(value(out!), value(x), value(y))
-end
-
-@i function ⊕(identity)(out!::Partial, x::Partial)
-    ⊕(identity)(value(out!), value(x))
-end
+#@i function ⊕(identity)(out!::Partial, x::Partial)
+#    ⊕(identity)(value(out!), value(x))
+#end
 
 @i function hessian1(f, args; kwargs, index::Int)
     @safe @assert count(x -> x isa Loss, args) == 1
@@ -39,6 +36,11 @@ end
     ~@routine getiloss
 end
 
+"""
+    simple_hessian(f, args::Tuple; kwargs=())
+
+Obtain the Hessian matrix of `f(args..., kwargs...)` by differentiating the first order gradients.
+"""
 function simple_hessian(f, args::Tuple; kwargs=())
     N = length(args)
     hmat = zeros(N, N)
@@ -75,7 +77,11 @@ function local_nhessian(f, args; kwargs=())
     hes
 end
 
-"""J(in, out)"""
+"""
+    jacobian(f, args; kwargs=())
+
+Get the Jacobian matrix for function `f(args..., kwargs...)`.
+"""
 function jacobian(f, args; kwargs=())
     narg = length(args)
     res = zeros(narg, narg)

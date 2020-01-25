@@ -5,10 +5,6 @@ using Test
     include("instructs.jl")
 end
 
-@testset "functions.jl" begin
-    include("functions.jl")
-end
-
 @testset "autodiff" begin
     include("autodiff/autodiff.jl")
 end
