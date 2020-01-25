@@ -19,6 +19,9 @@ It features
 [![Build Status](https://travis-ci.com/GiggleLiu/NiLang.jl.svg?branch=master)](https://travis-ci.com/GiggleLiu/NiLang.jl)
 [![Codecov](https://codecov.io/gh/GiggleLiu/NiLang.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/GiggleLiu/NiLang.jl)
 
+> The strangeness of reversible computing is mainly due to
+> our lack of experience with it.—Henry Baker, 1992
+
 ## To Start
 ```
 pkg> dev git@github.com:GiggleLiu/NiLangCore.jl.git
@@ -26,57 +29,69 @@ pkg> dev git@github.com:GiggleLiu/NiLang.jl.git
 ```
 
 ## Examples
-1. a unitary matrix multiplication operation, parametrized by at most `N*(N+1)/2` parameters (θ).
+1. Compute exp function from Taylor expansion
+
 ```julia
-@i function umm!(x, θ, Nin::Int, Nout::Int)
-    @anc k = 0
-    for j=1:Nout
-        for i=Nin-1:-1:j
-            k += 1
-            ROT(x[i], x[i+1], θ[k])
+@i function iexp(out!, x::T; atol::Float64=1e-14) where T
+    @anc anc1 = zero(T)
+    @anc anc2 = zero(T)
+    @anc anc3 = zero(T)
+    @anc iplus = 0
+    @anc expout = zero(T)
+
+    out! += identity(1.0)
+    @routine r1 begin
+        anc1 += identity(1.0)
+        while (value(anc1) > atol, iplus != 0)
+            iplus += identity(1)
+            anc2 += anc1 * x
+            anc3 += anc2 / iplus
+            expout += identity(anc3)
+            # speudo inverse
+            anc1 -= anc2 / x
+            anc2 -= anc3 * iplus
+            SWAP(anc1, anc3)
         end
     end
 
-    # uncompute k
-    for j=1:Nout
-        for i=Nin-1:-1:j
-            k -= 1
-        end
-    end
+    out! += identity(expout)
+
+    ~@routine r1
 end
 ```
 
-Notes:
-* `+=` and `-=` are inplace `+` and `-` operations.
-In fact, all instructions/function in `NiLang` are (effectively) inplace.
-* `@anc x = val` declares an ancilla register with initial value `val`.
-At the end of computation, this ancilla register must be reset to `0` and return to system,
-otherwise raises `InvertibilityError`.
-* control flow `for start:step:stop ... end` looks quite similar to traditional computation,
-except it errors if `start`, `step` or `stop` changes during computation.
-* `if` and `while` statement is a bit different, they use a tuple of (precondition, postcondition) as input. precondition is used in forward execution, postcondition is used in backward execution.
-These two conditions should match, otherwise errors.
+To understand the grammar, see the [README](https://github.com/GiggleLiu/NiLangCore.jl) of NiLangCore.
+
 
 2. The autodiff engine
+
 ```julia
-# compute `((a.+b).*b)[1] -> out`
-@i function test1(a, b)
-    a .+= b
-end
-@i function test2(a, b, out, loss)
-    a .+= b
-    out .+= (a .* b)
-    loss += out[1]
-end
+julia> y!, x = 0.0, 1.6
+(0.0, 1.6)
 
-x = [3, 1.0]
-y = [4, 2.0]
-out = [0.0, 1.0]
-loss = 0.0
-# gradients
-@instr test2'(x, y, out, loss)
-ga = grad(x)
+# first order gradients
+julia> @instr iexp'(Loss(y!), x)
 
-# to reclaim gradient memory in reversible computer, one should call
-@instr (~test2')(x, y, out, loss)
+julia> grad(x)
+4.9530324244260555
+
+julia> y!, x = 0.0, 1.6
+(0.0, 1.6)
+
+# second order gradient by differentiate first order gradients
+julia> simple_hessian(iexp, (Loss(y!), x))
+2×2 Array{Float64,2}:
+0.0 0.0
+0.0 4.95303
+
+julia> y!, x = 0.0, 1.6
+(0.0, 1.6)
+
+# second order gradient by taylor propagation (experimental)
+julia> @instr iexp''(Loss(y!), x)
+
+julia> collect_hessian()
+2×2 Array{Float64,2}:
+0.0 0.0
+0.0 4.95303
 ```

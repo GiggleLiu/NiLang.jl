@@ -1,32 +1,64 @@
 export XOR, SWAP, NEG, CONJ
 export ROT, IROT
 
+"""
+    NEG(a!) -> -a!
+"""
 function NEG(a!::Number)
     -a!
 end
 @selfdual NEG
 
-function CONJ(x::Number)
-    x'
+"""
+    CONJ(a!) -> a!'
+"""
+function CONJ(a!::Number)
+    a!'
 end
 @selfdual CONJ
 
+"""
+    XOR(a!, b) -> a! ⊻ b, b
+"""
 function XOR(a!::Number, b::Number)
     a!⊻b, b
 end
 @selfdual XOR
 
+"""
+    SWAP(a!, b!) -> b!, a!
+"""
 function SWAP(a!::Number, b!::Number)
     b!, a!
 end
 @selfdual SWAP
 
+"""
+    ROT(a!, b!, θ) -> a!', b!', θ
+
+```math
+\\begin{align}
+    {\\rm ROT}(a!, b!, \\theta)  = \\begin{bmatrix}
+        \\cos(\\theta) & - \\sin(\\theta)\\\\
+        \\sin(\\theta)  & \\cos(\\theta)
+    \\end{bmatrix}
+    \\begin{bmatrix}
+        a!\\\\
+        b!
+    \\end{bmatrix},
+\\end{align}
+```
+"""
 function ROT(i::Number, j::Number, θ::Number)
     a, b = rot(value(i), value(j), value(θ))
     @assign value(i) a
     @assign value(j) b
     i, j, θ
 end
+
+"""
+    IROT(a!, b!, θ) -> ROT(a!, b!, -θ)
+"""
 function IROT(i::Number, j::Number, θ::Number)
     i, j, _ = ROT(i, j, -θ)
     i, j, θ

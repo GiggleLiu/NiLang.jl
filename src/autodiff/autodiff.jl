@@ -8,9 +8,6 @@ using MLStyle
 
 import ..NiLang: ⊕, ⊖, NEG, CONJ, ROT, IROT, SWAP
 
-NiLangCore.ADCore.GVar(x::Dup) = Dup(GVar(x.x), GVar(x.twin))
-(invg::Type{Inv{GVar}})(x::Dup) = Dup(invg(x.x), invg(x.twin))
-
 include("instructs_basic.jl")
 include("instructs_ext.jl")
 include("simple_hessian.jl")
@@ -21,5 +18,4 @@ for op in [:>, :<, :>=, :<=, :isless]
     @eval Base.$op(a::Bundle, b) = $op(value(a), b)
     @eval Base.$op(a, b::Bundle) = $op(a, value(b))
 end
-#Base.conj(x::GVar) = GVar(x.x', x.g')
 end
