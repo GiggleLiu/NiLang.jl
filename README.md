@@ -25,8 +25,8 @@ It features:
 
 ## To Start
 ```
-pkg> dev git@github.com:GiggleLiu/NiLangCore.jl.git
-pkg> dev git@github.com:GiggleLiu/NiLang.jl.git
+pkg> add NiLangCore
+pkg> add NiLang
 ```
 
 ## Examples
