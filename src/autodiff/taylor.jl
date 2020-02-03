@@ -167,7 +167,7 @@ end
 end
 
 @i function ⊖(exp)(out!::BeijingRing{T}, x::BeijingRing) where T
-    @anc expx = zero(T)
+    expx <| zero(T)
     expx += exp(x.x)
     out!.x ⊕ expx
     # hessian from hessian
@@ -185,8 +185,8 @@ end
 end
 
 @i function ⊖(log)(out!::BeijingRing{T}, x::BeijingRing) where T
-    @anc g = zero(T)
-    @anc h = zero(T)
+    g <| zero(T)
+    h <| zero(T)
     out!.x += log(x.x)
 
     @routine r1 begin
@@ -210,8 +210,8 @@ end
 end
 
 @i function ⊖(sin)(out!::BeijingRing{T}, x::BeijingRing) where T
-    @anc sinx = zero(T)
-    @anc cosx = zero(T)
+    sinx <| zero(T)
+    cosx <| zero(T)
     sinx += sin(x.x)
     cosx += cos(x.x)
     out!.x ⊕ sinx
@@ -231,8 +231,8 @@ end
 end
 
 @i function ⊖(cos)(out!::BeijingRing{T}, x::BeijingRing) where T
-    @anc sinx = zero(T)
-    @anc cosx = zero(T)
+    sinx <| zero(T)
+    cosx <| zero(T)
     sinx += sin(x.x)
     cosx += cos(x.x)
     out!.x ⊕ cosx
@@ -304,14 +304,14 @@ end
 
 @i function ⊖(/)(out!::BeijingRing{T}, x, y) where T
     ⊖(/)(out!.x, value(x), value(y))
-    @anc binv = zero(T)
-    @anc binv2 = zero(T)
-    @anc binv3 = zero(T)
-    @anc a3 = zero(T)
-    @anc xjac = zero(T)
-    @anc yjac = zero(T)
-    @anc yyjac = zero(T)
-    @anc xyjac = zero(T)
+    binv <| zero(T)
+    binv2 <| zero(T)
+    binv3 <| zero(T)
+    a3 <| zero(T)
+    xjac <| zero(T)
+    yjac <| zero(T)
+    yyjac <| zero(T)
+    xyjac <| zero(T)
 
     @routine jacs begin
         # compute dout/dx and dout/dy
@@ -361,17 +361,17 @@ end
 
 @i function ⊖(^)(out!::BeijingRing{T}, x, n) where T
     ⊖(^)(out!.x, value(x), value(n))
-    @anc logx = zero(T)
-    @anc logx2 = zero(T)
-    @anc powerxn = zero(T)
-    @anc anc1 = zero(T)
-    @anc anc2 = zero(T)
-    @anc xjac = zero(T)
-    @anc njac = zero(T)
-    @anc hxn = zero(T)
-    @anc hxx = zero(T)
-    @anc hnn = zero(T)
-    @anc nminus1 = zero(T)
+    logx <| zero(T)
+    logx2 <| zero(T)
+    powerxn <| zero(T)
+    anc1 <| zero(T)
+    anc2 <| zero(T)
+    xjac <| zero(T)
+    njac <| zero(T)
+    hxn <| zero(T)
+    hxx <| zero(T)
+    hnn <| zero(T)
+    nminus1 <| zero(T)
 
     # compute jacobians
     @routine getjac begin
@@ -437,13 +437,13 @@ end
 end
 
 @i function IROT(a!::BeijingRing{T}, b!, θ) where T
-    @anc s = zero(T)
-    @anc c = zero(T)
-    @anc ca = zero(T)
-    @anc sb = zero(T)
-    @anc sa = zero(T)
-    @anc cb = zero(T)
-    @anc θ2 = zero(T)
+    s <| zero(T)
+    c <| zero(T)
+    ca <| zero(T)
+    sb <| zero(T)
+    sa <| zero(T)
+    cb <| zero(T)
+    θ2 <| zero(T)
     IROT(value(a!), value(b!), value(θ))
 
     @routine temp begin

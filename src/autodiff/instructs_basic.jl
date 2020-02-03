@@ -42,8 +42,8 @@ end
 
 @i function ⊖(/)(out!::GVar{T}, x::GVar, y::GVar) where T
     value(out!) -= value(x)/value(y)
-    @anc a1 = zero(T)
-    @anc a2 = zero(T)
+    a1 <| zero(T)
+    a2 <| zero(T)
     grad(x) += grad(out!)/value(y)
     a1 += value(x)*grad(out!)
     a2 += a1/value(y)
@@ -54,8 +54,8 @@ end
 
 @i function ⊖(/)(out!::GVar{T}, x, y::GVar) where T
     value(out!) -= x/value(y)
-    @anc a1 = zero(T)
-    @anc a2 = zero(T)
+    a1 <| zero(T)
+    a2 <| zero(T)
     a1 += x*grad(out!)
     a2 += a1/value(y)
     grad(y) -= a2/value(y)
@@ -70,9 +70,9 @@ end
 
 @i function ⊖(^)(out!::GVar{T}, x::GVar, n::GVar) where T
     ⊖(^)(value(out!), value(x), value(n))
-    @anc anc1 = zero(T)
-    @anc anc2 = zero(T)
-    @anc jac = zero(T)
+    anc1 <| zero(T)
+    anc2 <| zero(T)
+    jac <| zero(T)
 
     # grad x
     @routine getjac begin
@@ -96,9 +96,9 @@ end
 
 @i function ⊖(^)(out!::GVar{T}, x::GVar, n) where T
     ⊖(^)(value(out!), value(x), n)
-    @anc anc1 = zero(T)
-    @anc anc2 = zero(T)
-    @anc jac = zero(T)
+    anc1 <| zero(T)
+    anc2 <| zero(T)
+    jac <| zero(T)
 
     @routine getjac begin
         n ⊖ 1
@@ -112,9 +112,9 @@ end
 
 @i function ⊖(^)(out!::GVar{T}, x, n::GVar) where T
     ⊖(^)(value(out!), x, value(n))
-    @anc anc1 = zero(T)
-    @anc anc2 = zero(T)
-    @anc jac = zero(T)
+    anc1 <| zero(T)
+    anc2 <| zero(T)
+    jac <| zero(T)
 
     # get jac of n
     @routine getnjac begin

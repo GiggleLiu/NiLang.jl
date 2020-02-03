@@ -33,11 +33,11 @@ pkg> add NiLang
 
 ```julia
 @i function iexp(out!, x::T; atol::Float64=1e-14) where T
-    @anc anc1 = zero(T)
-    @anc anc2 = zero(T)
-    @anc anc3 = zero(T)
-    @anc iplus = 0
-    @anc expout = zero(T)
+    anc1 <| zero(T)
+    anc2 <| zero(T)
+    anc3 <| zero(T)
+    iplus <| 0
+    expout <| zero(T)
 
     out! += identity(1.0)
     @routine r1 begin

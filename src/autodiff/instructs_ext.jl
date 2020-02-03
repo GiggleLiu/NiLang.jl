@@ -1,6 +1,6 @@
 @i function ⊖(exp)(out!::GVar, x::GVar{T}) where T
     value(out!) -= exp(value(x))
-    @anc anc1 = zero(T)
+    anc1 <| zero(T)
     anc1 += exp(value(x))
     grad(x) += grad(out!) * anc1
     anc1 -= exp(value(x))
@@ -13,7 +13,7 @@ end
 
 @i function ⊖(sin)(out!::GVar, x::GVar{T}) where T
     value(out!) -= sin(value(x))
-    @anc anc1 = zero(T)
+    anc1 <| zero(T)
     anc1 += cos(value(x))
     grad(x) += grad(out!) * anc1
     anc1 -= cos(value(x))
@@ -21,7 +21,7 @@ end
 
 @i function ⊖(cos)(out!::GVar, x::GVar{T}) where T
     value(out!) -= cos(value(x))
-    @anc anc1 = zero(T)
+    anc1 <| zero(T)
     anc1 -= sin(value(x))
     grad(x) += grad(out!) * anc1
     anc1 += sin(value(x))
