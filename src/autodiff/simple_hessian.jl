@@ -28,7 +28,7 @@ export simple_hessian, nhessian, jacobian, local_nhessian
         GVar(grad(tget(args,i)))
         GVar(value(tget(args,i)))
     end
-    grad(grad(tget(args,index))) ⊕ 1.0
+    grad(grad(tget(args,index))) ⊕ 1
     # backward#2
     (Loss)(tget(args,iloss))
     (~f')(args...; kwargs...)

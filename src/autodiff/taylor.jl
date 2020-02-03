@@ -28,15 +28,15 @@ function collect_hessian()
 end
 
 """
-    beijingring!(x::Float64)
+    beijingring!(x::AbstractFloat)
 
 Allocated a new Beijing ring, it will allocate memory on a global tape `NiLang.AD.rings`.
 """
-function beijingring!(x::Float64)
+function beijingring!(x::AbstractFloat)
     nr = length(rings)+1
-    r = zeros(Float64, nr*2-1)
+    r = zeros(typeof(x), nr*2-1)
     push!(rings, r)
-    BeijingRing(x, 0.0, nr)
+    BeijingRing(x, zero(x), nr)
 end
 
 """
@@ -190,7 +190,7 @@ end
     out!.x += log(x.x)
 
     @routine begin
-        g += 1.0/x.x
+        g += 1/x.x
         h += g/x.x
         NEG(h)
     end
@@ -315,7 +315,7 @@ end
 
     @routine begin
         # compute dout/dx and dout/dy
-        xjac += 1.0/value(y)
+        xjac += 1/value(y)
         binv2 += xjac^2
         binv3 += xjac^3
         yjac -= value(x)*binv2
@@ -502,7 +502,7 @@ function local_hessian(f, args; kwargs=())
     for j=1:nargs
         rings_init!()
         largs = [beijingring!(arg) for arg in args]
-        @instr grad(largs[j]) ⊕ 1.0
+        @instr grad(largs[j]) ⊕ 1
         @instr (~f)(largs...)
         hes[:,:,j] .= collect_hessian()
     end
@@ -524,7 +524,7 @@ function (h::Hessian)(args...; kwargs...)
     @instr h.f(args...)
     rings_init!()
     args = [beijingring!(x) for x in args]
-    @instr grad(args[iloss]) ⊕ 1.0
+    @instr grad(args[iloss]) ⊕ 1
     @instr (~h.f)(args...)
     @instr Loss(tget(args, iloss))
     args

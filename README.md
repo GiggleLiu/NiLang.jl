@@ -39,9 +39,9 @@ pkg> add NiLang
     iplus <| 0
     expout <| zero(T)
 
-    out! += identity(1.0)
+    out! += identity(1)
     @routine begin
-        anc1 += identity(1.0)
+        anc1 += identity(1)
         while (value(anc1) > atol, iplus != 0)
             iplus += identity(1)
             anc2 += anc1 * x
