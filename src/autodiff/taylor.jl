@@ -189,7 +189,7 @@ end
     h <| zero(T)
     out!.x += log(x.x)
 
-    @routine r1 begin
+    @routine begin
         g += 1.0/x.x
         h += g/x.x
         NEG(h)
@@ -206,7 +206,7 @@ end
     # update gradients
     grad(x) += g * grad(out!)
 
-    ~@routine r1
+    ~@routine
 end
 
 @i function ⊖(sin)(out!::BeijingRing{T}, x::BeijingRing) where T
@@ -313,7 +313,7 @@ end
     yyjac <| zero(T)
     xyjac <| zero(T)
 
-    @routine jacs begin
+    @routine begin
         # compute dout/dx and dout/dy
         xjac += 1.0/value(y)
         binv2 += xjac^2
@@ -356,7 +356,7 @@ end
         grad(y) += yjac * grad(out!)
     end
 
-    ~@routine jacs
+    ~@routine
 end
 
 @i function ⊖(^)(out!::BeijingRing{T}, x, n) where T
@@ -374,7 +374,7 @@ end
     nminus1 <| zero(T)
 
     # compute jacobians
-    @routine getjac begin
+    @routine begin
         nminus1 ⊕ value(n)
         nminus1 ⊖ 1
         powerxn += value(x)^value(n)
@@ -433,7 +433,7 @@ end
         grad(n) += grad(out!) * njac
     end
 
-    ~@routine getjac
+    ~@routine
 end
 
 @i function IROT(a!::BeijingRing{T}, b!, θ) where T
@@ -446,7 +446,7 @@ end
     θ2 <| zero(T)
     IROT(value(a!), value(b!), value(θ))
 
-    @routine temp begin
+    @routine begin
         θ2 ⊖ value(θ)
         θ2 ⊖ π/2
         s += sin(value(θ))
@@ -492,7 +492,7 @@ end
     grad(θ) += value(b!) * grad(b!)
     ROT(grad(a!), grad(b!), π/2)
 
-    ~@routine temp
+    ~@routine
 end
 
 function local_hessian(f, args; kwargs=())

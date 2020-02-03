@@ -40,7 +40,7 @@ pkg> add NiLang
     expout <| zero(T)
 
     out! += identity(1.0)
-    @routine r1 begin
+    @routine begin
         anc1 += identity(1.0)
         while (value(anc1) > atol, iplus != 0)
             iplus += identity(1)
@@ -56,7 +56,7 @@ pkg> add NiLang
 
     out! += identity(expout)
 
-    ~@routine r1
+    ~@routine
 end
 ```
 

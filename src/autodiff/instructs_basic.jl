@@ -75,23 +75,23 @@ end
     jac <| zero(T)
 
     # grad x
-    @routine getjac begin
+    @routine begin
         n ⊖ 1
         anc1 += value(x)^value(n)
         n ⊕ 1
         jac += anc1 * value(n)
     end
     grad(x) += grad(out!) * jac
-    ~@routine getjac
+    ~@routine
 
     # get grad of n
-    @routine getnjac begin
+    @routine begin
         anc1 += log(value(x))
         anc2 += value(x) ^ value(n)
         jac += anc1*anc2
     end
     grad(n) += grad(out!) * jac
-    ~@routine getnjac
+    ~@routine
 end
 
 @i function ⊖(^)(out!::GVar{T}, x::GVar, n) where T
@@ -100,14 +100,14 @@ end
     anc2 <| zero(T)
     jac <| zero(T)
 
-    @routine getjac begin
+    @routine begin
         n ⊖ 1
         anc1 += value(x)^n
         n ⊕ 1
         jac += anc1 * n
     end
     grad(x) += grad(out!) * jac
-    ~@routine getjac
+    ~@routine
 end
 
 @i function ⊖(^)(out!::GVar{T}, x, n::GVar) where T
@@ -117,13 +117,13 @@ end
     jac <| zero(T)
 
     # get jac of n
-    @routine getnjac begin
+    @routine begin
         anc1 += log(x)
         anc2 += x ^ value(n)
         jac += anc1*anc2
     end
     grad(n) += grad(out!) * jac
-    ~@routine getnjac
+    ~@routine
 end
 
 @i function ⊖(abs)(out!::GVar, x::GVar{T}) where T
