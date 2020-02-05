@@ -32,12 +32,12 @@ pkg> add NiLang
 1. Compute exp function from Taylor expansion
 
 ```julia
-@i function iexp(out!, x::T; atol::Float64=1e-14) where T
-    anc1 <| zero(T)
-    anc2 <| zero(T)
-    anc3 <| zero(T)
-    iplus <| 0
-    expout <| zero(T)
+@i function iexp(out!, x::T; atol::Real=1e-14) where T
+    anc1 ← zero(T)
+    anc2 ← zero(T)
+    anc3 ← zero(T)
+    iplus ← 0
+    expout ← zero(T)
 
     out! += identity(1)
     @routine begin

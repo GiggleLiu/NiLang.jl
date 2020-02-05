@@ -13,9 +13,4 @@ include("instructs_ext.jl")
 include("simple_hessian.jl")
 include("taylor.jl")
 
-for op in [:>, :<, :>=, :<=, :isless]
-    @eval Base.$op(a::Bundle, b::Bundle) = $op(value(a), value(b))
-    @eval Base.$op(a::Bundle, b) = $op(value(a), b)
-    @eval Base.$op(a, b::Bundle) = $op(a, value(b))
-end
 end

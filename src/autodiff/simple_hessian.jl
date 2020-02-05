@@ -11,7 +11,7 @@ export simple_hessian, nhessian, jacobian, local_nhessian
 
 @i function hessian1(f, args; kwargs, index::Int)
     @safe @assert count(x -> x isa Loss, args) == 1
-    iloss <| 0
+    iloss ← 0
     @routine begin
         for i=1:length(args)
             if (tget(args,i) isa Loss, iloss==i)
