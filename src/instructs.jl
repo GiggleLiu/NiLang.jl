@@ -1,5 +1,29 @@
 export XOR, SWAP, NEG, CONJ
 export ROT, IROT
+export ipop!, ipush!
+
+const GLOBAL_STACK = []
+
+############# global stack operations ##########
+function ipush!(x)
+    push!(GLOBAL_STACK, x)
+    zero(x)
+end
+function ipop!(x)
+    @invcheck x zero(x)
+    pop!(GLOBAL_STACK)
+end
+
+############# local stack operations ##########
+function ipush!(stack, x)
+    push!(stack, x)
+    stack, zero(x)
+end
+function ipop!(stack, x)
+    @invcheck x zero(x)
+    stack, pop!(stack)
+end
+@dual ipop! ipush!
 
 """
     NEG(a!) -> -a!
