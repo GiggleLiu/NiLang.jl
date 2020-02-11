@@ -32,6 +32,8 @@ pkg> add NiLang
 1. Compute exp function from Taylor expansion
 
 ```julia
+using NiLang, NiLang.AD
+
 @i function iexp(out!, x::T; atol::Real=1e-14) where T
     anc1 ← zero(T)
     anc2 ← zero(T)
