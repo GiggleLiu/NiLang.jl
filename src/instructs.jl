@@ -126,3 +126,20 @@ for (TP, OP) in [(:PlusEq, :+), (:MinusEq, :-), (:XorEq, :⊻)]
         @eval NiLangCore.nargs(::$TP{typeof($SOP)}) = 2
     end
 end
+
+# patch for fixed point numbers
+function (f::PlusEq{typeof(/)})(out!::T, x::Integer, y::Integer) where T<:Fixed
+    out!+T(x)/y, x, y
+end
+
+function (f::MinusEq{typeof(/)})(out!::T, x::Integer, y::Integer) where T<:Fixed
+    out!-T(x)/y, x, y
+end
+
+for F in [:exp, :log, :sin, :cos]
+    @eval Base.$F(x::Fixed43) = Fixed43($F(Float64(Fixed43(x))))
+end
+
+Base.:^(x::Integer, y::Fixed43) = Fixed43(x^(Float64(y)))
+Base.:^(x::Fixed43, y::Fixed43) = Fixed43(x^(Float64(y)))
+Base.:^(x::T, y::Fixed43) where T<:AbstractFloat = x^(T(y))

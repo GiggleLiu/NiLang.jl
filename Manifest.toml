@@ -11,6 +11,11 @@ uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
 deps = ["Random", "Serialization", "Sockets"]
 uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 
+[[FixedPointNumbers]]
+git-tree-sha1 = "3ba9ea634d4c8b289d590403b4a06f8e227a6238"
+uuid = "53c48c17-4a7d-5ca2-90c5-79b7896eea93"
+version = "0.8.0"
+
 [[InteractiveUtils]]
 deps = ["Markdown"]
 uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
@@ -35,7 +40,7 @@ uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
 
 [[NiLangCore]]
 deps = ["MLStyle", "TupleTools"]
-git-tree-sha1 = "7efece7c71be137f77f26d517ffa1e84c51b7835"
+git-tree-sha1 = "bdd3c1adad64db3520ff17e700ba1086ea3eb4cc"
 repo-rev = "master"
 repo-url = "https://github.com/GiggleLiu/NiLangCore.jl.git"
 uuid = "575d3204-02a4-11ea-3f62-238caa8bf11e"

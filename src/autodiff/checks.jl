@@ -1,9 +1,13 @@
 export ng, check_grad
 export ngradient
 
+using FixedPointNumbers: Fixed
+
 isvar(x) = false
 isvar(x::AbstractFloat) = true
+isvar(x::Fixed) = true
 isvar(x::Loss{<:AbstractFloat}) = true
+isvar(x::Loss{<:Fixed}) = true
 isvar(x::AbstractArray{T}) where T<:AbstractFloat = true
 
 function tset(vfunc::Function, tp::Tuple, iloss)

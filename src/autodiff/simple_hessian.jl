@@ -21,7 +21,7 @@ export simple_hessian, nhessian, jacobian, local_nhessian
     end
 
     # forward
-    f'(args...; kwargs...)
+    Grad(f)(args...; kwargs...)
 
     (~Loss)(tget(args,iloss))
     for i = 1:length(args)
@@ -45,8 +45,10 @@ function simple_hessian(f, args::Tuple; kwargs=())
     N = length(args)
     hmat = zeros(N, N)
     for i=1:N
-        res = hessian1(f, args; kwargs=kwargs, index=i)
-        hmat[:,i] .= map(x->x isa Loss ? grad(value(value(x))) :  grad(value(x)), res[2])
+        if !(args[i] isa Integer || args[i] isa AbstractVector)
+            res = hessian1(f, args; kwargs=kwargs, index=i)
+            hmat[:,i] .= map(x->x isa Loss ? grad(value(value(x))) :  grad(value(x)), res[2])
+        end
     end
     hmat
 end
@@ -56,12 +58,14 @@ function nhessian(f, args; kwargs=(), η=1e-5)
     narg = length(largs)
     res = zeros(narg, narg)
     for i = 1:narg
-        @instr value(largs[i]) ⊕ η/2
-        gpos = gradient(f, (largs...,); kwargs=kwargs)
-        @instr value(largs[i]) ⊖ η
-        gneg = gradient(f, (largs...,); kwargs=kwargs)
-        @instr value(largs[i]) ⊕ η/2
-        res[:,i] .= (gpos .- gneg)./η
+        if !(args[i] isa Integer || args[i] isa AbstractVector)
+            @instr value(largs[i]) ⊕ η/2
+            gpos = gradient(f, (largs...,); kwargs=kwargs)
+            @instr value(largs[i]) ⊖ η
+            gneg = gradient(f, (largs...,); kwargs=kwargs)
+            @instr value(largs[i]) ⊕ η/2
+            res[:,i] .= (gpos .- gneg)./η
+        end
     end
     return res
 end

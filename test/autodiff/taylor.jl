@@ -3,12 +3,12 @@ using Test
 using TensorOperations
 
 @testset "HessianData" begin
-    rings_init!()
+    rings_init!(Float64)
     out! = beijingring!(6.0)
     a = beijingring!(2.0)
     b = beijingring!(3.0)
 
-    @test nrings() == 3
+    @test nrings(Float64) == 3
 
     @test chfield(out!, Val(:x), 0.5).x == 0.5
     @test chfield(out!, value, 0.6).x == 0.6
@@ -48,11 +48,11 @@ function hessian_propagate2(h, f, args; kwargs=())
     @instr f(args...)
     for j=1:nargs
         # init rings
-        rings_init!()
+        rings_init!(Float64)
         largs = [beijingring!(x) for x in args]
         for i=1:nargs
-            NiLang.AD.rings[i][1:i] .= h[1:i,i,j]
-            NiLang.AD.rings[i][end:-1:end-i+1] .= h[i,1:i,j]
+            getrings(Float64)[i][1:i] .= h[1:i,i,j]
+            getrings(Float64)[i][end:-1:end-i+1] .= h[i,1:i,j]
         end
         @instr (~f)(largs...)
         hes[:,:,j] .= collect_hessian()
@@ -100,4 +100,10 @@ end
         h2 = hessian_propagate2(copy(h), op, (0.3,))
         @test h1 ≈ h2
     end
+end
+
+@testset "match eltype" begin
+    @test NiLang.AD.match_eltype((1, [2,3,4], [[Float64(2.0)]])) == Float64
+    @test NiLang.AD.match_eltype((1, [2,3,4], [[Fixed43(2.0)]])) == Fixed43
+    @test_throws ErrorException NiLang.AD.match_eltype((1, [2,3,4.0], [[Fixed43(2.0)]])) == Fixed43
 end

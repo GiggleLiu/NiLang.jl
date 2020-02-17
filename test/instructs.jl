@@ -14,6 +14,13 @@ end
     x, y, out = 2.0, 2.0, 1.0
     @instr out += x / y
     @test x == 2.0 && y == 2.0 && out == 2.0
+
+    out = Fixed43(0.0)
+    x = 1
+    @instr out += x/2
+    @test out === Fixed43(0.5)
+    @instr out -= x/2
+    @test out === Fixed43(0.0)
 end
 
 @testset "XOR, SWAP" begin
