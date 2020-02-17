@@ -1,4 +1,4 @@
-@i function ⊖(exp)(out!::GVar, x::GVar{T}) where T
+@i @inline function ⊖(exp)(out!::GVar, x::GVar{T}) where T
     value(out!) -= exp(value(x))
     anc1 ← zero(T)
     anc1 += exp(value(x))
@@ -6,12 +6,12 @@
     anc1 -= exp(value(x))
 end
 
-@i function ⊖(log)(out!::GVar, x::GVar{T}) where T
+@i @inline function ⊖(log)(out!::GVar, x::GVar{T}) where T
     value(out!) -= log(value(x))
     grad(x) += grad(out!) / value(x)
 end
 
-@i function ⊖(sin)(out!::GVar, x::GVar{T}) where T
+@i @inline function ⊖(sin)(out!::GVar, x::GVar{T}) where T
     value(out!) -= sin(value(x))
     anc1 ← zero(T)
     anc1 += cos(value(x))
@@ -19,7 +19,7 @@ end
     anc1 -= cos(value(x))
 end
 
-@i function ⊖(cos)(out!::GVar, x::GVar{T}) where T
+@i @inline function ⊖(cos)(out!::GVar, x::GVar{T}) where T
     value(out!) -= cos(value(x))
     anc1 ← zero(T)
     anc1 -= sin(value(x))
@@ -32,7 +32,7 @@ for op in [:exp, :log, :sin, :cos]
     @eval @nograd ⊖($op)(out!::GVar, x)
 end
 
-@i function IROT(a!::GVar, b!::GVar, θ::GVar)
+@i @inline function IROT(a!::GVar, b!::GVar, θ::GVar)
     IROT(value(a!), value(b!), value(θ))
     NEG(value(θ))
     value(θ) ⊖ π/2
@@ -44,7 +44,7 @@ end
     ROT(grad(a!), grad(b!), π/2)
 end
 
-@i function IROT(a!::GVar, b!::GVar, θ)
+@i @inline function IROT(a!::GVar, b!::GVar, θ)
     IROT(value(a!), value(b!), θ)
     NEG(θ)
     θ ⊖ π/2

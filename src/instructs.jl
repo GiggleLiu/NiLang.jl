@@ -5,21 +5,21 @@ export ipop!, ipush!
 const GLOBAL_STACK = []
 
 ############# global stack operations ##########
-function ipush!(x)
+@inline function ipush!(x)
     push!(GLOBAL_STACK, x)
     zero(x)
 end
-function ipop!(x)
+@inline function ipop!(x)
     @invcheck x zero(x)
     pop!(GLOBAL_STACK)
 end
 
 ############# local stack operations ##########
-function ipush!(stack, x)
+@inline function ipush!(stack, x)
     push!(stack, x)
     stack, zero(x)
 end
-function ipop!(stack, x)
+@inline function ipop!(stack, x)
     @invcheck x zero(x)
     stack, pop!(stack)
 end
@@ -28,7 +28,7 @@ end
 """
     NEG(a!) -> -a!
 """
-function NEG(a!::Number)
+@inline function NEG(a!::Number)
     -a!
 end
 @selfdual NEG
@@ -36,7 +36,7 @@ end
 """
     CONJ(a!) -> a!'
 """
-function CONJ(a!::Number)
+@inline function CONJ(a!::Number)
     a!'
 end
 @selfdual CONJ
@@ -44,7 +44,7 @@ end
 """
     XOR(a!, b) -> a! ⊻ b, b
 """
-function XOR(a!::Number, b::Number)
+@inline function XOR(a!::Number, b::Number)
     a!⊻b, b
 end
 @selfdual XOR
@@ -52,7 +52,7 @@ end
 """
     SWAP(a!, b!) -> b!, a!
 """
-function SWAP(a!::Number, b!::Number)
+@inline function SWAP(a!::Number, b!::Number)
     b!, a!
 end
 @selfdual SWAP
@@ -73,7 +73,7 @@ end
 \\end{align}
 ```
 """
-function ROT(i::Number, j::Number, θ::Number)
+@inline function ROT(i::Number, j::Number, θ::Number)
     a, b = rot(value(i), value(j), value(θ))
     @assign value(i) a
     @assign value(j) b
@@ -83,14 +83,14 @@ end
 """
     IROT(a!, b!, θ) -> ROT(a!, b!, -θ)
 """
-function IROT(i::Number, j::Number, θ::Number)
+@inline function IROT(i::Number, j::Number, θ::Number)
     i, j, _ = ROT(i, j, -θ)
     i, j, θ
 end
 @dual ROT IROT
 
 for F1 in [:NEG, :CONJ]
-    @eval @i function $F1(a!)
+    @eval @i @inline function $F1(a!)
         $F1(value(a!))
     end
     @eval NiLangCore.nouts(::typeof($F1)) = 1
@@ -98,7 +98,7 @@ for F1 in [:NEG, :CONJ]
 end
 
 for F2 in [:XOR, :SWAP]
-    @eval @i function $F2(a, b)
+    @eval @i @inline function $F2(a, b)
         $F2(value(a), value(b))
     end
     @eval NiLangCore.nouts(::typeof($F2)) = $(F2 == :SWAP ? 2 : 1)
@@ -106,7 +106,7 @@ for F2 in [:XOR, :SWAP]
 end
 
 for F3 in [:ROT, :ITOR]
-    @eval @i function $F3(a, b, c)
+    @eval @i @inline function $F3(a, b, c)
         $F3(value(a), value(b), value(c))
     end
     @eval NiLangCore.nouts(::typeof($F3)) = 2
@@ -114,7 +114,7 @@ for F3 in [:ROT, :ITOR]
 end
 
 for (TP, OP) in [(:PlusEq, :+), (:MinusEq, :-), (:XorEq, :⊻)]
-    @eval @i function (inf::$TP)(out!, args...; kwargs...)
+    @eval @i @inline function (inf::$TP)(out!, args...; kwargs...)
         inf(value(out!), value.(args)...; kwargs...)
     end
     @eval NiLangCore.nouts(::$TP) = 1

@@ -1,5 +1,5 @@
 export ng, check_grad
-export ngradient, gradient
+export ngradient
 
 isvar(x) = false
 isvar(x::AbstractFloat) = true
@@ -11,11 +11,6 @@ function tset(vfunc::Function, tp::Tuple, iloss)
 end
 function tset(value, tp::Tuple, iloss)
     map(i->i===iloss ? value : tp[i], 1:length(tp))
-end
-
-function gradient(f, args; kwargs=())
-    gargs = f'(args...; kwargs...)
-    return [grad(x) for x in gargs]
 end
 
 function ng(f, args, iarg, iloss; δ=1e-5, kwargs=())

@@ -1,16 +1,16 @@
 # unary
-@i function NEG(a!::GVar)
+@i @inline function NEG(a!::GVar)
     NEG(value(a!))
     NEG(grad(a!))
 end
 
-@i function CONJ(a!::GVar)
+@i @inline function CONJ(a!::GVar)
     CONJ(value(a!))
     CONJ(grad(a!))
 end
 
 # +-
-@i function ⊖(identity)(a!::GVar, b::GVar)
+@i @inline function ⊖(identity)(a!::GVar, b::GVar)
     value(a!) ⊖ value(b)
     grad(b) ⊕ grad(a!)
 end
@@ -18,29 +18,29 @@ end
 @nograd ⊖(identity)(a!::GVar, b)
 
 # NOTE: it will error on `SWAP(a!::GVar, b)` or `SWAP(a!, b:GVar)`
-@i function SWAP(a!::GVar, b!::GVar)
+@i @inline function SWAP(a!::GVar, b!::GVar)
     SWAP(value(a!), value(b!))
     SWAP(grad(a!), grad(b!))
 end
 
 # */
-@i function ⊖(*)(out!::GVar, x::GVar, y::GVar)
+@i @inline function ⊖(*)(out!::GVar, x::GVar, y::GVar)
     value(out!) -= value(x) * value(y)
     grad(x) += grad(out!) * value(y)
     grad(y) += value(x) * grad(out!)
 end
 
-@i function ⊖(*)(out!::GVar, x, y::GVar)
+@i @inline function ⊖(*)(out!::GVar, x, y::GVar)
     value(out!) -= value(x) * value(y)
     grad(y) += value(x) * grad(out!)
 end
 
-@i function ⊖(*)(out!::GVar, x::GVar, y)
+@i @inline function ⊖(*)(out!::GVar, x::GVar, y)
     value(out!) -= value(x) * value(y)
     grad(x) += grad(out!) * value(y)
 end
 
-@i function ⊖(/)(out!::GVar{T}, x::GVar, y::GVar) where T
+@i @inline function ⊖(/)(out!::GVar{T}, x::GVar, y::GVar) where T
     value(out!) -= value(x)/value(y)
     a1 ← zero(T)
     a2 ← zero(T)
@@ -52,7 +52,7 @@ end
     a1 -= value(x)*grad(out!)
 end
 
-@i function ⊖(/)(out!::GVar{T}, x, y::GVar) where T
+@i @inline function ⊖(/)(out!::GVar{T}, x, y::GVar) where T
     value(out!) -= x/value(y)
     a1 ← zero(T)
     a2 ← zero(T)
@@ -63,12 +63,12 @@ end
     a1 -= x*grad(out!)
 end
 
-@i function ⊖(/)(out!::GVar, x::GVar, y)
+@i @inline function ⊖(/)(out!::GVar, x::GVar, y)
     value(out!) -= value(x)/y
     grad(x) += grad(out!)/y
 end
 
-@i function ⊖(^)(out!::GVar{T}, x::GVar, n::GVar) where T
+@i @inline function ⊖(^)(out!::GVar{T}, x::GVar, n::GVar) where T
     ⊖(^)(value(out!), value(x), value(n))
     anc1 ← zero(T)
     anc2 ← zero(T)
@@ -94,7 +94,7 @@ end
     ~@routine
 end
 
-@i function ⊖(^)(out!::GVar{T}, x::GVar, n) where T
+@i @inline function ⊖(^)(out!::GVar{T}, x::GVar, n) where T
     ⊖(^)(value(out!), value(x), n)
     anc1 ← zero(T)
     anc2 ← zero(T)
@@ -110,7 +110,7 @@ end
     ~@routine
 end
 
-@i function ⊖(^)(out!::GVar{T}, x, n::GVar) where T
+@i @inline function ⊖(^)(out!::GVar{T}, x, n::GVar) where T
     ⊖(^)(value(out!), x, value(n))
     anc1 ← zero(T)
     anc2 ← zero(T)
@@ -126,7 +126,7 @@ end
     ~@routine
 end
 
-@i function ⊖(abs)(out!::GVar, x::GVar{T}) where T
+@i @inline function ⊖(abs)(out!::GVar, x::GVar{T}) where T
     value(out!) -= abs(value(x))
     if (x > 0, ~)
         grad(x) ⊕ grad(out!)

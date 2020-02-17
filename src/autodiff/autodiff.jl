@@ -2,7 +2,7 @@ module AD
 
 using ..NiLang
 using NiLangCore
-using MLStyle
+using MLStyle, TupleTools
 
 import ..NiLang: ⊕, ⊖, NEG, CONJ, ROT, IROT, SWAP, chfield, value
 
