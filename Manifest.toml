@@ -40,7 +40,7 @@ uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
 
 [[NiLangCore]]
 deps = ["MLStyle", "TupleTools"]
-git-tree-sha1 = "bdd3c1adad64db3520ff17e700ba1086ea3eb4cc"
+git-tree-sha1 = "bc04d09cff04402abb042edffd9bfd9a0d928a0b"
 repo-rev = "master"
 repo-url = "https://github.com/GiggleLiu/NiLangCore.jl.git"
 uuid = "575d3204-02a4-11ea-3f62-238caa8bf11e"
