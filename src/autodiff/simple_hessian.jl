@@ -1,4 +1,4 @@
-export simple_hessian, nhessian, jacobian, local_nhessian
+export simple_hessian, nhessian, simple_jacobian, jacobian, local_nhessian
 
 # TODEP
 #@i function ⊕(*)(out!::Partial, x::Partial, y::Partial)
@@ -21,7 +21,7 @@ export simple_hessian, nhessian, jacobian, local_nhessian
     end
 
     # forward
-    f'(args...; kwargs...)
+    Grad(f)(args...; kwargs...)
 
     (~Loss)(tget(args,iloss))
     for i = 1:length(args)
@@ -45,8 +45,10 @@ function simple_hessian(f, args::Tuple; kwargs=())
     N = length(args)
     hmat = zeros(N, N)
     for i=1:N
-        res = hessian1(f, args; kwargs=kwargs, index=i)
-        hmat[:,i] .= map(x->x isa Loss ? grad(value(value(x))) :  grad(value(x)), res[2])
+        if !(args[i] isa Integer || args[i] isa AbstractVector)
+            res = hessian1(f, args; kwargs=kwargs, index=i)
+            hmat[:,i] .= map(x->x isa Loss ? grad(value(value(x))) :  grad(value(x)), res[2])
+        end
     end
     hmat
 end
@@ -56,12 +58,14 @@ function nhessian(f, args; kwargs=(), η=1e-5)
     narg = length(largs)
     res = zeros(narg, narg)
     for i = 1:narg
-        @instr value(largs[i]) ⊕ η/2
-        gpos = gradient(f, (largs...,); kwargs=kwargs)
-        @instr value(largs[i]) ⊖ η
-        gneg = gradient(f, (largs...,); kwargs=kwargs)
-        @instr value(largs[i]) ⊕ η/2
-        res[:,i] .= (gpos .- gneg)./η
+        if !(args[i] isa Integer || args[i] isa AbstractVector)
+            @instr value(largs[i]) ⊕ η/2
+            gpos = gradient(f, (largs...,); kwargs=kwargs)
+            @instr value(largs[i]) ⊖ η
+            gneg = gradient(f, (largs...,); kwargs=kwargs)
+            @instr value(largs[i]) ⊕ η/2
+            res[:,i] .= (gpos .- gneg)./η
+        end
     end
     return res
 end
@@ -78,17 +82,60 @@ function local_nhessian(f, args; kwargs=())
 end
 
 """
-    jacobian(f, args; kwargs=())
+    simple_jacobian(f, args; kwargs=())
 
 Get the Jacobian matrix for function `f(args..., kwargs...)`.
 """
-function jacobian(f, args; kwargs=())
+function simple_jacobian(f, args; kwargs=())
     narg = length(args)
-    res = zeros(narg, narg)
+    T = match_eltype(args)
+    res = zeros(T, narg, narg)
     for i = 1:narg
         @instr Loss(tget(args, i))
-        res[:,i] .= gradient(f, args; kwargs=kwargs)
+        res[i,:] .= gradient(f, args; kwargs=kwargs)
         @instr (~Loss)(tget(args, i))
     end
     return res
+end
+
+function wrap_jacobian(::Type{T}, args) where T
+    # get number of parameters
+    N = 0
+    for arg in args
+        if isvar(arg)
+            N += length(arg)
+        end
+    end
+
+    # jacobian matrix
+    jac = zeros(T, N, N)
+    for i=1:N
+        jac[i,i] = 1
+    end
+
+    k = 0
+    res = []
+    for arg in args
+        if isvar(arg)
+            if arg isa AbstractArray
+                ri = similar(arg, GVar{T, Vector{T}})
+                for l=1:length(arg)
+                    k += 1
+                    ri[k] = GVar(arg[l], view(jac,:,k))
+                end
+            else
+                k += 1
+                ri = GVar(arg, view(jac, :, k))
+            end
+            push!(res, ri)
+        end
+    end
+    jac, res
+end
+
+function jacobian(f, args; kwargs=())
+    args = f(args...; kwargs...)
+    jac, args = wrap_jacobian(Float64, args)
+    (~f)(args...; kwargs...)
+    return jac
 end

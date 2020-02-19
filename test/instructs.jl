@@ -14,6 +14,13 @@ end
     x, y, out = 2.0, 2.0, 1.0
     @instr out += x / y
     @test x == 2.0 && y == 2.0 && out == 2.0
+
+    out = Fixed43(0.0)
+    x = 1
+    @instr out += x/2
+    @test out === Fixed43(0.5)
+    @instr out -= x/2
+    @test out === Fixed43(0.0)
 end
 
 @testset "XOR, SWAP" begin
@@ -37,7 +44,6 @@ end
 
 @testset "ROT" begin
     x, y, θ = 0.0, 1.0, π
-    #@instr ROT(x, y, θ)
     @test check_inv(ROT, (x, y, θ); verbose=true)
     @test check_inv(IROT, (x, y, θ); verbose=true)
 end

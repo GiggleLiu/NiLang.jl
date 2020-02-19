@@ -1,21 +1,31 @@
 export BeijingRing, taylor_hessian, local_hessian, hdata
-export rings_init!, nrings, beijingring!, collect_hessian
+export rings_init!, nrings, beijingring!, getrings, collect_hessian
 
-const rings = Vector{Float64}[]
+using FixedPointNumbers
+
+const _rings_float64 = Vector{Float64}[]
+const _rings_fixed43 = Vector{Fixed43}[]
+ringtype = Float64
+
+getrings(::Type{Float64}) = _rings_float64
+getrings(::Type{Fixed43}) = _rings_fixed43
 
 """
-    rings_init!()
+    rings_init!(T)
 
-Remove all rings in global storage.
+Remove all rings of type `T` in global storage.
 """
-rings_init!() = empty!(rings)
+rings_init!(::Type{T}) where T = empty!(getrings(T))
+function set_ringtype!(::Type{T}) where T
+    global ringtype = T
+end
 
 """
-    nrings()
+    nrings(T)
 
-Number of rings in global storage.
+Number of rings of type `T` in global storage.
 """
-nrings() = length(rings)
+nrings(::Type{T}) where T = length(getrings(T))
 
 """
     collect_hessian()
@@ -23,7 +33,7 @@ nrings() = length(rings)
 Collect hessian data to a matrix.
 """
 function collect_hessian()
-    N = nrings()
+    N = nrings(ringtype)
     hess = [hdata((i,j)) for i=1:N, j=1:N]
 end
 
@@ -32,19 +42,22 @@ end
 
 Allocated a new Beijing ring, it will allocate memory on a global tape `NiLang.AD.rings`.
 """
-function beijingring!(x::AbstractFloat)
-    nr = length(rings)+1
+function beijingring!(x::T) where T
+    nr = nrings(T)+1
     r = zeros(typeof(x), nr*2-1)
-    push!(rings, r)
+    push!(getrings(T), r)
     BeijingRing(x, zero(x), nr)
 end
+
+beijingring!(x::Integer) = x
+beijingring!(x::AbstractVector) = beijingring!.(x)
 
 """
     BeijingRing{T}
 
 The type to access global Hessian data.
 """
-struct BeijingRing{T}
+struct BeijingRing{T} <: IWrapper{T}
     x::T
     g::T
     index::Int
@@ -52,10 +65,11 @@ end
 
 NiLang.AD.grad(hd::BeijingRing) = hd.g
 NiLang.value(hd::BeijingRing) = hd.x
+Base.eltype(x::BeijingRing{T}) where T = T
 
 function hdata(h::Tuple{Int,Int})
     i1, i2 = h
-    i1 > i2 ? rings[i1][i2] : rings[i2][end-i1+1]
+    i1 > i2 ? getrings(ringtype)[i1][i2] : getrings(ringtype)[i2][end-i1+1]
 end
 
 """
@@ -68,9 +82,9 @@ hdata(h::Tuple{BeijingRing{T},BeijingRing{T}}) where T = hdata((h[1].index, h[2]
 function NiLang.chfield(h::Tuple{Int, Int}, ::typeof(hdata), val)
     i1, i2 = h
     if i1 > i2
-        rings[i1][i2] = val
+        getrings(ringtype)[i1][i2] = val
     else
-        rings[i2][end-i1+1] = val
+        getrings(ringtype)[i2][end-i1+1] = val
     end
     h
 end
@@ -96,16 +110,16 @@ function Base.zero(x::Type{BeijingRing{T}}) where T
 end
 
 
-function NiLangCore.deanc(x::BeijingRing, val::BeijingRing)
-    pop!(NiLang.AD.rings)
-    pop!(NiLang.AD.rings)
+function NiLangCore.deanc(x::BeijingRing{T}, val::BeijingRing{T}) where T
+    pop!(getrings(T))
+    pop!(getrings(T))
     value(x) == value(val)
 end
 
-@i function NEG(x!::BeijingRing)
+@i function NEG(x!::BeijingRing{T}) where T
     NEG(x!.x)
     # hessian from hessian
-    for i=1:nrings()
+    for i=1:nrings(T)
         NEG(hdata((x!.index, i)))
         NEG(hdata((i, x!.index)))
     end
@@ -114,10 +128,10 @@ end
     NEG(grad(x!))
 end
 
-@i function CONJ(x!::BeijingRing)
+@i function CONJ(x!::BeijingRing{T}) where T
     CONJ(x!.x)
     # hessian from hessian
-    for i=1:nrings()
+    for i=1:nrings(T)
         CONJ(hdata((x!.index, i)))
         CONJ(hdata((i, x!.index)))
     end
@@ -126,13 +140,13 @@ end
     CONJ(grad(x!))
 end
 
-@i function ⊖(identity)(out!::BeijingRing, x::BeijingRing)
+@i function ⊖(identity)(out!::BeijingRing{T}, x::BeijingRing{T}) where T
     ⊖(identity)(out!.x, x.x)
     # hessian from hessian
-    for i=1:nrings()
+    for i=1:nrings(T)
         hdata((x.index, i)) ⊕ hdata((out!.index, i))
     end
-    for i=1:nrings()
+    for i=1:nrings(T)
         hdata((i, x.index)) ⊕ hdata((i, out!.index))
     end
 
@@ -140,24 +154,24 @@ end
     grad(x) ⊕ grad(out!)
 end
 
-@i function ⊖(abs)(out!::BeijingRing, x::BeijingRing)
+@i function ⊖(abs)(out!::BeijingRing{T}, x::BeijingRing{T}) where T
     ⊖(abs)(out!.x, x.x)
     # hessian from hessian
     if (x.x > 0, ~)
-        for i=1:nrings()
+        for i=1:nrings(T)
             hdata((x.index, i)) ⊕ hdata((out!.index, i))
         end
-        for i=1:nrings()
+        for i=1:nrings(T)
             hdata((i, x.index)) ⊕ hdata((i, out!.index))
         end
 
         # update gradients
         grad(x) ⊕ grad(out!)
     else
-        for i=1:nrings()
+        for i=1:nrings(T)
             hdata((x.index, i)) ⊖ hdata((out!.index, i))
         end
-        for i=1:nrings()
+        for i=1:nrings(T)
             hdata((i, x.index)) ⊖ hdata((i, out!.index))
         end
 
@@ -166,15 +180,15 @@ end
     end
 end
 
-@i function ⊖(exp)(out!::BeijingRing{T}, x::BeijingRing) where T
+@i function ⊖(exp)(out!::BeijingRing{T}, x::BeijingRing{T}) where T
     expx ← zero(T)
     expx += exp(x.x)
     out!.x ⊕ expx
     # hessian from hessian
-    for i=1:nrings()
+    for i=1:nrings(T)
         hdata((x.index, i)) += expx * hdata((out!.index, i))
     end
-    for i=1:nrings()
+    for i=1:nrings(T)
         hdata((i, x.index)) += expx * hdata((i, out!.index))
     end
     hdata((x, x)) += expx * grad(out!)
@@ -184,7 +198,7 @@ end
     expx -= exp(x.x)
 end
 
-@i function ⊖(log)(out!::BeijingRing{T}, x::BeijingRing) where T
+@i function ⊖(log)(out!::BeijingRing{T}, x::BeijingRing{T}) where T
     g ← zero(T)
     h ← zero(T)
     out!.x += log(x.x)
@@ -195,10 +209,10 @@ end
         NEG(h)
     end
     # hessian from hessian
-    for i=1:nrings()
+    for i=1:nrings(T)
         hdata((x.index, i)) += g * hdata((out!.index, i))
     end
-    for i=1:nrings()
+    for i=1:nrings(T)
         hdata((i, x.index)) += g * hdata((i, out!.index))
     end
     hdata((x, x)) += h * grad(out!)
@@ -209,17 +223,17 @@ end
     ~@routine
 end
 
-@i function ⊖(sin)(out!::BeijingRing{T}, x::BeijingRing) where T
+@i function ⊖(sin)(out!::BeijingRing{T}, x::BeijingRing{T}) where T
     sinx ← zero(T)
     cosx ← zero(T)
     sinx += sin(x.x)
     cosx += cos(x.x)
     out!.x ⊕ sinx
     # hessian from hessian
-    for i=1:nrings()
+    for i=1:nrings(T)
         hdata((x.index, i)) += cosx * hdata((out!.index, i))
     end
-    for i=1:nrings()
+    for i=1:nrings(T)
         hdata((i, x.index)) += cosx * hdata((i, out!.index))
     end
     hdata((x, x)) -= sinx * grad(out!)
@@ -230,17 +244,17 @@ end
     cosx -= cos(x.x)
 end
 
-@i function ⊖(cos)(out!::BeijingRing{T}, x::BeijingRing) where T
+@i function ⊖(cos)(out!::BeijingRing{T}, x::BeijingRing{T}) where T
     sinx ← zero(T)
     cosx ← zero(T)
     sinx += sin(x.x)
     cosx += cos(x.x)
     out!.x ⊕ cosx
     # hessian from hessian
-    for i=1:nrings()
+    for i=1:nrings(T)
         hdata((x.index, i)) -= sinx * hdata((out!.index, i))
     end
-    for i=1:nrings()
+    for i=1:nrings(T)
         hdata((i, x.index)) -= sinx * hdata((i, out!.index))
     end
     hdata((x, x)) -= cosx * grad(out!)
@@ -251,13 +265,13 @@ end
     cosx -= cos(x.x)
 end
 
-@i function SWAP(x!::BeijingRing, y!::BeijingRing)
+@i function SWAP(x!::BeijingRing{T}, y!::BeijingRing{T}) where T
     SWAP(x!.x, y!.x)
     # hessian from hessian
-    for i=1:nrings()
+    for i=1:nrings(T)
         SWAP(hdata((x!.index, i)), hdata((y!.index, i)))
     end
-    for i=1:nrings()
+    for i=1:nrings(T)
         SWAP(hdata((i, x!.index)), hdata((i, y!.index)))
     end
 
@@ -267,10 +281,10 @@ end
 
 # dL^2/dx/dy = ∑(dL^2/da/db)*da/dx*db/dy
 # https://arxiv.org/abs/1206.6464
-@i function ⊖(*)(out!::BeijingRing, x, y)
+@i function ⊖(*)(out!::BeijingRing{T}, x, y) where T
     ⊖(*)(out!.x, value(x), value(y))
     # hessian from hessian
-    for i=1:nrings()
+    for i=1:nrings(T)
         if (x isa BeijingRing, ~)
             hdata((x.index, i)) += value(y) * hdata((out!.index, i))
         end
@@ -278,7 +292,7 @@ end
             hdata((y.index, i)) += value(x) * hdata((out!.index, i))
         end
     end
-    for i=1:nrings()
+    for i=1:nrings(T)
         if (x isa BeijingRing, ~)
             hdata((i, x.index)) += value(y) * hdata((i, out!.index))
         end
@@ -324,7 +338,7 @@ end
         xyjac ⊖ binv2
     end
     # hessian from hessian
-    for i=1:nrings()
+    for i=1:nrings(T)
         if (x isa BeijingRing, ~)
             hdata((x.index, i)) += xjac * hdata((out!.index, i))
         end
@@ -332,7 +346,7 @@ end
             hdata((y.index, i)) += yjac * hdata((out!.index, i))
         end
     end
-    for i=1:nrings()
+    for i=1:nrings(T)
         if (x isa BeijingRing, ~)
             hdata((i, x.index)) += xjac * hdata((i, out!.index))
         end
@@ -342,10 +356,12 @@ end
     end
 
     # hessian from jacobian
-    if (x isa BeijingRing && y isa BeijingRing, ~)
-        hdata((y.index, y.index)) += yyjac*grad(out!)
-        hdata((x.index, y.index)) += xyjac*grad(out!)
-        hdata((y.index, x.index)) += xyjac*grad(out!)
+    if (y isa BeijingRing, ~)
+        hdata((y, y)) += yyjac*grad(out!)
+        if (x isa BeijingRing, ~)
+            hdata((x, y)) += xyjac*grad(out!)
+            hdata((y, x)) += xyjac*grad(out!)
+        end
     end
 
     # update gradients
@@ -371,7 +387,7 @@ end
     hxn ← zero(T)
     hxx ← zero(T)
     hnn ← zero(T)
-    nminus1 ← zero(T)
+    nminus1 ← (n isa BeijingRing ? zero(eltype(n)) : zero(n))
 
     # compute jacobians
     @routine begin
@@ -397,7 +413,7 @@ end
     end
 
     # hessian from hessian
-    for i=1:nrings()
+    for i=1:nrings(T)
         if (x isa BeijingRing, ~)
             hdata((i, x.index)) += hdata((i, out!.index)) * xjac
         end
@@ -405,7 +421,7 @@ end
             hdata((i, n.index)) += hdata((i, out!.index)) * njac
         end
     end
-    for i=1:nrings()
+    for i=1:nrings(T)
         if (x isa BeijingRing, ~)
             hdata((x.index, i)) += hdata((out!.index, i)) * xjac
         end
@@ -418,9 +434,13 @@ end
     # Dnn = x^n*log(x)^2
     # Dxx = (-1 + n)*n*x^(-2 + n)
     # Dxn = Dnx = x^(-1 + n) + n*x^(-1 + n)*log(x)
-    if (x isa BeijingRing && n isa BeijingRing, ~)
+    if (x isa BeijingRing, ~)
         hdata((x, x)) += hxx * grad(out!)
+    end
+    if (n isa BeijingRing, ~)
         hdata((n, n)) += hnn * grad(out!)
+    end
+    if (x isa BeijingRing && n isa BeijingRing, ~)
         hdata((x, n)) += hxn * grad(out!)
         hdata((n, x)) += hxn * grad(out!)
     end
@@ -458,13 +478,13 @@ end
     end
 
     # update gradient, #1
-    for i=1:nrings()
+    for i=1:nrings(T)
         ROT(hdata((i, a!.index)), hdata((i, b!.index)), θ2)
         hdata((i, θ.index)) += value(a!) * hdata((i, a!.index))
         hdata((i, θ.index)) += value(b!) * hdata((i, b!.index))
         ROT(hdata((i, a!.index)), hdata((i, b!.index)), π/2)
     end
-    for i=1:nrings()
+    for i=1:nrings(T)
         ROT(hdata((a!.index, i)), hdata((b!.index, i)), θ2)
         hdata((θ.index, i)) += value(a!) * hdata((a!.index, i))
         hdata((θ.index, i)) += value(b!) * hdata((b!.index, i))
@@ -500,7 +520,7 @@ function local_hessian(f, args; kwargs=())
     hes = zeros(nargs,nargs,nargs)
     @instr f(args...)
     for j=1:nargs
-        rings_init!()
+        rings_init!(ringtype)
         largs = [beijingring!(arg) for arg in args]
         @instr grad(largs[j]) ⊕ 1
         @instr (~f)(largs...)
@@ -522,13 +542,34 @@ function (h::Hessian)(args...; kwargs...)
     @instr (~Loss)(tget(args, iloss))
 
     @instr h.f(args...)
-    rings_init!()
+    rings_init!(ringtype)
     args = [beijingring!(x) for x in args]
     @instr grad(args[iloss]) ⊕ 1
     @instr (~h.f)(args...)
     @instr Loss(tget(args, iloss))
     args
 end
+
+function match_eltype(args)
+    types = Any[_eltype.(args)...]
+    hasfloat = any(t->t <: AbstractFloat, types)
+    hasfixed = any(t->t <: Fixed, types)
+    if hasfloat && hasfixed
+        error("Float point number and Fixed point numbers are not compatible!")
+    end
+    if hasfloat
+        promote_type(filter(x->x <: AbstractFloat, types)...)
+    elseif hasfixed
+        promote_type(filter(x->x <: Fixed, types)...)
+    else
+        promote_type(types...)
+    end
+end
+
+_eltype(x) = typeof(x)
+_eltype(::Type{T}) where T = T
+_eltype(::Type{<:AbstractArray{T}}) where T = _eltype(T)
+_eltype(x::AbstractArray{T}) where T = _eltype(T)
 
 macro nohess(ex)
     @match ex begin

@@ -1,16 +1,16 @@
 # unary
-@i function NEG(a!::GVar)
+@i @inline function NEG(a!::GVar)
     NEG(value(a!))
     NEG(grad(a!))
 end
 
-@i function CONJ(a!::GVar)
+@i @inline function CONJ(a!::GVar)
     CONJ(value(a!))
     CONJ(grad(a!))
 end
 
 # +-
-@i function ⊖(identity)(a!::GVar, b::GVar)
+@i @inline function ⊖(identity)(a!::GVar, b::GVar)
     value(a!) ⊖ value(b)
     grad(b) ⊕ grad(a!)
 end
@@ -18,29 +18,29 @@ end
 @nograd ⊖(identity)(a!::GVar, b)
 
 # NOTE: it will error on `SWAP(a!::GVar, b)` or `SWAP(a!, b:GVar)`
-@i function SWAP(a!::GVar, b!::GVar)
+@i @inline function SWAP(a!::GVar, b!::GVar)
     SWAP(value(a!), value(b!))
     SWAP(grad(a!), grad(b!))
 end
 
 # */
-@i function ⊖(*)(out!::GVar, x::GVar, y::GVar)
+@i @inline function ⊖(*)(out!::GVar, x::GVar, y::GVar)
     value(out!) -= value(x) * value(y)
     grad(x) += grad(out!) * value(y)
     grad(y) += value(x) * grad(out!)
 end
 
-@i function ⊖(*)(out!::GVar, x, y::GVar)
+@i @inline function ⊖(*)(out!::GVar, x, y::GVar)
     value(out!) -= value(x) * value(y)
     grad(y) += value(x) * grad(out!)
 end
 
-@i function ⊖(*)(out!::GVar, x::GVar, y)
+@i @inline function ⊖(*)(out!::GVar, x::GVar, y)
     value(out!) -= value(x) * value(y)
     grad(x) += grad(out!) * value(y)
 end
 
-@i function ⊖(/)(out!::GVar{T}, x::GVar, y::GVar) where T
+@i @inline function ⊖(/)(out!::GVar{T}, x::GVar, y::GVar) where T
     value(out!) -= value(x)/value(y)
     a1 ← zero(T)
     a2 ← zero(T)
@@ -52,7 +52,7 @@ end
     a1 -= value(x)*grad(out!)
 end
 
-@i function ⊖(/)(out!::GVar{T}, x, y::GVar) where T
+@i @inline function ⊖(/)(out!::GVar{T}, x, y::GVar) where T
     value(out!) -= x/value(y)
     a1 ← zero(T)
     a2 ← zero(T)
@@ -63,12 +63,12 @@ end
     a1 -= x*grad(out!)
 end
 
-@i function ⊖(/)(out!::GVar, x::GVar, y)
+@i @inline function ⊖(/)(out!::GVar, x::GVar, y)
     value(out!) -= value(x)/y
     grad(x) += grad(out!)/y
 end
 
-@i function ⊖(^)(out!::GVar{T}, x::GVar, n::GVar) where T
+@i @inline function ⊖(^)(out!::GVar{T}, x::GVar, n::GVar) where T
     ⊖(^)(value(out!), value(x), value(n))
     anc1 ← zero(T)
     anc2 ← zero(T)
@@ -94,7 +94,7 @@ end
     ~@routine
 end
 
-@i function ⊖(^)(out!::GVar{T}, x::GVar, n) where T
+@i @inline function ⊖(^)(out!::GVar{T}, x::GVar, n) where T
     ⊖(^)(value(out!), value(x), n)
     anc1 ← zero(T)
     anc2 ← zero(T)
@@ -110,7 +110,7 @@ end
     ~@routine
 end
 
-@i function ⊖(^)(out!::GVar{T}, x, n::GVar) where T
+@i @inline function ⊖(^)(out!::GVar{T}, x, n::GVar) where T
     ⊖(^)(value(out!), x, value(n))
     anc1 ← zero(T)
     anc2 ← zero(T)
@@ -126,7 +126,7 @@ end
     ~@routine
 end
 
-@i function ⊖(abs)(out!::GVar, x::GVar{T}) where T
+@i @inline function ⊖(abs)(out!::GVar, x::GVar{T}) where T
     value(out!) -= abs(value(x))
     if (x > 0, ~)
         grad(x) ⊕ grad(out!)
@@ -141,3 +141,61 @@ for op in [:*, :/, :^]
     @eval @nograd ⊖($op)(out!, x::GVar, y::GVar)
     @eval @nograd ⊖($op)(out!, x::GVar, y)
 end
+
+@i @inline function ⊖(exp)(out!::GVar, x::GVar{T}) where T
+    value(out!) -= exp(value(x))
+    anc1 ← zero(T)
+    anc1 += exp(value(x))
+    grad(x) += grad(out!) * anc1
+    anc1 -= exp(value(x))
+end
+
+@i @inline function ⊖(log)(out!::GVar, x::GVar{T}) where T
+    value(out!) -= log(value(x))
+    grad(x) += grad(out!) / value(x)
+end
+
+@i @inline function ⊖(sin)(out!::GVar, x::GVar{T}) where T
+    value(out!) -= sin(value(x))
+    anc1 ← zero(T)
+    anc1 += cos(value(x))
+    grad(x) += grad(out!) * anc1
+    anc1 -= cos(value(x))
+end
+
+@i @inline function ⊖(cos)(out!::GVar, x::GVar{T}) where T
+    value(out!) -= cos(value(x))
+    anc1 ← zero(T)
+    anc1 -= sin(value(x))
+    grad(x) += grad(out!) * anc1
+    anc1 += sin(value(x))
+end
+
+for op in [:exp, :log, :sin, :cos]
+    @eval @nograd ⊖($op)(out!, x::GVar)
+    @eval @nograd ⊖($op)(out!::GVar, x)
+end
+
+@i @inline function IROT(a!::GVar, b!::GVar, θ::GVar)
+    IROT(value(a!), value(b!), value(θ))
+    NEG(value(θ))
+    value(θ) ⊖ π/2
+    ROT(grad(a!), grad(b!), value(θ))
+    grad(θ) += value(a!) * grad(a!)
+    grad(θ) += value(b!) * grad(b!)
+    value(θ) ⊕ π/2
+    NEG(value(θ))
+    ROT(grad(a!), grad(b!), π/2)
+end
+
+@i @inline function IROT(a!::GVar, b!::GVar, θ)
+    IROT(value(a!), value(b!), θ)
+    NEG(θ)
+    θ ⊖ π/2
+    ROT(grad(a!), grad(b!), θ)
+    θ ⊕ π/2
+    NEG(θ)
+    ROT(grad(a!), grad(b!), π/2)
+end
+
+@nograd IROT(a!, b!, θ::GVar)

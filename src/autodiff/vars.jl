@@ -103,6 +103,7 @@ macro nograd(ex)
             for arg in args
                 push!(newargs, @match arg begin
                     :($x::GVar) => :($x.x)
+                    :($x::VecGVar) => :($x.x)
                     :($x::GVar{$tp}) => :($x.x)
                     _ => arg
                 end

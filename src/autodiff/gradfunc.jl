@@ -1,4 +1,4 @@
-export Grad, NGrad, Hessian
+export Grad, NGrad, Hessian, gradient
 
 struct NGrad{N,FT} <: Function
     f::FT
@@ -37,4 +37,14 @@ Base.display(bf::NGrad) = print(bf)
     (~g.f)(args...; kwargs...)
 
     ~@routine
+end
+
+function gradient(f, args; kwargs=())
+    @assert count(x -> x isa Loss, args) == 1
+    iloss = findfirst(x -> x isa Loss, args)
+    _args = TupleTools.insertat(args, iloss, (args[iloss].x,))
+
+    out = NiLangCore.wrap_tuple(GVar.(f(_args...; kwargs...)))
+    _out = TupleTools.insertat(out, iloss, (chfield(out[iloss], grad, grad(out[iloss]) + 1),))
+    grad.(NiLangCore.wrap_tuple((~f)(_out...; kwargs...)))
 end
