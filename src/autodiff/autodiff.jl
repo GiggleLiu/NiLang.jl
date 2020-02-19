@@ -12,8 +12,8 @@ include("vars.jl")
 include("gradfunc.jl")
 include("checks.jl")
 
-include("instructs_basic.jl")
-include("instructs_ext.jl")
+include("instructs.jl")
+include("instructs_broadcast.jl")
 include("simple_hessian.jl")
 include("taylor.jl")
 

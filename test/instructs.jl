@@ -44,7 +44,6 @@ end
 
 @testset "ROT" begin
     x, y, θ = 0.0, 1.0, π
-    #@instr ROT(x, y, θ)
     @test check_inv(ROT, (x, y, θ); verbose=true)
     @test check_inv(IROT, (x, y, θ); verbose=true)
 end

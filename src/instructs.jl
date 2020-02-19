@@ -37,7 +37,7 @@ end
     CONJ(a!) -> a!'
 """
 @inline function CONJ(a!::Number)
-    a!'
+    conj(a!)
 end
 @selfdual CONJ
 
@@ -45,7 +45,7 @@ end
     XOR(a!, b) -> a! ⊻ b, b
 """
 @inline function XOR(a!::Number, b::Number)
-    a!⊻b, b
+    a! ⊻ b, b
 end
 @selfdual XOR
 
@@ -74,10 +74,8 @@ end
 ```
 """
 @inline function ROT(i::Number, j::Number, θ::Number)
-    a, b = rot(value(i), value(j), value(θ))
-    @assign value(i) a
-    @assign value(j) b
-    i, j, θ
+    a, b = rot(i, j, θ)
+    a, b, θ
 end
 
 """
@@ -105,10 +103,8 @@ for F2 in [:XOR, :SWAP]
     @eval NiLangCore.nargs(::typeof($F2)) = 2
 end
 
-for F3 in [:ROT, :ITOR]
-    @eval @i @inline function $F3(a, b, c)
-        $F3(value(a), value(b), value(c))
-    end
+for F3 in [:ROT, :IROT]
+    @eval $F3(a, b, c) = $F3(value(a), value(b), value(c))
     @eval NiLangCore.nouts(::typeof($F3)) = 2
     @eval NiLangCore.nargs(::typeof($F3)) = 3
 end
@@ -122,7 +118,7 @@ for (TP, OP) in [(:PlusEq, :+), (:MinusEq, :-), (:XorEq, :⊻)]
     for SOP in [:*, :/, :^]
         @eval NiLangCore.nargs(::$TP{typeof($SOP)}) = 3
     end
-    for SOP in [:sin, :cos, :log, :exp]
+    for SOP in [:sin, :cos, :log, :exp, :identity, :abs]
         @eval NiLangCore.nargs(::$TP{typeof($SOP)}) = 2
     end
 end

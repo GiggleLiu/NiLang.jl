@@ -559,8 +559,10 @@ function match_eltype(args)
     end
     if hasfloat
         promote_type(filter(x->x <: AbstractFloat, types)...)
-    else
+    elseif hasfixed
         promote_type(filter(x->x <: Fixed, types)...)
+    else
+        promote_type(types...)
     end
 end
 

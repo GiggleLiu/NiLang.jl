@@ -39,7 +39,7 @@ end
 
 function hessian_propagate(h, f, args; kwargs=())
     jac = jacobian(f, args; kwargs=kwargs)
-    @tensor out[i,j,o] := jac[i,a]*h[a,b,o]*jac[j,b]
+    @tensor out[i,j,o] := jac[a,i]*h[a,b,o]*jac[b,j]
 end
 
 function hessian_propagate2(h, f, args; kwargs=())
@@ -77,6 +77,10 @@ end
         h2 = hessian_propagate2(copy(h), op, (0.3, 0.4, 2.0))
         @show h1 - h2
         @test h1 ≈ h2
+
+        j1 = jacobian(op, (0.3, 0.4, 2.0))
+        j2 = simple_jacobian(op, (0.3, 0.4, 2.0))
+        @test j1 ≈ j2
     end
 
     for op in [⊕(identity), ⊕(abs), SWAP, ⊕(exp), ⊕(log), ⊕(sin), ⊕(cos)]
@@ -88,6 +92,10 @@ end
         h1 = hessian_propagate(copy(h), op, (0.3, 0.4))
         h2 = hessian_propagate2(copy(h), op, (0.3, 0.4))
         @test h1 ≈ h2
+
+        j1 = jacobian(op, (0.3, 0.4))
+        j2 = simple_jacobian(op, (0.3, 0.4))
+        @test j1 ≈ j2
     end
 
     for op in [NEG, CONJ]
@@ -99,6 +107,10 @@ end
         h1 = hessian_propagate(copy(h), op, (0.3,))
         h2 = hessian_propagate2(copy(h), op, (0.3,))
         @test h1 ≈ h2
+
+        j1 = jacobian(op, (0.3,))
+        j2 = simple_jacobian(op, (0.3,))
+        @test j1 ≈ j2
     end
 end
 
