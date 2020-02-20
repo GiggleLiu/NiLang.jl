@@ -42,8 +42,8 @@ end
 
 @i @inline function ⊖(/)(out!::GVar{T}, x::GVar, y::GVar) where T
     value(out!) -= value(x)/value(y)
-    a1 ← zero(T)
-    a2 ← zero(T)
+    a1 ← zero(grad(out!))
+    a2 ← zero(grad(out!))
     grad(x) += grad(out!)/value(y)
     a1 += value(x)*grad(out!)
     a2 += a1/value(y)
@@ -54,8 +54,8 @@ end
 
 @i @inline function ⊖(/)(out!::GVar{T}, x, y::GVar) where T
     value(out!) -= x/value(y)
-    a1 ← zero(T)
-    a2 ← zero(T)
+    a1 ← zero(grad(out!))
+    a2 ← zero(grad(out!))
     a1 += x*grad(out!)
     a2 += a1/value(y)
     grad(y) -= a2/value(y)
@@ -70,9 +70,9 @@ end
 
 @i @inline function ⊖(^)(out!::GVar{T}, x::GVar, n::GVar) where T
     ⊖(^)(value(out!), value(x), value(n))
-    anc1 ← zero(T)
-    anc2 ← zero(T)
-    jac ← zero(T)
+    anc1 ← zero(value(x))
+    anc2 ← zero(value(x))
+    jac ← zero(value(x))
 
     # grad x
     @routine begin
@@ -96,9 +96,9 @@ end
 
 @i @inline function ⊖(^)(out!::GVar{T}, x::GVar, n) where T
     ⊖(^)(value(out!), value(x), n)
-    anc1 ← zero(T)
-    anc2 ← zero(T)
-    jac ← zero(T)
+    anc1 ← zero(value(x))
+    anc2 ← zero(value(x))
+    jac ← zero(value(x))
 
     @routine begin
         n ⊖ 1
@@ -112,9 +112,9 @@ end
 
 @i @inline function ⊖(^)(out!::GVar{T}, x, n::GVar) where T
     ⊖(^)(value(out!), x, value(n))
-    anc1 ← zero(T)
-    anc2 ← zero(T)
-    jac ← zero(T)
+    anc1 ← zero(x)
+    anc2 ← zero(x)
+    jac ← zero(x)
 
     # get jac of n
     @routine begin
@@ -144,7 +144,7 @@ end
 
 @i @inline function ⊖(exp)(out!::GVar, x::GVar{T}) where T
     value(out!) -= exp(value(x))
-    anc1 ← zero(T)
+    anc1 ← zero(value(x))
     anc1 += exp(value(x))
     grad(x) += grad(out!) * anc1
     anc1 -= exp(value(x))
@@ -157,7 +157,7 @@ end
 
 @i @inline function ⊖(sin)(out!::GVar, x::GVar{T}) where T
     value(out!) -= sin(value(x))
-    anc1 ← zero(T)
+    anc1 ← zero(value(x))
     anc1 += cos(value(x))
     grad(x) += grad(out!) * anc1
     anc1 -= cos(value(x))
@@ -165,7 +165,7 @@ end
 
 @i @inline function ⊖(cos)(out!::GVar, x::GVar{T}) where T
     value(out!) -= cos(value(x))
-    anc1 ← zero(T)
+    anc1 ← zero(value(x))
     anc1 -= sin(value(x))
     grad(x) += grad(out!) * anc1
     anc1 += sin(value(x))

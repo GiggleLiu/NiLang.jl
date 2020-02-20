@@ -88,64 +88,72 @@ end
 @dual ROT IROT
 
 for F1 in [:NEG, :CONJ]
-    @eval @i @inline function $F1(a!)
-        $F1(value(a!))
+    @eval @inline function $F1(a!::IWrapper)
+        @instr $F1(value(a!))
+        a!
     end
     @eval NiLangCore.nouts(::typeof($F1)) = 1
     @eval NiLangCore.nargs(::typeof($F1)) = 1
 end
 
-for F2 in [:XOR, :SWAP]
-    @eval @i @inline function $F2(a, b)
-        $F2(value(a), value(b))
+for F2 in [:XOR, :SWAP, :((inf::PlusEq)), :((inf::MinusEq)), :((inf::XorEq))]
+    @eval @inline function $F2(a::IWrapper, b)
+        @instr $F2(value(a), b)
+        a, b
     end
+    @eval @inline function $F2(a::IWrapper, b::IWrapper)
+        @instr $F2(value(a), value(b))
+        a, b
+    end
+    @eval @inline function $F2(a, b::IWrapper)
+        @instr $F2(a, value(b))
+        a, b
+    end
+end
+
+for F2 in [:XOR, :SWAP]
     @eval NiLangCore.nouts(::typeof($F2)) = $(F2 == :SWAP ? 2 : 1)
     @eval NiLangCore.nargs(::typeof($F2)) = 2
 end
 
-for F3 in [:ROT, :IROT]
-    @eval @inline @generated function $F3(a!, b!, θ)
-        if !(a! <: IWrapper || b! <: IWrapper || θ <: IWrapper)
-            return :(MethodError($($F3), (a!, b!, θ)))
-        end
-        param_a = a! <: IWrapper ? :(value(a!)) : :(a!)
-        param_b = b! <: IWrapper ? :(value(b!)) : :(b!)
-        param_θ = θ <: IWrapper ? :(value(θ)) : :(θ)
-        quote
-            @instr $($F3)($param_a, $param_b, $param_θ)
-            a!, b!, θ
-        end
+for F3 in [:ROT, :IROT, :((inf::PlusEq)), :((inf::MinusEq)), :((inf::XorEq))]
+    @eval @inline function $F3(a::IWrapper, b, c)
+        @instr $F3(value(a), b, c)
+        a, b, c
     end
+    @eval @inline function $F3(a::IWrapper, b::IWrapper, c)
+        @instr $F3(value(a), value(b), c)
+        a, b, c
+    end
+    @eval @inline function $F3(a::IWrapper, b::IWrapper, c::IWrapper)
+        @instr $F3(value(a), value(b), value(c))
+        a, b, c
+    end
+    @eval @inline function $F3(a::IWrapper, b, c::IWrapper)
+        @instr $F3(value(a), b, value(c))
+        a, b, c
+    end
+    @eval @inline function $F3(a, b::IWrapper, c)
+        @instr $F3(a, value(b), c)
+        a, b, c
+    end
+    @eval @inline function $F3(a, b::IWrapper, c::IWrapper)
+        @instr $F3(a, value(b), value(c))
+        a, b, c
+    end
+    @eval @inline function $F3(a, b, c::IWrapper)
+        @instr $F3(a, b, value(c))
+        a, b, c
+    end
+end
+
+for F3 in [:ROT, :IROT]
     @eval NiLangCore.nouts(::typeof($F3)) = 2
     @eval NiLangCore.nargs(::typeof($F3)) = 3
 end
 
 for (TP, OP) in [(:PlusEq, :+), (:MinusEq, :-), (:XorEq, :⊻)]
-    @eval @inline @generated function (inf::$TP)(out!, x; kwargs...)
-        if !(out! <: IWrapper || x <:IWrapper)
-            return :(MethodError(inf, (out!, x)))
-        end
-        param_out = out! <: IWrapper ? :(value(out!)) : :(out!)
-        param_x = x <: IWrapper ? :(value(x)) : :(x)
-        quote
-            @instr inf($param_out, $param_x, kwargs...)
-            out!, x
-        end
-    end
-    @eval @inline @generated function (inf::$TP)(out!, x, y; kwargs...)
-        if !(out! <: IWrapper || x <:IWrapper || y<:IWrapper)
-            return :(MethodError(inf, (out!, x, y)))
-        end
-        param_out = out! <: IWrapper ? :(value(out!)) : :(out!)
-        param_x = x <: IWrapper ? :(value(x)) : :(x)
-        param_y = x <: IWrapper ? :(value(y)) : :(y)
-        quote
-            @instr inf($param_out, $param_x, $param_y; kwargs...)
-            out!, x, y
-        end
-    end
     @eval NiLangCore.nouts(::$TP) = 1
-
     for SOP in [:*, :/, :^]
         @eval NiLangCore.nargs(::$TP{typeof($SOP)}) = 3
     end

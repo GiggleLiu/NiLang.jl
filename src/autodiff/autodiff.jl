@@ -13,7 +13,7 @@ include("gradfunc.jl")
 include("checks.jl")
 
 include("instructs.jl")
-include("instructs_broadcast.jl")
+include("jacobian.jl")
 include("simple_hessian.jl")
 include("taylor.jl")
 
