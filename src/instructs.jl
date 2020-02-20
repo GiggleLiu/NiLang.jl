@@ -98,15 +98,15 @@ end
 
 for F2 in [:XOR, :SWAP, :((inf::PlusEq)), :((inf::MinusEq)), :((inf::XorEq))]
     @eval @inline function $F2(a::IWrapper, b)
-        @instr $F2(value(a), b)
+        @instr $(NiLangCore.get_argname(F2))(value(a), b)
         a, b
     end
     @eval @inline function $F2(a::IWrapper, b::IWrapper)
-        @instr $F2(value(a), value(b))
+        @instr $(NiLangCore.get_argname(F2))(value(a), value(b))
         a, b
     end
     @eval @inline function $F2(a, b::IWrapper)
-        @instr $F2(a, value(b))
+        @instr $(NiLangCore.get_argname(F2))(a, value(b))
         a, b
     end
 end
@@ -117,33 +117,17 @@ for F2 in [:XOR, :SWAP]
 end
 
 for F3 in [:ROT, :IROT, :((inf::PlusEq)), :((inf::MinusEq)), :((inf::XorEq))]
-    @eval @inline function $F3(a::IWrapper, b, c)
-        @instr $F3(value(a), b, c)
-        a, b, c
-    end
-    @eval @inline function $F3(a::IWrapper, b::IWrapper, c)
-        @instr $F3(value(a), value(b), c)
-        a, b, c
-    end
-    @eval @inline function $F3(a::IWrapper, b::IWrapper, c::IWrapper)
-        @instr $F3(value(a), value(b), value(c))
-        a, b, c
-    end
-    @eval @inline function $F3(a::IWrapper, b, c::IWrapper)
-        @instr $F3(value(a), b, value(c))
-        a, b, c
-    end
-    @eval @inline function $F3(a, b::IWrapper, c)
-        @instr $F3(a, value(b), c)
-        a, b, c
-    end
-    @eval @inline function $F3(a, b::IWrapper, c::IWrapper)
-        @instr $F3(a, value(b), value(c))
-        a, b, c
-    end
-    @eval @inline function $F3(a, b, c::IWrapper)
-        @instr $F3(a, b, value(c))
-        a, b, c
+    @eval @inline @generated function $F3(a, b, c)
+        if !(a <: IWrapper || b <: IWrapper || θ <: IWrapper)
+            return :(MethodError($($F3), (a, b, c)))
+        end
+        param_a = a <: IWrapper ? :(value(a)) : :(a)
+        param_b = b <: IWrapper ? :(value(b)) : :(b)
+        param_c = c <: IWrapper ? :(value(c)) : :(c)
+        quote
+            @instr $($(QuoteNode(F3)))($param_a, $param_b, $param_c)
+            a, b, c
+        end
     end
 end
 
