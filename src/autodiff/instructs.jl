@@ -199,3 +199,8 @@ end
 end
 
 @nograd IROT(a!, b!, θ::GVar)
+
+# TODO: fix this patch!
+function NiLang.ipop!(x::GVar)
+    GVar(pop!(NiLang.GLOBAL_STACK))
+end
