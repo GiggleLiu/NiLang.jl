@@ -66,7 +66,7 @@ function rand_hes(n)
 end
 
 @testset "hessian propagate" begin
-    for op in [⊕(*), ⊕(/), ⊕(^), ROT]
+    for op in [⊕(*), ⊕(/), ⊕(^), ROT, IROT]
         @show op
         h1 = local_hessian(op, (0.3, 0.4, 2.0))
         h2 = local_nhessian(op, (0.3, 0.4, 2.0))
@@ -80,6 +80,7 @@ end
     end
 
     for op in [⊕(identity), ⊕(abs), SWAP, ⊕(exp), ⊕(log), ⊕(sin), ⊕(cos)]
+        @show op
         h1 = local_hessian(op, (0.3, 0.4))
         h2 = local_nhessian(op, (0.3, 0.4))
         @test h1 ≈ h2
@@ -90,7 +91,10 @@ end
         @test h1 ≈ h2
     end
 
-    for op in [NEG, CONJ]
+    @i function f1(x)
+        MULINT(x, 3)
+    end
+    for op in [NEG, CONJ, f1, ~f1]
         h1 = local_hessian(op, (0.3,))
         h2 = local_nhessian(op, (0.3,))
         @test h1 ≈ h2

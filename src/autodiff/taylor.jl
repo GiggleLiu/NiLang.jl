@@ -154,6 +154,20 @@ end
     grad(x) ⊕ grad(out!)
 end
 
+@i function DIVINT(x!::BeijingRing{T}, n) where T
+    DIVINT(x!.x, n)
+    # hessian from hessian
+    for i=1:nrings(T)
+        MULINT(hdata((x!.index, i)), n)
+    end
+    for i=1:nrings(T)
+        MULINT(hdata((i, x!.index)), n)
+    end
+
+    # update gradients
+    MULINT(grad(x!), n)
+end
+
 @i function ⊖(abs)(out!::BeijingRing{T}, x::BeijingRing{T}) where T
     ⊖(abs)(out!.x, x.x)
     # hessian from hessian
@@ -516,7 +530,7 @@ end
 end
 
 function local_hessian(f, args; kwargs=())
-    nargs = length(args)
+    nargs = sum(nparams(args))
     hes = zeros(nargs,nargs,nargs)
     @instr f(args...)
     for j=1:nargs

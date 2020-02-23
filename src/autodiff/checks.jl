@@ -1,14 +1,24 @@
-export ng, check_grad
+export check_grad, nparams
 export ngradient
 
 using FixedPointNumbers: Fixed
 
-isvar(x) = false
-isvar(x::AbstractFloat) = true
-isvar(x::Fixed) = true
-isvar(x::Loss{<:AbstractFloat}) = true
-isvar(x::Loss{<:Fixed}) = true
-isvar(x::AbstractArray{T}) where T<:AbstractFloat = true
+isvar(x) = nparams(x) != 0
+
+nparams(model) = nparams(NiLangCore.struct2namedtuple(model))
+nparams(x::AbstractArray{<:AbstractFloat}) = length(x)
+nparams(x::AbstractArray{<:GVar}) = length(x)
+nparams(x::AbstractArray) = sum(nparams, x)
+nparams(x::Fixed) = 1
+function nparams(x::Union{Tuple,NamedTuple})
+    res = 0
+    for xi in x
+        res += nparams(xi)
+    end
+    res
+end
+nparams(x::AbstractFloat) = 1
+nparams(x::GVar) = 1
 
 function tset(vfunc::Function, tp::Tuple, iloss)
     map(i->i===iloss ? vfunc(tp[i]) : tp[i], 1:length(tp))

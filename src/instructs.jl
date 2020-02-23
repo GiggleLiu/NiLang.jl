@@ -1,5 +1,5 @@
 export XOR, SWAP, NEG, CONJ
-export ROT, IROT
+export ROT, IROT, MULINT, DIVINT
 export ipop!, ipush!
 
 const GLOBAL_STACK = []
@@ -9,9 +9,11 @@ const GLOBAL_STACK = []
     push!(GLOBAL_STACK, x)
     zero(x)
 end
-@inline function ipop!(x)
+#
+# TODO: fix this patch!
+@inline function ipop!(x::T) where T
     @invcheck x zero(x)
-    pop!(GLOBAL_STACK)
+    loaddata(T, pop!(GLOBAL_STACK))
 end
 
 ############# local stack operations ##########
@@ -19,10 +21,15 @@ end
     push!(stack, x)
     stack, zero(x)
 end
-@inline function ipop!(stack, x)
+
+@inline function ipop!(stack, x::T) where T
     @invcheck x zero(x)
-    stack, pop!(stack)
+    stack, loaddata(T, pop!(stack))
 end
+
+loaddata(::Type{T}, x::T) where T = x
+loaddata(::Type{T}, x::TX) where {T<:IWrapper, TX} = T(x)
+
 @dual ipop! ipush!
 
 """
@@ -56,6 +63,22 @@ end
     b!, a!
 end
 @selfdual SWAP
+
+"""
+    MULINT(a!, b::Integer) -> a!*b, b
+"""
+@inline function MULINT(a!::Number, b::Integer)
+    a! * b, b
+end
+
+"""
+    DIVINT(a!, b::Integer) -> a!/b, b
+"""
+@inline function DIVINT(a!::Number, b::Integer)
+    a! / b, b
+end
+@dual MULINT DIVINT
+
 
 """
     ROT(a!, b!, θ) -> a!', b!', θ
@@ -118,7 +141,7 @@ end
 
 for F3 in [:ROT, :IROT, :((inf::PlusEq)), :((inf::MinusEq)), :((inf::XorEq))]
     @eval @inline @generated function $F3(a, b, c)
-        if !(a <: IWrapper || b <: IWrapper || θ <: IWrapper)
+        if !(a <: IWrapper || b <: IWrapper || c <: IWrapper)
             return :(MethodError($($F3), (a, b, c)))
         end
         param_a = a <: IWrapper ? :(value(a)) : :(a)

@@ -58,7 +58,7 @@ function nhessian(f, args; kwargs=(), η=1e-5)
     narg = length(largs)
     res = zeros(narg, narg)
     for i = 1:narg
-        if !(args[i] isa Integer || args[i] isa AbstractVector)
+        if nparams(args[i]) == 1
             @instr value(largs[i]) ⊕ η/2
             gpos = gradient(f, (largs...,); kwargs=kwargs)
             @instr value(largs[i]) ⊖ η
@@ -74,9 +74,12 @@ function local_nhessian(f, args; kwargs=())
     nargs = length(args)
     hes = zeros(nargs,nargs,nargs)
     for j=1:nargs
-        @instr Loss(tget(args, j))
-        hes[:,:,j] .= nhessian(f, args; kwargs=kwargs)
-        @instr (~Loss)(tget(args, j))
+        if nparams(args[j]) == 1
+            @instr Loss(tget(args, j))
+            hes[:,:,j] .= nhessian(f, args; kwargs=kwargs)
+            @instr (~Loss)(tget(args, j))
+        end
     end
-    hes
+    mask = BitArray(nparams.(args) .== 1)
+    hes[mask, mask, mask]
 end
