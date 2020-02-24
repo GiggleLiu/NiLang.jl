@@ -1,10 +1,6 @@
 # NiLang
 
-Warning: 
-
-* This project is still in progress, with a lot of unstable features.
-Please read the tests in `NiLangCore.jl` and `NiLang.jl` to figure out the tested features.
-* It requires Julia version >= 1.3.
+* Requires Julia version >= 1.3.
 
 
 NiLang.jl (逆lang), is a reversible domain sepecific language (DSL) in Julia.
@@ -12,7 +8,6 @@ It features:
 
 * an instruction level (i.e. only backward rules of `+`, `-`, `*` and `/` are required) automatic differentiation engine,
 * a reversible language with abstraction and arrays,
-* arbitrary higher-order gradint (in progress).
 
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://GiggleLiu.github.io/NiLang.jl/stable)
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://GiggleLiu.github.io/NiLang.jl/dev)
