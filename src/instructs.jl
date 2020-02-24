@@ -1,5 +1,5 @@
 export XOR, SWAP, NEG, CONJ
-export ROT, IROT
+export ROT, IROT, MULINT, DIVINT
 export ipop!, ipush!
 
 const GLOBAL_STACK = []
@@ -9,9 +9,11 @@ const GLOBAL_STACK = []
     push!(GLOBAL_STACK, x)
     zero(x)
 end
-@inline function ipop!(x)
+#
+# TODO: fix this patch!
+@inline function ipop!(x::T) where T
     @invcheck x zero(x)
-    pop!(GLOBAL_STACK)
+    loaddata(T, pop!(GLOBAL_STACK))
 end
 
 ############# local stack operations ##########
@@ -19,10 +21,15 @@ end
     push!(stack, x)
     stack, zero(x)
 end
-@inline function ipop!(stack, x)
+
+@inline function ipop!(stack, x::T) where T
     @invcheck x zero(x)
-    stack, pop!(stack)
+    stack, loaddata(T, pop!(stack))
 end
+
+loaddata(::Type{T}, x::T) where T = x
+loaddata(::Type{T}, x::TX) where {T<:IWrapper, TX} = T(x)
+
 @dual ipop! ipush!
 
 """
@@ -58,6 +65,22 @@ end
 @selfdual SWAP
 
 """
+    MULINT(a!, b::Integer) -> a!*b, b
+"""
+@inline function MULINT(a!::Number, b::Integer)
+    a! * b, b
+end
+
+"""
+    DIVINT(a!, b::Integer) -> a!/b, b
+"""
+@inline function DIVINT(a!::Number, b::Integer)
+    a! / b, b
+end
+@dual MULINT DIVINT
+
+
+"""
     ROT(a!, b!, θ) -> a!', b!', θ
 
 ```math
@@ -88,64 +111,56 @@ end
 @dual ROT IROT
 
 for F1 in [:NEG, :CONJ]
-    @eval @i @inline function $F1(a!)
-        $F1(value(a!))
+    @eval @inline function $F1(a!::IWrapper)
+        @instr $F1(value(a!))
+        a!
     end
     @eval NiLangCore.nouts(::typeof($F1)) = 1
     @eval NiLangCore.nargs(::typeof($F1)) = 1
 end
 
-for F2 in [:XOR, :SWAP]
-    @eval @i @inline function $F2(a, b)
-        $F2(value(a), value(b))
+for F2 in [:XOR, :SWAP, :((inf::PlusEq)), :((inf::MinusEq)), :((inf::XorEq))]
+    @eval @inline function $F2(a::IWrapper, b)
+        @instr $(NiLangCore.get_argname(F2))(value(a), b)
+        a, b
     end
+    @eval @inline function $F2(a::IWrapper, b::IWrapper)
+        @instr $(NiLangCore.get_argname(F2))(value(a), value(b))
+        a, b
+    end
+    @eval @inline function $F2(a, b::IWrapper)
+        @instr $(NiLangCore.get_argname(F2))(a, value(b))
+        a, b
+    end
+end
+
+for F2 in [:XOR, :SWAP]
     @eval NiLangCore.nouts(::typeof($F2)) = $(F2 == :SWAP ? 2 : 1)
     @eval NiLangCore.nargs(::typeof($F2)) = 2
 end
 
-for F3 in [:ROT, :IROT]
-    @eval @inline @generated function $F3(a!, b!, θ)
-        if !(a! <: IWrapper || b! <: IWrapper || θ <: IWrapper)
-            return :(MethodError($($F3), (a!, b!, θ)))
+for F3 in [:ROT, :IROT, :((inf::PlusEq)), :((inf::MinusEq)), :((inf::XorEq))]
+    @eval @inline @generated function $F3(a, b, c)
+        if !(a <: IWrapper || b <: IWrapper || c <: IWrapper)
+            return :(throw(MethodError($($(QuoteNode(F3))), (a, b, c))))
         end
-        param_a = a! <: IWrapper ? :(value(a!)) : :(a!)
-        param_b = b! <: IWrapper ? :(value(b!)) : :(b!)
-        param_θ = θ <: IWrapper ? :(value(θ)) : :(θ)
+        param_a = a <: IWrapper ? :(value(a)) : :(a)
+        param_b = b <: IWrapper ? :(value(b)) : :(b)
+        param_c = c <: IWrapper ? :(value(c)) : :(c)
         quote
-            @instr $($F3)($param_a, $param_b, $param_θ)
-            a!, b!, θ
+            @instr $($(QuoteNode(F3)))($param_a, $param_b, $param_c)
+            a, b, c
         end
     end
+end
+
+for F3 in [:ROT, :IROT]
     @eval NiLangCore.nouts(::typeof($F3)) = 2
     @eval NiLangCore.nargs(::typeof($F3)) = 3
 end
 
 for (TP, OP) in [(:PlusEq, :+), (:MinusEq, :-), (:XorEq, :⊻)]
-    @eval @inline @generated function (inf::$TP)(out!, x; kwargs...)
-        if !(out! <: IWrapper || x <:IWrapper)
-            return :(MethodError(inf, (out!, x)))
-        end
-        param_out = out! <: IWrapper ? :(value(out!)) : :(out!)
-        param_x = x <: IWrapper ? :(value(x)) : :(x)
-        quote
-            @instr inf($param_out, $param_x, kwargs...)
-            out!, x
-        end
-    end
-    @eval @inline @generated function (inf::$TP)(out!, x, y; kwargs...)
-        if !(out! <: IWrapper || x <:IWrapper || y<:IWrapper)
-            return :(MethodError(inf, (out!, x, y)))
-        end
-        param_out = out! <: IWrapper ? :(value(out!)) : :(out!)
-        param_x = x <: IWrapper ? :(value(x)) : :(x)
-        param_y = x <: IWrapper ? :(value(y)) : :(y)
-        quote
-            @instr inf($param_out, $param_x, $param_y; kwargs...)
-            out!, x, y
-        end
-    end
     @eval NiLangCore.nouts(::$TP) = 1
-
     for SOP in [:*, :/, :^]
         @eval NiLangCore.nargs(::$TP{typeof($SOP)}) = 3
     end

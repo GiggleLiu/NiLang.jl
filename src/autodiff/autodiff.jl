@@ -4,7 +4,8 @@ using ..NiLang
 using NiLangCore
 using MLStyle, TupleTools
 
-import ..NiLang: ⊕, ⊖, NEG, CONJ, ROT, IROT, SWAP, chfield, value
+import ..NiLang: ⊕, ⊖, NEG, CONJ, ROT, IROT, SWAP,
+    chfield, value, MULINT, DIVINT
 
 export GVar, grad, Loss, NoGrad, @nograd
 
@@ -13,7 +14,7 @@ include("gradfunc.jl")
 include("checks.jl")
 
 include("instructs.jl")
-include("instructs_broadcast.jl")
+include("jacobian.jl")
 include("simple_hessian.jl")
 include("taylor.jl")
 

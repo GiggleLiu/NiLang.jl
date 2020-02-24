@@ -48,6 +48,12 @@ end
     @test check_inv(IROT, (x, y, θ); verbose=true)
 end
 
+@testset "MULINT" begin
+    x, y = 3.3, 2
+    @test check_inv(MULINT, (x, y); verbose=true)
+    @test check_inv(DIVINT, (x, y); verbose=true)
+end
+
 @testset "stack operations" begin
     x =0.3
     @instr ipush!(x)

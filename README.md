@@ -96,3 +96,5 @@ julia> collect_hessian()
 0.0 0.0
 0.0 4.95303
 ```
+
+See [more examples](examples/)

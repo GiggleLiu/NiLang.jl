@@ -1,4 +1,4 @@
-export simple_hessian, nhessian, simple_jacobian, jacobian, local_nhessian
+export simple_hessian, nhessian, local_nhessian
 
 # TODEP
 #@i function ⊕(*)(out!::Partial, x::Partial, y::Partial)
@@ -58,7 +58,7 @@ function nhessian(f, args; kwargs=(), η=1e-5)
     narg = length(largs)
     res = zeros(narg, narg)
     for i = 1:narg
-        if !(args[i] isa Integer || args[i] isa AbstractVector)
+        if nparams(args[i]) == 1
             @instr value(largs[i]) ⊕ η/2
             gpos = gradient(f, (largs...,); kwargs=kwargs)
             @instr value(largs[i]) ⊖ η
@@ -74,68 +74,12 @@ function local_nhessian(f, args; kwargs=())
     nargs = length(args)
     hes = zeros(nargs,nargs,nargs)
     for j=1:nargs
-        @instr Loss(tget(args, j))
-        hes[:,:,j] .= nhessian(f, args; kwargs=kwargs)
-        @instr (~Loss)(tget(args, j))
-    end
-    hes
-end
-
-"""
-    simple_jacobian(f, args; kwargs=())
-
-Get the Jacobian matrix for function `f(args..., kwargs...)`.
-"""
-function simple_jacobian(f, args; kwargs=())
-    narg = length(args)
-    T = match_eltype(args)
-    res = zeros(T, narg, narg)
-    for i = 1:narg
-        @instr Loss(tget(args, i))
-        res[i,:] .= gradient(f, args; kwargs=kwargs)
-        @instr (~Loss)(tget(args, i))
-    end
-    return res
-end
-
-function wrap_jacobian(::Type{T}, args) where T
-    # get number of parameters
-    N = 0
-    for arg in args
-        if isvar(arg)
-            N += length(arg)
+        if nparams(args[j]) == 1
+            @instr Loss(tget(args, j))
+            hes[:,:,j] .= nhessian(f, args; kwargs=kwargs)
+            @instr (~Loss)(tget(args, j))
         end
     end
-
-    # jacobian matrix
-    jac = zeros(T, N, N)
-    for i=1:N
-        jac[i,i] = 1
-    end
-
-    k = 0
-    res = []
-    for arg in args
-        if isvar(arg)
-            if arg isa AbstractArray
-                ri = similar(arg, GVar{T, Vector{T}})
-                for l=1:length(arg)
-                    k += 1
-                    ri[k] = GVar(arg[l], view(jac,:,k))
-                end
-            else
-                k += 1
-                ri = GVar(arg, view(jac, :, k))
-            end
-            push!(res, ri)
-        end
-    end
-    jac, res
-end
-
-function jacobian(f, args; kwargs=())
-    args = f(args...; kwargs...)
-    jac, args = wrap_jacobian(Float64, args)
-    (~f)(args...; kwargs...)
-    return jac
+    mask = BitArray(nparams.(args) .== 1)
+    hes[mask, mask, mask]
 end

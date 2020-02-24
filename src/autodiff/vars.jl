@@ -19,6 +19,9 @@ Attach a gradient field to `x`.
     function GVar{T,GT}(x::T, g::GT) where {T,GT}
         new{T,GT}(x, g)
     end
+    function GVar{T,GT}(x::T) where {T, GT}
+        new{T,GT}(x, zero(GT))
+    end
     function GVar(x::T, g::GT) where {T,GT}
         new{T,GT}(x, g)
     end
