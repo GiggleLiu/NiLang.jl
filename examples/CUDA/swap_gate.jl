@@ -30,23 +30,24 @@ SWAP gate in quantum computing.
     @cuda threads=tget(XY,1) blocks=tget(XY,2) swap_kernel(state, mask1, mask2)
 end
 
+using Test
 @testset "swap gate" begin
     v = cu(randn(128))
     v1 = instruct!(copy(v), Val(:SWAP), (3,4))[1]
     v2 = instruct!(copy(v1), Val(:SWAP), (3,4))[1]
     v3 = (~instruct!)(copy(v1), Val(:SWAP), (3,4))[1]
-    v ≈ v1
-    v ≈ v2
-    v ≈ v3
+    @test !(v ≈ v1)
+    @test v ≈ v2
+    @test v ≈ v3
 end
+
 @i function loss(out!, state::CuVector)
     instruct!(state, Val(:SWAP), (3,4))
-    out! += identity(state[1])
+    out! += identity(state[4])
 end
 
-loss(0.0, CuArray(randn(128)), CuArray(randn(128)))
-loss'(Loss(0.0), CuArray(randn(128)), CuArray(randn(128)))
-
+loss(0.0, CuArray(randn(128)))
+loss'(Loss(0.0), CuArray(randn(128)))
 
 ####################### A different loss ###############
 @i function loss(out!, state::CuVector, target::CuVector)
@@ -78,4 +79,5 @@ function (_::MinusEq{typeof(*)})(out!, x, y)
     out!, x, y
 end
 
-
+loss(0.0, CuArray(randn(128)), CuArray(randn(128)))
+loss'(Loss(0.0), CuArray(randn(128)), CuArray(randn(128)))

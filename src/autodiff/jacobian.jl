@@ -47,14 +47,17 @@ function wrap_jacobian(::Type{T}, args) where T
                 ri = GVar(arg, AutoBcast(view(jac, :, k)))
             end
             push!(res, ri)
+        else
+            push!(res, nothing)
         end
     end
     jac, res
 end
 
-function jacobian(f, args; kwargs=())
+jacobian(f, args; kwargs=()) = jacobian(Float64, f, args; kwargs=kwargs)
+function jacobian(::Type{T}, f, args; kwargs=()) where T
     args = f(args...; kwargs...)
-    jac, args = wrap_jacobian(Float64, args)
+    jac, args = wrap_jacobian(T, args)
     (~f)(args...; kwargs...)
     return jac
 end
