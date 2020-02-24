@@ -46,11 +46,11 @@ uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
 
 [[NiLangCore]]
 deps = ["DataStructures", "MLStyle", "TupleTools"]
-git-tree-sha1 = "da6e8fa8f2c86c1fd578d8ac4294a7bef2f804d0"
+git-tree-sha1 = "52bb8e90905995fafb8ce0384b9653295ba02921"
 repo-rev = "master"
 repo-url = "https://github.com/GiggleLiu/NiLangCore.jl.git"
 uuid = "575d3204-02a4-11ea-3f62-238caa8bf11e"
-version = "0.3.0"
+version = "0.4.0"
 
 [[OrderedCollections]]
 deps = ["Random", "Serialization", "Test"]

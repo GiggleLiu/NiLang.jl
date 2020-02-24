@@ -1,7 +1,7 @@
 name = "NiLang"
 uuid = "ab4ef3a6-0b42-11ea-31f6-e34652774712"
 authors = ["JinGuo Liu", "thautwarm"]
-version = "0.1.4"
+version = "0.1.5"
 
 [deps]
 FixedPointNumbers = "53c48c17-4a7d-5ca2-90c5-79b7896eea93"
@@ -12,7 +12,7 @@ TupleTools = "9d95972d-f1c8-5527-a6e0-b4b365fa01f6"
 
 [compat]
 MLStyle = "0.3"
-NiLangCore = "0.3"
+NiLangCore = "0.4"
 Reexport = "0.2"
 julia = "1.3"
 
