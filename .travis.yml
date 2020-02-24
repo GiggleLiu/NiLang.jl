@@ -16,15 +16,13 @@ after_success:
   - julia -e 'using Pkg; Pkg.add("Coverage"); using Coverage; Codecov.submit(process_folder())'
 jobs:
   include:
-    - stage: "DocTest"
+    - stage: Documentation
       julia: 1.3 # we only do doc test on latest stable release
       os: linux
       script:
         - julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
         - julia --project=docs/ --code-coverage=user docs/make.jl
-    - stage: Documentation
-      julia: 1.3
-      script: julia --project=docs -e '
+        - julia --project=docs -e '
           using Pkg;
           Pkg.develop(PackageSpec(path=pwd()));
           Pkg.instantiate();
