@@ -1,6 +1,5 @@
 using NiLang, NiLang.AD, NiLangCore
 
-NiLang.invcheckon(false)
 include("symlib.jl")
 
 @i @inline function NiLang.AD.IROT(a!::GVar{<:Basic}, b!::GVar{<:Basic}, θ::GVar{<:Basic})

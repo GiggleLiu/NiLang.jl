@@ -142,7 +142,7 @@ end
 for F3 in [:ROT, :IROT, :((inf::PlusEq)), :((inf::MinusEq)), :((inf::XorEq))]
     @eval @inline @generated function $F3(a, b, c)
         if !(a <: IWrapper || b <: IWrapper || c <: IWrapper)
-            return :(MethodError($($F3), (a, b, c)))
+            return :(throw(MethodError($($(QuoteNode(F3))), (a, b, c))))
         end
         param_a = a <: IWrapper ? :(value(a)) : :(a)
         param_b = b <: IWrapper ? :(value(b)) : :(b)

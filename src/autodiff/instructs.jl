@@ -55,6 +55,8 @@ end
     grad(y) -= a2/value(y)
     a2 -= a1/value(y)
     a1 -= value(x)*grad(out!)
+    @invcheckoff a1 → zero(grad(out!))
+    @invcheckoff a2 → zero(grad(out!))
 end
 
 @i @inline function ⊖(/)(out!::GVar{T}, x, y::GVar) where T
@@ -66,6 +68,8 @@ end
     grad(y) -= a2/value(y)
     a2 -= a1/value(y)
     a1 -= x*grad(out!)
+    @invcheckoff a1 → zero(grad(out!))
+    @invcheckoff a2 → zero(grad(out!))
 end
 
 @i @inline function ⊖(/)(out!::GVar, x::GVar, y)
@@ -97,12 +101,14 @@ end
     end
     grad(n) += grad(out!) * jac
     ~@routine
+    @invcheckoff jac → zero(value(x))
+    @invcheckoff anc2 → zero(value(x))
+    @invcheckoff anc1 → zero(value(x))
 end
 
 @i @inline function ⊖(^)(out!::GVar{T}, x::GVar, n) where T
     ⊖(^)(value(out!), value(x), n)
     anc1 ← zero(value(x))
-    anc2 ← zero(value(x))
     jac ← zero(value(x))
 
     @routine begin
@@ -113,6 +119,8 @@ end
     end
     grad(x) += grad(out!) * jac
     ~@routine
+    @invcheckoff jac → zero(value(x))
+    @invcheckoff anc1 → zero(value(x))
 end
 
 @i @inline function ⊖(^)(out!::GVar{T}, x, n::GVar) where T
@@ -129,6 +137,9 @@ end
     end
     grad(n) += grad(out!) * jac
     ~@routine
+    @invcheckoff jac → zero(value(x))
+    @invcheckoff anc2 → zero(value(x))
+    @invcheckoff anc1 → zero(value(x))
 end
 
 @i @inline function ⊖(abs)(out!::GVar, x::GVar{T}) where T
@@ -153,6 +164,7 @@ end
     anc1 += exp(value(x))
     grad(x) += grad(out!) * anc1
     anc1 -= exp(value(x))
+    @invcheckoff anc1 → zero(value(x))
 end
 
 @i @inline function ⊖(log)(out!::GVar, x::GVar{T}) where T
@@ -166,6 +178,7 @@ end
     anc1 += cos(value(x))
     grad(x) += grad(out!) * anc1
     anc1 -= cos(value(x))
+    @invcheckoff anc1 → zero(value(x))
 end
 
 @i @inline function ⊖(cos)(out!::GVar, x::GVar{T}) where T
@@ -174,6 +187,7 @@ end
     anc1 -= sin(value(x))
     grad(x) += grad(out!) * anc1
     anc1 += sin(value(x))
+    @invcheckoff anc1 → zero(value(x))
 end
 
 for op in [:exp, :log, :sin, :cos]
