@@ -8,15 +8,12 @@ See the irreversible version for comparison
 http://tutorials.yaoquantum.org/dev/generated/developer-guide/2.cuda-acceleration/
 """
 @i @inline function swap_kernel(state::AbstractVector{T}, mask1, mask2) where T
-    @routine begin
-        @invcheckoff b ← (blockIdx().x-1) * blockDim().x + threadIdx().x
-    end
+    @invcheckoff b ← (blockIdx().x-1) * blockDim().x + threadIdx().x
     @invcheckoff if (b < length(state), ~)
         if (b&mask1==0 && b&mask2==mask2, ~)
             NiLang.SWAP(state[b+1], state[b ⊻ (mask1|mask2) + 1])
         end
     end
-    ~@routine
 end
 
 # TODO: support ::Type like argument.
