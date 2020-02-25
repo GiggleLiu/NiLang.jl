@@ -1,4 +1,4 @@
-export BeijingRing, taylor_hessian, local_hessian, hdata
+export BeijingRing, hdata
 export rings_init!, nrings, beijingring!, getrings, collect_hessian
 
 using FixedPointNumbers

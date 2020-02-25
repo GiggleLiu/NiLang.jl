@@ -77,6 +77,9 @@ end
 @inline function DIVINT(a!::Number, b::Integer)
     a! / b, b
 end
+@inline function DIVINT(a!::Integer, b::Integer)
+    a! ÷ b, b
+end
 @dual MULINT DIVINT
 
 

@@ -1,6 +1,7 @@
 using NiLang, NiLang.AD
 using Test
 using TensorOperations
+using NiLang.AD: hessian_numeric, local_hessian_numeric, local_hessian
 
 @testset "HessianData" begin
     rings_init!(Float64)
@@ -23,7 +24,7 @@ end
 
 @testset "hessian" begin
     h1 = (⊕(*)''(Loss(0.0), 2.0, 3.0); collect_hessian())
-    h2 = nhessian(⊕(*), (Loss(0.0), 2.0, 3.0))
+    h2 = hessian_numeric(⊕(*), (Loss(0.0), 2.0, 3.0))
     @test h1 ≈ h2
 
     @i function test(a,b,c)
@@ -32,7 +33,7 @@ end
         ROT(a, b, c)
     end
     h1 = (test''(Loss(0.0), 2.0, 0.5); collect_hessian())
-    h2 = nhessian(test, (Loss(0.0), 2.0, 0.5))
+    h2 = hessian_numeric(test, (Loss(0.0), 2.0, 0.5))
     @show h2
     @test isapprox(h1, h2, atol=1e-5)
 end
@@ -69,7 +70,7 @@ end
     for op in [⊕(*), ⊕(/), ⊕(^), ROT, IROT]
         @show op
         h1 = local_hessian(op, (0.3, 0.4, 2.0))
-        h2 = local_nhessian(op, (0.3, 0.4, 2.0))
+        h2 = local_hessian_numeric(op, (0.3, 0.4, 2.0))
         @test h1 ≈ h2
 
         h = rand_hes(3)
@@ -82,7 +83,7 @@ end
     for op in [⊕(identity), ⊕(abs), SWAP, ⊕(exp), ⊕(log), ⊕(sin), ⊕(cos)]
         @show op
         h1 = local_hessian(op, (0.3, 0.4))
-        h2 = local_nhessian(op, (0.3, 0.4))
+        h2 = local_hessian_numeric(op, (0.3, 0.4))
         @test h1 ≈ h2
 
         h = rand_hes(2)
@@ -96,7 +97,7 @@ end
     end
     for op in [NEG, CONJ, f1, ~f1]
         h1 = local_hessian(op, (0.3,))
-        h2 = local_nhessian(op, (0.3,))
+        h2 = local_hessian_numeric(op, (0.3,))
         @test h1 ≈ h2
 
         h = rand_hes(1)

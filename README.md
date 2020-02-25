@@ -75,7 +75,7 @@ julia> y!, x = 0.0, 1.6
 (0.0, 1.6)
 
 # second order gradient by differentiate first order gradients
-julia> simple_hessian(iexp, (Loss(y!), x))
+julia> hessian_repeat(iexp, (Loss(y!), x))
 2×2 Array{Float64,2}:
 0.0 0.0
 0.0 4.95303

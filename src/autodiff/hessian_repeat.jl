@@ -1,4 +1,4 @@
-export simple_hessian, nhessian, local_nhessian
+export hessian_repeat
 
 # TODEP
 #@i function ⊕(*)(out!::Partial, x::Partial, y::Partial)
@@ -37,11 +37,11 @@ export simple_hessian, nhessian, local_nhessian
 end
 
 """
-    simple_hessian(f, args::Tuple; kwargs=())
+    hessian_repeat(f, args::Tuple; kwargs=())
 
 Obtain the Hessian matrix of `f(args..., kwargs...)` by differentiating the first order gradients.
 """
-function simple_hessian(f, args::Tuple; kwargs=())
+function hessian_repeat(f, args::Tuple; kwargs=())
     N = length(args)
     hmat = zeros(N, N)
     for i=1:N
@@ -53,7 +53,7 @@ function simple_hessian(f, args::Tuple; kwargs=())
     hmat
 end
 
-function nhessian(f, args; kwargs=(), η=1e-5)
+function hessian_numeric(f, args; kwargs=(), η=1e-5)
     largs = Any[args...]
     narg = length(largs)
     res = zeros(narg, narg)
@@ -70,13 +70,13 @@ function nhessian(f, args; kwargs=(), η=1e-5)
     return res
 end
 
-function local_nhessian(f, args; kwargs=())
+function local_hessian_numeric(f, args; kwargs=())
     nargs = length(args)
     hes = zeros(nargs,nargs,nargs)
     for j=1:nargs
         if nparams(args[j]) == 1
             @instr Loss(tget(args, j))
-            hes[:,:,j] .= nhessian(f, args; kwargs=kwargs)
+            hes[:,:,j] .= hessian_numeric(f, args; kwargs=kwargs)
             @instr (~Loss)(tget(args, j))
         end
     end

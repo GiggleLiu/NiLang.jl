@@ -6,3 +6,5 @@
 /dev/
 /docs/build/
 /docs/site/
+/docs/src/examples/
+_local/

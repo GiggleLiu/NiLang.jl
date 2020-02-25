@@ -1,5 +1,5 @@
 export check_grad, nparams
-export ngradient
+export gradient_numeric
 
 using FixedPointNumbers: Fixed
 
@@ -60,9 +60,11 @@ function ng(f, args, iarg, iloss; δ=1e-5, kwargs=())
 end
 
 """
-Numeric differentiation.
+    gradient_numeric(f, args; kwargs=())
+
+Numeric differentiating f(args..., kwargs...).
 """
-function ngradient(f, args; kwargs=())
+function gradient_numeric(f, args; kwargs=())
     iloss = findfirst(x->x<:Loss, typeof.(args))
     @instr (~Loss)(tget(args,iloss))
     if iloss === nothing
@@ -85,7 +87,7 @@ Return true if the gradient of `f(args..., kwargs...)` is reversible.
 function check_grad(f, args; kwargs=(), atol::Real=1e-4, verbose::Bool=false)
     vars = ((iarg for iarg in 1:length(args) if isvar(args[iarg]))...,)
     initial_vars = deepcopy(vars)
-    ngs = ngradient(f, args; kwargs=kwargs)
+    ngs = gradient_numeric(f, args; kwargs=kwargs)
     gs = gradient(f, args; kwargs=kwargs)
     verbose && @show ngs
     verbose && @show gs

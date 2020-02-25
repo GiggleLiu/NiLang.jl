@@ -14,5 +14,7 @@ include("autobcast.jl")
 
 include("autodiff/autodiff.jl")
 
+include("deprecations.jl")
+
 export AD
 end # module

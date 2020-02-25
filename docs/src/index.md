@@ -6,9 +6,19 @@ Our paper is comming soon.
 
 Welcome for discussion in [Julia slack](https://slackinvite.julialang.org/), **#autodiff** channel.
 
-```@index
+## Examples
+```@contents
+Pages = [
+    "examples/besselj.md",
+]
+Depth = 1
 ```
 
-```@autodocs
-Modules = [NiLang]
+## Manual
+
+```@contents
+Pages = [
+    "api.md",
+]
+Depth = 2
 ```

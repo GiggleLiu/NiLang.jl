@@ -15,7 +15,7 @@ include("checks.jl")
 
 include("instructs.jl")
 include("jacobian.jl")
-include("simple_hessian.jl")
+include("hessian_repeat.jl")
 include("taylor.jl")
 
 end

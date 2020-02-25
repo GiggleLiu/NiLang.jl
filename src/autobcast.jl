@@ -1,5 +1,10 @@
 export AutoBcast
 
+"""
+    AutoBcast{T} <: IWrapper{T}
+
+A vectorized variable.
+"""
 @pure_wrapper AutoBcast
 
 Base.length(ab::AutoBcast) = length(ab.x)
