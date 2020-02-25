@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Bessel function · NiLang.jl</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link href="../../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><h1>NiLang.jl</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../../search/"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../../">Home</a></li><li><span class="toctext">Examples</span><ul><li class="current"><a class="toctext" href>Bessel function</a><ul class="internal"></ul></li></ul></li><li><span class="toctext">API Manual</span><ul><li><a class="toctext" href="../../api/">API Manual</a></li></ul></li></ul></nav><article id="docs"><header><nav><ul><li>Examples</li><li><a href>Bessel function</a></li></ul><a class="edit-page" href="https://github.com/GiggleLiu/NiLang.jl/blob/master/examples/besselj.jl"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Bessel function</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="Bessel-function-1" href="#Bessel-function-1">Bessel function</a></h1><p>An Bessel function of the first kind of order <span>$\nu$</span> can be computed using Taylor expansion</p><div>\[    J_\nu(z) = \sum\limits_{n=0}^{\infty} \frac{(z/2)^\nu}{\Gamma(k+1)\Gamma(k+\nu+1)} (-z^2/4)^{n}\]</div><p>where <span>$\Gamma(n) = (n-1)!$</span> is the Gamma function. One can compute the accumulated item iteratively as <span>$s_n = -\frac{z^2}{4} s_{n-1}$</span>. Intuitively, this problem mimics the famous pebble game, since one can not release state <span>$s_{n-1}$</span> directly after computing <span>$s_n$</span>. One would need an increasing size of tape to cache the intermediate state. To circumvent this problem. We introduce the following reversible approximate multiplier</p><pre><code class="language-julia">using NiLang, NiLang.AD
+
+@i @inline function imul(out!, x, anc!)
+    anc! += out! * x
+    out! -= anc! / x
+    SWAP(out!, anc!)
+end</code></pre><p>Here, the definition of SWAP can be found in \App{app:instr}, <span>$anc! \approx 0$</span> is a <em>dirty ancilla</em>. Line 2 computes the result and accumulates it to the dirty ancilla, we get an approximately correct output in <strong>anc!</strong>. Line 3 &quot;uncomputes&quot; <strong>out!</strong> approximately by using the information stored in <strong>anc!</strong>, leaving a dirty zero state in register <strong>out!</strong>. Line 4 swaps the contents in <strong>out!</strong> and <strong>anc!</strong>. Finally, we have an approximately correct output and a dirtier ancilla. With this multiplier, we implementation <span>$J_\nu$</span> as follows.</p><pre><code class="language-julia">@i function ibesselj(out!, ν, z; atol=1e-8)
+    k ← 0
+    fact_nu ← zero(ν)
+    halfz ← zero(z)
+    halfz_power_nu ← zero(z)
+    halfz_power_2 ← zero(z)
+    out_anc ← zero(z)
+    anc1 ← zero(z)
+    anc2 ← zero(z)
+    anc3 ← zero(z)
+    anc4 ← zero(z)
+    anc5 ← zero(z)
+
+    @routine begin
+        halfz += z / 2
+        halfz_power_nu += halfz ^ ν
+        halfz_power_2 += halfz ^ 2
+        ifactorial(fact_nu, ν)
+
+        anc1 += halfz_power_nu/fact_nu
+        out_anc += identity(anc1)
+        while (abs(unwrap(anc1)) &gt; atol &amp;&amp; abs(unwrap(anc4)) &lt; atol, k!=0)
+            k += identity(1)
+            @routine begin
+                anc5 += identity(k)
+                anc5 += identity(ν)
+                anc2 -= k * anc5
+                anc3 += halfz_power_2 / anc2
+            end
+            imul(anc1, anc3, anc4)
+            out_anc += identity(anc1)
+            ~@routine
+        end
+    end
+    out! += identity(out_anc)
+    ~@routine
+end</code></pre><p>where the <strong>ifactorial</strong> is defined as</p><pre><code class="language-julia">@i function ifactorial(out!, n)
+    out! += identity(1)
+    for i=1:n
+        MULINT(out!, i)
+    end
+end</code></pre><p>Here, only a constant number of ancillas are used in this implementation, while the algorithm complexity does not increase comparing to its irreversible counterpart. ancilla <strong>anc4</strong> plays the role of <em>dirty ancilla</em> in multiplication, it is uncomputed rigoriously in the uncomputing stage. The reason why the &quot;approximate uncomputing&quot; trick works here lies in the fact that from the mathematic perspective the state in <span>$n$</span>th step <span>$\{s_n, z\}$</span> contains the same amount of information as the state in the <span>$n-1$</span>th step <span>$\{s_{n-1}, z\}$</span> except some special points, it is highly possible to find an equation to uncompute the previous state from the current state. This trick can be used extensively in many other application. It mitigated the artifitial irreversibility brought by the number system that we have adopt at the cost of precision.</p><p>To obtain gradients, one can wrap the variable <strong>y!</strong> with <strong>Loss</strong> type and feed it into <strong>ibesselj&#39;</strong></p><pre><code class="language-julia">y, x = 0.0, 3.0
+ibesselj&#39;(Loss(y), 2, x)</code></pre><pre><code class="language-none">(NiLang.AD.Loss(GVar(0.0, 1.0)), 2, GVar(3.0, 0.014998130404173693))</code></pre><p>Here, <strong>ibesselj&#39;</strong> is a callable instance of type <strong>Grad{typeof(ibesselj)}}</strong>. This function itself is reversible and differentiable, one can back-propagate this function to obtain Hessians. In NiLang, it is implemented as <strong>hessian_repeat</strong>.</p><pre><code class="language-julia">hessian_repeat(ibesselj, (Loss(y), 2, x))</code></pre><pre><code class="language-none">3×3 Array{Float64,2}:
+ 0.0  0.0   0.0    
+ 0.0  0.0   0.0    
+ 0.0  0.0  -0.27505</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p><footer><hr/><a class="previous" href="../../"><span class="direction">Previous</span><span class="title">Home</span></a><a class="next" href="../../api/"><span class="direction">Next</span><span class="title">API Manual</span></a></footer></article></body></html>
