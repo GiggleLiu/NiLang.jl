@@ -18,6 +18,8 @@ Depth = 1
 
 ```@contents
 Pages = [
+    "grammar.md",
+    "instructions.md",
     "api.md",
 ]
 Depth = 2

@@ -15,14 +15,14 @@ makedocs(;
         "Examples" => Any[
             "examples/besselj.md",
            ],
-        "API Manual" => Any[
+        "API & Manual" => Any[
+            "instructions.md",
             "api.md",
            ]
     ],
     repo="https://github.com/GiggleLiu/NiLang.jl/blob/{commit}{path}#L{line}",
     sitename="NiLang.jl",
     authors="JinGuo Liu, thautwarm",
-    assets=String[],
 )
 
 deploydocs(;

@@ -12,15 +12,21 @@ const L2 = [(1, 3), (1, 4), (1, 7), (1, 8), (1, 9),
     (5, 8), (5, 9), (6, 7), (6, 10), (7, 8), (8, 9),
     (9, 10)]
 
-function myvar(v)
+function myvar_and_mean(v)
     mv  = Statistics.mean(v)
-    sum((v .- mv).^2)./(length(v)-1)
+    sum((v .- mv).^2)./(length(v)-1), mv
+end
+
+function relu(x::T) where T
+    x > 0 ? x : zero(T)
 end
 
 function loss(x)
-    a = [LinearAlgebra.norm(x[:,i]-x[:,j])^2 for (i, j) in L1]
-    b = [LinearAlgebra.norm(x[:,i]-x[:,j])^2 for (i, j) in L2]
-    myvar(a) + myvar(b)
+    a = [LinearAlgebra.norm(x[:,i]-x[:,j]) for (i, j) in L1]
+    b = [LinearAlgebra.norm(x[:,i]-x[:,j]) for (i, j) in L2]
+    va, ma = myvar_and_mean(a)
+    vb, mb = myvar_and_mean(b)
+    va + vb + exp(relu(-mb + ma + 0.1)) - 1
 end
 
 function trainz(params)
@@ -46,7 +52,7 @@ if DO_BENCHMARK
     @benchmark Zygote.gradient(loss, $x)
 end
 
-params = randn(4, 10)
+params = randn(5, 10)
 @time trainz(params)
 
 import LinearAlgebra
