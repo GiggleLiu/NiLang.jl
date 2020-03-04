@@ -10,6 +10,7 @@ end
 const Grad{FT} = NGrad{1,FT}
 const Hessian{FT} = NGrad{2,FT}
 
+NiLangCore.unwrap(g::NGrad) = unwrap(g.f)
 Base.adjoint(f::Function) = Grad(f)
 Base.adjoint(f::NGrad{N}) where {N} = NGrad{N+1}(f.f)
 Base.show_function(io::IO, b::NGrad{N}, compact::Bool) where {N} = print(io, "$(b.f)"*"'"^N)
@@ -33,10 +34,10 @@ Base.display(bf::NGrad) = print(bf)
         end
     end
 
-    g.f(args...; kwargs...)
+    unwrap(g)(args...; kwargs...)
     GVar.(args)
     grad(tget(args,iloss)) += identity(1)
-    (~g.f)(args...; kwargs...)
+    (~unwrap(g))(args...; kwargs...)
 
     ~@routine
 end
