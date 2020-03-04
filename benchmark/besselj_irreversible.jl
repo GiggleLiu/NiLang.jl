@@ -15,7 +15,7 @@ function besselj(ν, z; atol=1e-8)
 end
 
 function grad_besselj_manual(ν, z; atol=1e-8)
-    (besselj(ν-1, value(z); atol=atol) - besselj(ν+1, value(z)); atol=atol)/2
+    (besselj(ν-1, z; atol=atol) - besselj(ν+1, z); atol=atol)/2
 end
 
 println("Benchmarking Julia")
