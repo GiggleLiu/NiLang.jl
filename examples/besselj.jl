@@ -223,3 +223,30 @@ out_g! = GVar.(out!, CuArray(randn(128)))
 
 # You will get CUDA arrays with `GVar` elements as output, their gradient fields are what you want.
 # Cheers! Now you have a adjoint mode differentiable CUDA kernel.
+
+# ## Benchmark
+# We have different source to souce automatic differention implementations of the first type Bessel function ``J_2(1.0)`` benchmarked and show the results below.
+#
+# 
+# |           | Tangent/Adjoint | ``T_{\rm min}``/ns  |  Space/KB |
+# | --------- | --------------- | ------------------- | --------- |
+# |  Julia | - | 22 | 0 |
+# |  NiLang | - | 59 | 0 |
+# |  ForwardDiff | Tangent | 35 | 0 |
+# |  Manual | Adjoint | 83 | 0 |
+# |  NiLang.AD | Adjoint | 213 | 0 |
+# |  NiLang.AD (GPU) | Adjoint | 1.4 | 0 |
+# |  Zygote | Adjoint | 31201 | 13.47 |
+# |  Tapenade | Adjoint | ? | ? |
+
+# Julia is the CPU time used for running the irreversible forward program, is the baseline of benchmarking.
+# NiLang is the reversible implementation, it is 2.7 times slower than its irreversible counterpart. Here, we have remove the reversibility check.
+# ForwardDiff gives the best performance because it is designed for functions with single input.
+# It is even faster than manually derived gradients
+# ```math
+# J_{\nu}'(z) = \frac{J_{\nu-1} - J_{\nu+1}}{2}
+# ```
+# NiLang.AD is the reversible differential programming implementation, it considers only the backward pass.
+# The benchmark of its GPU version is estimated on Nvidia Titan V by broadcasting the gradient function on CUDA array of size ``2^17`` and take average.
+# The Zygote benchmark considers both forward pass and backward pass.
+# Tapenade is not yet ready.
