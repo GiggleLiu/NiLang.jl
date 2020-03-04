@@ -96,7 +96,7 @@ using CuArrays, CUDAnative, GPUArrays
 @i @inline function ⊖(CUDAnative.pow)(out!::GVar{T}, x::GVar, n::GVar) where T
     ⊖(CUDAnative.pow)(value(out!), value(x), value(n))
 
-    # grad x
+    ## grad x
     @routine @invcheckoff begin
         anc1 ← zero(value(x))
         anc2 ← zero(value(x))
@@ -109,7 +109,7 @@ using CuArrays, CUDAnative, GPUArrays
         value(n) += identity(1)
         jac1 += anc1 * value(n)
 
-        # get grad of n
+        ## get grad of n
         anc2 += log(value(x))
         anc3 += CUDAnative.pow(value(x), value(n))
         jac2 += anc3*anc2
@@ -136,7 +136,7 @@ end
 
 @i @inline function ⊖(CUDAnative.pow)(out!::GVar{T}, x, n::GVar) where T
     ⊖(CUDAnative.pow)(value(out!), x, value(n))
-    # get jac of n
+    ## get jac of n
     @routine @invcheckoff begin
         anc1 ← zero(x)
         anc2 ← zero(x)
