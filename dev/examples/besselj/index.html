@@ -51,7 +51,10 @@ ibesselj&#39;(Loss(y), 2, x)</code></pre><pre><code class="language-none">(NiLan
 using CuArrays, CUDAnative, GPUArrays
 
 @i @inline function ⊖(CUDAnative.pow)(out!::GVar{T}, x::GVar, n::GVar) where T
-    ⊖(CUDAnative.pow)(value(out!), value(x), value(n))</code></pre><p>grad x</p><pre><code class="language-">    @routine @invcheckoff begin
+    ⊖(CUDAnative.pow)(value(out!), value(x), value(n))
+
+    # grad x
+    @routine @invcheckoff begin
         anc1 ← zero(value(x))
         anc2 ← zero(value(x))
         anc3 ← zero(value(x))
@@ -61,7 +64,10 @@ using CuArrays, CUDAnative, GPUArrays
         value(n) -= identity(1)
         anc1 += CUDAnative.pow(value(x), value(n))
         value(n) += identity(1)
-        jac1 += anc1 * value(n)</code></pre><p>get grad of n</p><pre><code class="language-">        anc2 += log(value(x))
+        jac1 += anc1 * value(n)
+
+        # get grad of n
+        anc2 += log(value(x))
         anc3 += CUDAnative.pow(value(x), value(n))
         jac2 += anc3*anc2
     end
@@ -86,7 +92,9 @@ end
 end
 
 @i @inline function ⊖(CUDAnative.pow)(out!::GVar{T}, x, n::GVar) where T
-    ⊖(CUDAnative.pow)(value(out!), x, value(n))</code></pre><p>get jac of n</p><pre><code class="language-">    @routine @invcheckoff begin
+    ⊖(CUDAnative.pow)(value(out!), x, value(n))
+    # get jac of n
+    @routine @invcheckoff begin
         anc1 ← zero(x)
         anc2 ← zero(x)
         jac ← zero(x)
