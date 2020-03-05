@@ -16,9 +16,9 @@ The following is a list of terminologies used in the definition of grammar
 
 * <ident>, symbols
 * <num>, numbers
-* $0$, empty statement
+* 0, empty statement
 * <JuliaExpr>, native Julia expression
-* $[$ $]$,  zero or one repetitions.
+* [ ],  zero or one repetitions.
 
 Here, all $JuliaExpr$ should be pure, otherwise the reversibility is not guaranteed.
 Dataview is a view of a data, it can be a bijective mapping of an object, an item of an array or a field of an object.
