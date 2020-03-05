@@ -1,6 +1,7 @@
 export XOR, SWAP, NEG, CONJ
-export ROT, IROT, MULINT, DIVINT
+export ROT, IROT
 export ipop!, ipush!
+export mulint, divint
 
 const GLOBAL_STACK = []
 
@@ -63,25 +64,6 @@ end
     b!, a!
 end
 @selfdual SWAP
-
-"""
-    MULINT(a!, b::Integer) -> a!*b, b
-"""
-@inline function MULINT(a!::Number, b::Integer)
-    a! * b, b
-end
-
-"""
-    DIVINT(a!, b::Integer) -> a!/b, b
-"""
-@inline function DIVINT(a!::Number, b::Integer)
-    a! / b, b
-end
-@inline function DIVINT(a!::Integer, b::Integer)
-    a! ÷ b, b
-end
-@dual MULINT DIVINT
-
 
 """
     ROT(a!, b!, θ) -> a!', b!', θ
@@ -188,3 +170,24 @@ end
 Base.:^(x::Integer, y::Fixed43) = Fixed43(x^(Float64(y)))
 Base.:^(x::Fixed43, y::Fixed43) = Fixed43(x^(Float64(y)))
 Base.:^(x::T, y::Fixed43) where T<:AbstractFloat = x^(T(y))
+
+"""
+    mulint(a!, b::Integer) -> a!*b, b
+"""
+@i @inline function mulint(a!, b::Integer)
+    @invcheckoff anc ← zero(a!)
+    anc += a! * b
+    a! -= anc/b
+    SWAP(a!, anc)
+    @invcheckoff anc → zero(a!)
+end
+
+@i @inline function mulint(a!::Integer, b::Integer)
+    @invcheckoff anc ← zero(a!)
+    anc += a! * b
+    a! -= anc ÷ b
+    SWAP(a!, anc)
+    @invcheckoff anc → zero(a!)
+end
+
+const divint = ~mulint

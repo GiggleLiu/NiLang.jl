@@ -40,11 +40,6 @@ end
     grad(x) += grad(out!) * value(y)
 end
 
-@i @inline function DIVINT(x!::GVar, y)
-    DIVINT(value(x!), value(y))
-    MULINT(grad(x!), value(y))
-end
-
 @i @inline function ⊖(/)(out!::GVar{T}, x::GVar, y::GVar) where T
     value(out!) -= value(x)/value(y)
     @routine @invcheckoff begin

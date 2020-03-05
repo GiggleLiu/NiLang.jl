@@ -20,7 +20,7 @@ const L2 = [(1, 3), (1, 4), (1, 7), (1, 8), (1, 9),
     for i=1:length(x)
         anc += identity(x[i])
     end
-    MULINT(out!, length(x))
+    mulint(out!, length(x))
 end
 
 """
@@ -34,13 +34,13 @@ the variance and mean value from squared values.
         mean! += sqv[i] ^ 0.5
         var! += identity(sqv[i])
     end
-    DIVINT(mean!, length(sqv))
-    DIVINT(var!, length(sqv))
+    divint(mean!, length(sqv))
+    divint(var!, length(sqv))
     sqmean += mean! ^ 2
     var! -= identity(sqmean)
     sqmean -= mean! ^ 2
-    MULINT(var!, length(sqv))
-    DIVINT(var!, length(sqv)-1)
+    mulint(var!, length(sqv))
+    divint(var!, length(sqv)-1)
 end
 
 """

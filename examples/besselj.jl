@@ -68,7 +68,7 @@ end
 @i function ifactorial(out!, n)
     out! += identity(1)
     for i=1:n
-        MULINT(out!, i)
+        mulint(out!, i)
     end
 end
 

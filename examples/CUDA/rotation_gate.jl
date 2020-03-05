@@ -48,7 +48,7 @@ v1 = instruct!(copy(v), Val(:Rz), 3, 0.5)[1]
 end
 
 @i @inline function ROT_INSTRUCT(gate::Val{:Ry}, a, b, θ)
-    DIVINT(θ, 2)
+    divint(θ, 2)
     ROT(a, b, θ)
-    MULINT(θ, 2)
+    mulint(θ, 2)
 end

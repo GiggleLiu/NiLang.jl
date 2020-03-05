@@ -18,7 +18,7 @@ for F1 in [:NEG, :CONJ]
     end
 end
 
-for F2 in [:XOR, :SWAP, :MULINT, :DIVINT, :((inf::PlusEq)), :((inf::MinusEq)), :((inf::XorEq))]
+for F2 in [:XOR, :SWAP, :((inf::PlusEq)), :((inf::MinusEq)), :((inf::XorEq))]
     F2 != :SWAP && @eval @inline function $F2(a::AutoBcast, b)
         @instr @invcheckoff for i=1:length(a)
             $F2(a.x[i], b)

@@ -15,8 +15,8 @@ using Test
         @test check_grad(opm(/), (Loss(1.0), 2.0, 2.0); verbose=true)
     end
     @test check_grad(NEG, (Loss(1.0),); verbose=true)
-    @test check_grad(MULINT, (Loss(1.5), 2); verbose=true)
-    @test check_grad(DIVINT, (Loss(1.5), 2); verbose=true)
+    @test check_grad(mulint, (Loss(1.5), 2); verbose=true)
+    @test check_grad(divint, (Loss(1.5), 2); verbose=true)
     @test check_grad(ROT, (Loss(1.0), 2.0, 2.0); verbose=true)
     @test check_grad(ROT, (1.0, Loss(2.0), 2.0); verbose=true)
     @test check_grad(IROT, (Loss(1.0), 2.0, 2.0); verbose=true)

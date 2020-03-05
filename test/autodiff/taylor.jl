@@ -93,7 +93,7 @@ end
     end
 
     @i function f1(x)
-        MULINT(x, 3)
+        mulint(x, 3)
     end
     for op in [NEG, CONJ, f1, ~f1]
         h1 = local_hessian(op, (0.3,))
