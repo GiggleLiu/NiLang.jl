@@ -81,11 +81,11 @@ end
 # To obtain gradients, one can wrap the variable **y!** with **Loss** type and feed it into **ibesselj'**
 
 y, x = 0.0, 3.0
-ibesselj'(Loss(y), 2, x)
+ibesselj'(y, 2, x; iloss=1)
 
-# Here, **ibesselj'** is a callable instance of type **Grad{typeof(ibesselj)}}**. This function itself is reversible and differentiable, one can back-propagate this function to obtain Hessians. In NiLang, it is implemented as **hessian_repeat**.
+# Here, **ibesselj'** is a callable instance of type **Grad{typeof(ibesselj)}}**. This function itself is reversible and differentiable, one can back-propagate this function to obtain Hessians. In NiLang, it is implemented as **hessian_backback**.
 
-hessian_repeat(ibesselj, (Loss(y), 2, x))
+hessian_backback(ibesselj, (y, 2, x); iloss=1)
 
 # ## CUDA programming
 # You need a patch to define the gradients for "CUDAnative.pow".

@@ -1,5 +1,7 @@
 include("Adam.jl")
 using NiLang, NiLang.AD
+import ForwardDiff
+using ForwardDiff: Dual
 
 # bonds of a petersen graph
 const L1 = [(1, 6), (2, 7), (3, 8), (4, 9), (5, 10),
@@ -86,10 +88,6 @@ end
     ~@routine
 end
 
-params = randn(5, 10)
-
-import ForwardDiff
-using ForwardDiff: Dual
 function get_hessian(params0::AbstractArray{T}) where T
     N = length(params0)
     params = Dual.(params0, zero(T))
@@ -97,18 +95,12 @@ function get_hessian(params0::AbstractArray{T}) where T
     for i=1:N
         @inbounds i !== 1 && (params[i-1] = Dual(params0[i-1], zero(T)))
         @inbounds params[i] = Dual(params0[i], one(T))
-        res = get_grad(params)
+        res = gradient(Val(1), embedding_loss, (Dual(0.0, 0.0), params))[2]
         hes[:,i] .= vec(ForwardDiff.partials.(res, 1))
     end
     hes
 end
 
-@inline function get_grad(params::AbstractArray{T}) where T
-    out, out_params = embedding_loss(zero(T), params)
-    grad.((~embedding_loss)(GVar(out, one(out)), GVar.(out_params))[2])
-end
-
-using Optim
 function train(params)
     opt = Adam(lr=0.01)
     maxiter = 20000
@@ -126,6 +118,7 @@ function train(params)
     params
 end
 
+using Optim
 function train_newton(params)
     # mask used to fix first two elements
     msk = [false, false, true, true, true, true, true, true, true, true]
@@ -155,11 +148,13 @@ function train_newton(params)
     params
 end
 
+params = randn(5, 10)
+
 using BenchmarkTools
 DO_BENCHMARK = false
 if DO_BENCHMARK
     x = randn(5,10)
-    @benchmark Grad(embedding_loss)(Loss(0.0), $x)
+    @benchmark Grad(embedding_loss)(Val(1), 0.0, $x)
 end
 
 params = randn(5, 10)
