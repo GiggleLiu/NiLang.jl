@@ -1,18 +1,16 @@
 export jacobian, jacobian_repeat
 
 """
-    jacobian_repeat(f, args; kwargs=())
+    jacobian_repeat(f, args...; kwargs...)
 
 Get the Jacobian matrix for function `f(args..., kwargs...)` by computing one row (gradients) a time.
 """
-function jacobian_repeat(f, args; kwargs=())
+function jacobian_repeat(f, args; kwargs...)
     narg = length(args)
     T = match_eltype(args)
     res = zeros(T, narg, narg)
     for i = 1:narg
-        @instr Loss(tget(args, i))
-        res[i,:] .= gradient(f, args; kwargs=kwargs)
-        @instr (~Loss)(tget(args, i))
+        res[i,:] .= gradient(f, args; iloss=i, kwargs...)
     end
     return res
 end
@@ -55,12 +53,12 @@ function wrap_jacobian(::Type{T}, args) where T
 end
 
 """
-    jacobian(f, args; kwargs=())
+    jacobian(f, args; kwargs...)
 
 Get the Jacobian matrix for function `f(args..., kwargs...)` by use vectorized variables in the gradient field.
 """
-jacobian(f, args; kwargs=()) = jacobian(Float64, f, args; kwargs=kwargs)
-function jacobian(::Type{T}, f, args; kwargs=()) where T
+jacobian(f, args; kwargs...) = jacobian(Float64, f, args; kwargs...)
+function jacobian(::Type{T}, f, args; kwargs...) where T
     args = f(args...; kwargs...)
     jac, args = wrap_jacobian(T, args)
     (~f)(args...; kwargs...)

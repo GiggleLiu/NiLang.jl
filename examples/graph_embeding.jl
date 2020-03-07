@@ -63,7 +63,7 @@ end
     diff ← zero(T)
     d1 ← zeros(T, length(L1))
     d2 ← zeros(T, length(L2))
-    @routine begin
+    @routine @invcheckoff begin
         for i=1:length(L1)
             @inbounds sqdistance(d1[i], x[:,L1[i][1]],x[:,L1[i][2]])
         end
@@ -86,6 +86,29 @@ end
     ~@routine
 end
 
+params = randn(5, 10)
+
+import ForwardDiff
+using ForwardDiff: Dual
+function get_hessian(params0::AbstractArray{T}) where T
+    N = length(params0)
+    params = Dual.(params0, zero(T))
+    hes = zeros(T, N, N)
+    for i=1:N
+        @inbounds i !== 1 && (params[i-1] = Dual(params0[i-1], zero(T)))
+        @inbounds params[i] = Dual(params0[i], one(T))
+        res = get_grad(params)
+        hes[:,i] .= vec(ForwardDiff.partials.(res, 1))
+    end
+    hes
+end
+
+@inline function get_grad(params::AbstractArray{T}) where T
+    out, out_params = embedding_loss(zero(T), params)
+    grad.((~embedding_loss)(GVar(out, one(out)), GVar.(out_params))[2])
+end
+
+using Optim
 function train(params)
     opt = Adam(lr=0.01)
     maxiter = 20000
@@ -93,13 +116,42 @@ function train(params)
     msk = [false, false, true, true, true, true, true, true, true, true]
     pp = params[:,msk]
     for i=1:maxiter
-        g = grad.(Grad(embedding_loss)(Loss(0.0), params)[2][:,msk])
+        g = get_grad(params)[:,msk]
         update!(pp, g, opt)
         view(params, :, msk) .= pp
         if i%1000 == 0
             println("Step $i, loss = $(embedding_loss(0.0, params)[1])")
         end
     end
+    params
+end
+
+function train_newton(params)
+    # mask used to fix first two elements
+    msk = [false, false, true, true, true, true, true, true, true, true]
+    i = Ref(1)
+    function f(x)
+        vec(view(params,:,msk)) .= x
+        l = embedding_loss(0.0, params)[1]
+        i[] += 1
+        println("Step $(i[]), loss = $l")
+        return l
+    end
+    function g!(G, x)
+        vec(view(params,:,msk)) .= x
+        G .= vec(get_grad(params)[:,msk])
+    end
+    function h!(H, x)
+        vec(view(params,:,msk)) .= x
+        nm = sum(msk)*size(params, 1)
+        H .= reshape(reshape(get_hessian(params), size(params)..., size(params)...)[:,msk,:,msk], nm, nm)
+    end
+    NewtonTrustRegion(; initial_delta = 1.0,
+                    delta_hat = 20.0,
+                    eta = 0.1,
+                    rho_lower = 0.25,
+                    rho_upper = 0.75)
+    optimize(f, g!, h!, vec(params[:,msk]), NewtonTrustRegion())
     params
 end
 

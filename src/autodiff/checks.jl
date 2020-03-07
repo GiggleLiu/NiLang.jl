@@ -27,7 +27,7 @@ function tset(value, tp::Tuple, iloss)
     map(i->i===iloss ? value : tp[i], 1:length(tp))
 end
 
-function ng(f, args, iarg, iloss; δ=1e-5, kwargs=())
+function ng(f, args, iarg; iloss::Int, δ=1e-5, kwargs=())
     x = args[iarg]
     if x isa AbstractArray
         T = eltype(x)
@@ -60,19 +60,14 @@ function ng(f, args, iarg, iloss; δ=1e-5, kwargs=())
 end
 
 """
-    gradient_numeric(f, args; kwargs=())
+    gradient_numeric(f, args...; iloss, kwargs...)
 
 Numeric differentiating f(args..., kwargs...).
 """
-function gradient_numeric(f, args; kwargs=())
-    iloss = findfirst(x->x<:Loss, typeof.(args))
-    @instr (~Loss)(tget(args,iloss))
-    if iloss === nothing
-        throw(ArgumentError("input arguments does not contain Loss! $args"))
-    end
+function gradient_numeric(f, args; iloss::Int, kwargs...)
     map(1:length(args)) do iarg
         if isvar(args[iarg])
-            ng(f, args, iarg, iloss; kwargs=kwargs)
+            ng(f, args, iarg; iloss=iloss, kwargs...)
         else
             0
         end
@@ -80,15 +75,15 @@ function gradient_numeric(f, args; kwargs=())
 end
 
 """
-    check_grad(f, args; kwargs=(), atol::Real=1e-8, verbose::Bool=false)
+    check_grad(f, args; atol::Real=1e-8, verbose::Bool=false, iloss::Int, kwargs...)
 
 Return true if the gradient of `f(args..., kwargs...)` is reversible.
 """
-function check_grad(f, args; kwargs=(), atol::Real=1e-4, verbose::Bool=false)
+function check_grad(f, args; atol::Real=1e-4, verbose::Bool=false, iloss::Int, kwargs...)
     vars = ((iarg for iarg in 1:length(args) if isvar(args[iarg]))...,)
     initial_vars = deepcopy(vars)
-    ngs = gradient_numeric(f, args; kwargs=kwargs)
-    gs = gradient(f, args; kwargs=kwargs)
+    ngs = gradient_numeric(f, args; kwargs..., iloss=iloss)
+    gs = gradient(f, args; kwargs..., iloss=iloss)
     verbose && @show ngs
     verbose && @show gs
     if !all(isapprox.(ngs, gs, atol=atol))

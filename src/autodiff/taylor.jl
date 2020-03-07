@@ -529,24 +529,13 @@ function local_hessian(f, args; kwargs=())
     hes
 end
 
-function (h::Hessian)(args...; kwargs...)
-    @assert count(x -> x isa Loss, args) == 1
+function (h::Hessian)(args...; iloss::Int, kwargs...)
     N = length(args)
-
-    iloss = 0
-    for i=1:length(args)
-        if tget(args,i) isa Loss
-            iloss += identity(i)
-        end
-    end
-    @instr (~Loss)(tget(args, iloss))
-
-    @instr h.f(args...)
+    @instr protectf(h).f(args...)
     rings_init!(ringtype)
     args = [beijingring!(x) for x in args]
     @instr grad(args[iloss]) ⊕ 1
-    @instr (~h.f)(args...)
-    @instr Loss(tget(args, iloss))
+    @instr (~protectf(h).f)(args...)
     args
 end
 
