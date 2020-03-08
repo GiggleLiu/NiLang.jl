@@ -78,14 +78,21 @@ end
 # The reason why the "approximate uncomputing" trick works here lies in the fact that from the mathematic perspective the state in ``n``th step ``\{s_n, z\}`` contains the same amount of information as the state in the ``n-1``th step ``\{s_{n-1}, z\}`` except some special points, it is highly possible to find an equation to uncompute the previous state from the current state.
 # This trick can be used extensively in many other application. It mitigated the artifitial irreversibility brought by the number system that we have adopt at the cost of precision.
 
-# To obtain gradients, one can wrap the variable **y!** with **Loss** type and feed it into **ibesselj'**
+# To obtain gradients, one use **ibesselj'**
 
-y, x = 0.0, 3.0
-ibesselj'(y, 2, x; iloss=1)
+y, x = 0.0, 1.0
+ibesselj'(Val(1), y, 2, x)
 
-# Here, **ibesselj'** is a callable instance of type **Grad{typeof(ibesselj)}}**. This function itself is reversible and differentiable, one can back-propagate this function to obtain Hessians. In NiLang, it is implemented as **hessian_backback**.
+# Here, **ibesselj'** is a callable instance of type **Grad{typeof(ibesselj)}}**.
+# The first parameter `Val(1)` indicates the first argument is the loss.
 
-hessian_backback(ibesselj, (y, 2, x); iloss=1)
+# To obtain second order gradients, one can Feed dual numbers to this gradient function.
+using ForwardDiff: Dual
+_, hxy, _, hxx = ibesselj'(Val(1), Dual(y, zero(y)), 2, Dual(x, one(x)))
+println("The hessian dy^2/dx^2 is $(grad(hxx).partials[1])")
+
+# Here, the gradient field is a Dual number, it has a field partials that stores the derivative with respect to `x`.
+# This is the Hessian that we need.
 
 # ## CUDA programming
 # You need a patch to define the gradients for "CUDAnative.pow".
@@ -227,7 +234,7 @@ out_g! = GVar.(out!, CuArray(randn(128)))
 # ## Benchmark
 # We have different source to souce automatic differention implementations of the first type Bessel function ``J_2(1.0)`` benchmarked and show the results below.
 #
-# 
+#
 # |  Package  | Tangent/Adjoint | ``T_{\rm min}``/ns  |  Space/KB |
 # | --------- | --------------- | ------------------- | --------- |
 # |  Julia    |     -           |     22              |     0     |

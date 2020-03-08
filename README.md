@@ -1,6 +1,7 @@
 # NiLang
 
 * Requires Julia version >= 1.3.
+* If test breaks, try using the master branch of `NiLangCore`.
 
 
 NiLang.jl (逆lang), is a reversible domain sepecific language (DSL) in Julia.

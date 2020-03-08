@@ -23,7 +23,7 @@ using NiLang.AD: hessian_numeric, local_hessian_numeric, local_hessian
 end
 
 @testset "hessian" begin
-    h1 = (⊕(*)''(0.0, 2.0, 3.0; iloss=1); collect_hessian())
+    h1 = (hessian_propagate(⊕(*), (0.0, 2.0, 3.0); iloss=1); collect_hessian())
     h2 = hessian_numeric(⊕(*), (0.0, 2.0, 3.0); iloss=1)
     @test h1 ≈ h2
 
@@ -32,13 +32,13 @@ end
         c += b^a
         ROT(a, b, c)
     end
-    h1 = (test''(0.0, 2.0, 0.5; iloss=1); collect_hessian())
+    h1 = (hessian_propagate(test, (0.0, 2.0, 0.5); iloss=1); collect_hessian())
     h2 = hessian_numeric(test, (0.0, 2.0, 0.5); iloss=1)
     @show h2
     @test isapprox(h1, h2, atol=1e-5)
 end
 
-function hessian_propagate(h, f, args; kwargs...)
+function hessian_prop(h, f, args; kwargs...)
     jac = jacobian(f, args; kwargs...)
     @tensor out[i,j,o] := jac[a,i]*h[a,b,o]*jac[b,j]
 end
@@ -74,7 +74,7 @@ end
         @test h1 ≈ h2
 
         h = rand_hes(3)
-        h1 = hessian_propagate(copy(h), op, (0.3, 0.4, 2.0))
+        h1 = hessian_prop(copy(h), op, (0.3, 0.4, 2.0))
         h2 = hessian_propagate2(copy(h), op, (0.3, 0.4, 2.0))
         @show h1 - h2
         @test h1 ≈ h2
@@ -87,7 +87,7 @@ end
         @test h1 ≈ h2
 
         h = rand_hes(2)
-        h1 = hessian_propagate(copy(h), op, (0.3, 0.4))
+        h1 = hessian_prop(copy(h), op, (0.3, 0.4))
         h2 = hessian_propagate2(copy(h), op, (0.3, 0.4))
         @test h1 ≈ h2
     end
@@ -102,7 +102,7 @@ end
         @test h1 ≈ h2
 
         h = rand_hes(1)
-        h1 = hessian_propagate(copy(h), op, (0.3,))
+        h1 = hessian_prop(copy(h), op, (0.3,))
         h2 = hessian_propagate2(copy(h), op, (0.3,))
         @test h1 ≈ h2
     end

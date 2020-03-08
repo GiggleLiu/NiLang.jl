@@ -108,7 +108,7 @@ function train(params)
     msk = [false, false, true, true, true, true, true, true, true, true]
     pp = params[:,msk]
     for i=1:maxiter
-        g = get_grad(params)[:,msk]
+        g = gradient(Val(1), embedding_loss, (0.0, params))[2][:,msk]
         update!(pp, g, opt)
         view(params, :, msk) .= pp
         if i%1000 == 0
@@ -126,17 +126,17 @@ function train_newton(params)
     function f(x)
         vec(view(params,:,msk)) .= x
         l = embedding_loss(0.0, params)[1]
-        i[] += 1
         println("Step $(i[]), loss = $l")
         return l
     end
     function g!(G, x)
         vec(view(params,:,msk)) .= x
-        G .= vec(get_grad(params)[:,msk])
+        G .= vec(gradient(Val(1), embedding_loss, (0.0, params))[2][:,msk])
     end
     function h!(H, x)
         vec(view(params,:,msk)) .= x
         nm = sum(msk)*size(params, 1)
+        i[] += 1
         H .= reshape(reshape(get_hessian(params), size(params)..., size(params)...)[:,msk,:,msk], nm, nm)
     end
     NewtonTrustRegion(; initial_delta = 1.0,

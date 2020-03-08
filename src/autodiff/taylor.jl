@@ -1,4 +1,4 @@
-export BeijingRing, hdata
+export BeijingRing, hdata, hessian_propagate
 export rings_init!, nrings, beijingring!, getrings, collect_hessian
 
 using FixedPointNumbers
@@ -109,11 +109,15 @@ function Base.zero(x::Type{BeijingRing{T}}) where T
     beijingring!(zero(T))
 end
 
-
 function NiLangCore.deanc(x::BeijingRing{T}, val::BeijingRing{T}) where T
     pop!(getrings(T))
     pop!(getrings(T))
-    value(x) == value(val)
+    @invcheck value(x) value(val)
+end
+
+function NiLangCore.deanc_nocheck(x::BeijingRing{T}, val::BeijingRing{T}) where T
+    pop!(getrings(T))
+    pop!(getrings(T))
 end
 
 @i function NEG(x!::BeijingRing{T}) where T
@@ -529,13 +533,13 @@ function local_hessian(f, args; kwargs=())
     hes
 end
 
-function (h::Hessian)(args...; iloss::Int, kwargs...)
+function hessian_propagate(f, args; iloss::Int, kwargs...)
     N = length(args)
-    @instr protectf(h).f(args...)
+    @instr f(args...)
     rings_init!(ringtype)
     args = [beijingring!(x) for x in args]
     @instr grad(args[iloss]) ⊕ 1
-    @instr (~protectf(h).f)(args...)
+    @instr (~f)(args...)
     args
 end
 
