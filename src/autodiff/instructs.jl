@@ -144,11 +144,11 @@ for op in [:*, :/, :^]
 end
 
 @i @inline function ⊖(exp)(out!::GVar, x::GVar{T}) where T
-    value(out!) -= exp(value(x))
     @routine @invcheckoff begin
         anc1 ← zero(value(x))
         anc1 += exp(value(x))
     end
+    value(out!) -= identity(anc1)
     grad(x) += grad(out!) * anc1
     ~@routine
 end
