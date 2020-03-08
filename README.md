@@ -67,7 +67,7 @@ julia> y!, x = 0.0, 1.6
 (0.0, 1.6)
 
 # first order gradients
-julia> @instr iexp'(Loss(y!), x)
+julia> @instr iexp'(Val(1), y!, x)
 
 julia> grad(x)
 4.9530324244260555
@@ -76,21 +76,13 @@ julia> y!, x = 0.0, 1.6
 (0.0, 1.6)
 
 # second order gradient by differentiate first order gradients
-julia> hessian_repeat(iexp, (Loss(y!), x))
-2×2 Array{Float64,2}:
-0.0 0.0
-0.0 4.95303
+julia> using ForwardDiff: Dual
 
-julia> y!, x = 0.0, 1.6
-(0.0, 1.6)
+julia> _, hxy, hxx = iexp'(Val(1), 
+        Dual(y!, zero(y!)), Dual(x, one(x)));
 
-# second order gradient by taylor propagation (experimental)
-julia> @instr iexp''(Loss(y!), x)
-
-julia> collect_hessian()
-2×2 Array{Float64,2}:
-0.0 0.0
-0.0 4.95303
+julia> grad(hxx).partials[1]
+4.953032423978584
 ```
 
 See [more examples](examples/)
