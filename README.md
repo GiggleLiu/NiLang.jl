@@ -86,3 +86,16 @@ julia> grad(hxx).partials[1]
 ```
 
 See [more examples](examples/)
+
+## Cite our [paper](https://arxiv.org/abs/2003.04617)!
+
+```bibtex
+@misc{Liu2020,
+    title={Differentiate Everything with a Reversible Programming Language},
+    author={Jin-Guo Liu and Taine Zhao},
+    year={2020},
+    eprint={2003.04617},
+    archivePrefix={arXiv},
+    primaryClass={cs.PL}
+}
+```
