@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Sparse matrices · NiLang.jl</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link href="../../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><h1>NiLang.jl</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../../search/"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../../">Home</a></li><li><span class="toctext">Examples</span><ul><li><a class="toctext" href="../besselj/">Bessel function</a></li><li class="current"><a class="toctext" href>Sparse matrices</a><ul class="internal"></ul></li></ul></li><li><span class="toctext">API &amp; Manual</span><ul><li><a class="toctext" href="../../instructions/">Instruction Reference</a></li><li><a class="toctext" href="../../api/">API Manual</a></li></ul></li></ul></nav><article id="docs"><header><nav><ul><li>Examples</li><li><a href>Sparse matrices</a></li></ul><a class="edit-page" href="https://github.com/GiggleLiu/NiLang.jl/blob/master/examples/sparse.jl"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Sparse matrices</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="Sparse-matrices-1" href="#Sparse-matrices-1">Sparse matrices</a></h1><p>Source to source automatic differentiation is useful in differentiating sparse matrices. It is a well-known problem that sparse matrix operations can not benefit directly from generic backward rules for dense matrix because general rules do not keep the sparse structure. In the following, we will show that reversible AD can differentiate the Frobenius dot product between two sparse matrices with the state-of-the-art performance. Here, the Frobenius dot product is defined as \texttt{trace(A&#39;B)}. Its native Julia (irreversible) implemnetation is <code>SparseArrays.dot</code>.</p><p>The following is a reversible counterpart</p><pre><code class="language-julia">using NiLang, NiLang.AD
+using SparseArrays
+
+@i function idot(r::T, A::SparseMatrixCSC{T},B::SparseMatrixCSC{T}) where {T}
+    m ← size(A, 1)
+    n ← size(A, 2)
+    @invcheckoff branch_keeper ← zeros(Bool, 2*m)
+    @safe size(B) == (m,n) || throw(DimensionMismatch(&quot;matrices must have the same dimensions&quot;))
+    @invcheckoff @inbounds for j = 1:n
+        ia1 ← A.colptr[j]
+        ib1 ← B.colptr[j]
+        ia2 ← A.colptr[j+1]
+        ib2 ← B.colptr[j+1]
+        ia ← ia1
+        ib ← ib1
+        @inbounds for i=1:ia2-ia1+ib2-ib1-1
+            ra ← A.rowval[ia]
+            rb ← B.rowval[ib]
+            if (ra == rb, ~)
+                r += A.nzval[ia]&#39; * B.nzval[ib]
+            end
+            # b move -&gt; true, a move -&gt; false
+            branch_keeper[i] ⊻= ia == ia2-1 || ra &gt; rb
+            ra → A.rowval[ia]
+            rb → B.rowval[ib]
+            if (branch_keeper[i], ~)
+                ib += identity(1)
+            else
+                ia += identity(1)
+            end
+        end
+        ~@inbounds for i=1:ia2-ia1+ib2-ib1-1
+            # b move -&gt; true, a move -&gt; false
+            branch_keeper[i] ⊻= ia == ia2-1 || A.rowval[ia] &gt; B.rowval[ib]
+            if (branch_keeper[i], ~)
+                ib += identity(1)
+            else
+                ia += identity(1)
+            end
+        end
+    end
+    @invcheckoff branch_keeper → zeros(Bool, 2*m)
+end</code></pre><p>Here, the key point is using a \texttt{branch_keeper} vector to cache branch decisions.</p><p>The time used for a native implementation is</p><pre><code class="language-">using BenchmarkTools
+a = sprand(1000, 1000, 0.01);
+b = sprand(1000, 1000, 0.01);
+@benchmark SparseArrays.dot($a, $b)</code></pre><p>To compute the gradients, we wrap each matrix element with <code>GVar</code>, and send them to the reversible backward pass</p><pre><code class="language-">out! = SparseArrays.dot(a, b)
+@benchmark (~idot)($(GVar(out!, 1.0)),
+        $(GVar.(a)), $(GVar.(b)))</code></pre><p>The time used for computing backward pass is approximately 1.6 times Julia&#39;s native forward pass. Here, we have turned off the reversibility check off to achieve better performance. By writing sparse matrix multiplication and other sparse matrix operations reversibly, we will have a differentiable sparse matrix library with proper performance.</p><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p><footer><hr/><a class="previous" href="../besselj/"><span class="direction">Previous</span><span class="title">Bessel function</span></a><a class="next" href="../../instructions/"><span class="direction">Next</span><span class="title">Instruction Reference</span></a></footer></article></body></html>
