@@ -1,9 +1,10 @@
 using Documenter, NiLang
+using SparseArrays
 
 using Literate
 tutorialpath = joinpath(@__DIR__, "src/examples")
 sourcepath = joinpath(@__DIR__, "../examples")
-for jlfile in ["besselj.jl"]
+for jlfile in ["besselj.jl", "sparse.jl"]
     Literate.markdown(joinpath(sourcepath, jlfile), tutorialpath)
 end
 
@@ -14,6 +15,7 @@ makedocs(;
         "Home" => "index.md",
         "Examples" => Any[
             "examples/besselj.md",
+            "examples/sparse.md",
            ],
         "API & Manual" => Any[
             "instructions.md",
