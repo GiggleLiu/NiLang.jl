@@ -17,6 +17,39 @@ end
 @nograd ⊖(identity)(a!, b::GVar)
 @nograd ⊖(identity)(a!::GVar, b)
 
+# +- (triple)
+@i @inline function ⊖(+)(out!::GVar, x::GVar, y::GVar)
+    value(out!) -= value(x) + value(y)
+    grad(x) += identity(grad(out!))
+    grad(y) += identity(grad(out!))
+end
+
+@i @inline function ⊖(+)(out!::GVar, x::GVar, y)
+    value(out!) -= value(x) + value(y)
+    grad(x) += identity(grad(out!))
+end
+
+@i @inline function ⊖(+)(out!::GVar, x, y::GVar)
+    value(out!) -= value(x) + value(y)
+    grad(y) += identity(grad(out!))
+end
+
+@i @inline function ⊖(-)(out!::GVar, x::GVar, y::GVar)
+    value(out!) -= value(x) + value(y)
+    grad(x) += identity(grad(out!))
+    grad(y) -= identity(grad(out!))
+end
+
+@i @inline function ⊖(-)(out!::GVar, x, y::GVar)
+    value(out!) -= value(x) + value(y)
+    grad(y) -= identity(grad(out!))
+end
+
+@i @inline function ⊖(-)(out!::GVar, x::GVar, y)
+    value(out!) -= value(x) + value(y)
+    grad(x) += identity(grad(out!))
+end
+
 # NOTE: it will error on `SWAP(a!::GVar, b)` or `SWAP(a!, b:GVar)`
 @i @inline function SWAP(a!::GVar, b!::GVar)
     SWAP(value(a!), value(b!))
@@ -136,7 +169,7 @@ end
     end
 end
 
-for op in [:*, :/, :^]
+for op in [:*, :/, :^, :+, :-]
     @eval @nograd ⊖($op)(out!::GVar, x, y)
     @eval @nograd ⊖($op)(out!, x, y::GVar)
     @eval @nograd ⊖($op)(out!, x::GVar, y::GVar)

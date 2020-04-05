@@ -5,6 +5,8 @@ using Test
     for opm in [⊕, ⊖]
         @test check_grad(opm(identity), (1.0, 2.0); verbose=true, iloss=1)
         @test check_grad(opm(*), (1.0, 2.0, 2.0); verbose=true, iloss=1)
+        @test check_grad(opm(+), (1.0, 2.0, 2.0); verbose=true, iloss=1)
+        @test check_grad(opm(-), (1.0, 2.0, 2.0); verbose=true, iloss=1)
         @test check_grad(opm(^), (1.0, 2.0, 2); verbose=true, iloss=1)
         @test check_grad(opm(^), (1.0, 2.0, 2.0); verbose=true, iloss=1)
         @test check_grad(opm(abs), (1.0, -2.0); verbose=true, iloss=1)
