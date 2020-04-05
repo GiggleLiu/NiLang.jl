@@ -1,4 +1,4 @@
-export XOR, SWAP, NEG, CONJ
+export XOR, SWAP, NEG, CONJ, FLIP
 export ROT, IROT
 export ipop!, ipush!
 export mulint, divint
@@ -48,6 +48,9 @@ end
     conj(a!)
 end
 @selfdual CONJ
+
+@inline FLIP(b::Bool) = !b
+@selfdual FLIP
 
 """
     XOR(a!, b) -> a! ⊻ b, b

@@ -42,6 +42,13 @@ end
     @test check_inv(NEG, (x,))
 end
 
+@testset "FLIP" begin
+    x = false
+    @instr FLIP(x)
+    @test x == true
+    @test check_inv(FLIP, (x,))
+end
+
 @testset "ROT" begin
     x, y, θ = 0.0, 1.0, π
     @test check_inv(ROT, (x, y, θ); verbose=true)
