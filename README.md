@@ -4,7 +4,7 @@
 * If test breaks, try using the master branch of `NiLangCore`.
 
 
-NiLang.jl (逆lang), is a reversible domain sepecific language (DSL) in Julia.
+NiLang.jl (逆lang), is a reversible domain specific language (DSL) in Julia.
 It features:
 
 * an instruction level (i.e. only backward rules of `+`, `-`, `*` and `/` are required) automatic differentiation engine,
