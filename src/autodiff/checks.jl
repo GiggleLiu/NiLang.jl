@@ -27,7 +27,7 @@ function tset(value, tp::Tuple, iloss)
     map(i->i===iloss ? value : tp[i], 1:length(tp))
 end
 
-function ng(f, args, iarg; iloss::Int, δ=1e-5, kwargs=())
+function ng(f, args, iarg; iloss::Int, δ=1e-5, kwargs...)
     x = args[iarg]
     if x isa AbstractArray
         T = eltype(x)

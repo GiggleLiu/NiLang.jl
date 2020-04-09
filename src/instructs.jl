@@ -108,17 +108,16 @@ for F1 in [:NEG, :CONJ]
 end
 
 for F2 in [:XOR, :SWAP, :((inf::PlusEq)), :((inf::MinusEq)), :((inf::XorEq))]
-    @eval @inline function $F2(a::IWrapper, b)
-        @instr $(NiLangCore.get_argname(F2))(value(a), b)
-        a, b
-    end
-    @eval @inline function $F2(a::IWrapper, b::IWrapper)
-        @instr $(NiLangCore.get_argname(F2))(value(a), value(b))
-        a, b
-    end
-    @eval @inline function $F2(a, b::IWrapper)
-        @instr $(NiLangCore.get_argname(F2))(a, value(b))
-        a, b
+    @eval @inline @generated function $F2(a, b)
+        if !(a <: IWrapper || b <: IWrapper)
+            return :(throw(MethodError($($(QuoteNode(F2))), (a, b))))
+        end
+        param_a = a <: IWrapper ? :(value(a)) : :(a)
+        param_b = b <: IWrapper ? :(value(b)) : :(b)
+        quote
+            @instr $($(QuoteNode(F2)))($param_a, $param_b)
+            a, b
+        end
     end
 end
 

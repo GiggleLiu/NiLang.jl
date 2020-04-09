@@ -239,3 +239,11 @@ end
 end
 
 @nograd IROT(a!, b!, θ::GVar)
+
+export primitive_grad
+function primitive_grad end
+
+@i function (mf::MinusEq)(out!::GVar, args...; kwargs...)
+    value(out!) -= mf.f(value.(args)...; kwargs...)
+    grad.(args) .+= identity.(NiLangCore.wrap_tuple(primitive_grad(mf.f, value.(args)...; kwargs...)))
+end
