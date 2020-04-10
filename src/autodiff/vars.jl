@@ -108,7 +108,7 @@ macro nograd(ex)
                     :($x::GVar) => :($x.x)
                     :($x::VecGVar) => :($x.x)
                     :($x::GVar{$tp}) => :($x.x)
-                    _ => arg
+                    _ => NiLangCore.get_argname(arg)
                 end
                 )
             end

@@ -23,22 +23,16 @@ end
     @test out === Fixed43(0.0)
 end
 
-@testset "XOR, SWAP" begin
-    x, y = 1, 2
-    @instr XOR(x, y)
-    @test x == 3 && y == 2
+@testset "SWAP" begin
     x, y = 1, 2
     @instr SWAP(x, y)
     @test x == 2 && y == 1
 end
 
-@testset "CONJ, NEG" begin
-    x = 0.3 + 2im
-    @instr CONJ(x)
-    @test x == 0.3-2im
+@testset "NEG" begin
+    x = 0.3
     @instr NEG(x)
-    @test x == -0.3+2im
-    @test check_inv(CONJ, (x,))
+    @test x == -0.3
     @test check_inv(NEG, (x,))
 end
 

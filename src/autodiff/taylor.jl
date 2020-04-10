@@ -132,18 +132,6 @@ end
     NEG(grad(x!))
 end
 
-@i function CONJ(x!::BeijingRing{T}) where T
-    CONJ(x!.x)
-    # hessian from hessian
-    for i=1:nrings(T)
-        CONJ(hdata((x!.index, i)))
-        CONJ(hdata((i, x!.index)))
-    end
-
-    # update gradients
-    CONJ(grad(x!))
-end
-
 @i function ⊖(identity)(out!::BeijingRing{T}, x::BeijingRing{T}) where T
     ⊖(identity)(out!.x, x.x)
     # hessian from hessian
@@ -285,7 +273,7 @@ end
 
 # dL^2/dx/dy = ∑(dL^2/da/db)*da/dx*db/dy
 # https://arxiv.org/abs/1206.6464
-@i function ⊖(*)(out!::BeijingRing{T}, x, y) where T
+@i function ⊖(*)(out!::BeijingRing{T}, x::Real, y::Real) where T
     ⊖(*)(out!.x, value(x), value(y))
     # hessian from hessian
     for i=1:nrings(T)
@@ -320,7 +308,7 @@ end
     end
 end
 
-@i function ⊖(/)(out!::BeijingRing{T}, x, y) where T
+@i function ⊖(/)(out!::BeijingRing{T}, x::Real, y::Real) where T
     ⊖(/)(out!.x, value(x), value(y))
     binv ← zero(T)
     binv2 ← zero(T)
@@ -379,7 +367,7 @@ end
     ~@routine
 end
 
-@i function ⊖(^)(out!::BeijingRing{T}, x, n) where T
+@i function ⊖(^)(out!::BeijingRing{T}, x::Real, n::Real) where T
     ⊖(^)(out!.x, value(x), value(n))
     logx ← zero(T)
     logx2 ← zero(T)
@@ -460,7 +448,7 @@ end
     ~@routine
 end
 
-@i function IROT(a!::BeijingRing{T}, b!, θ) where T
+@i function IROT(a!::BeijingRing{T}, b!::Real, θ::Real) where T
     s ← zero(T)
     c ← zero(T)
     ca ← zero(T)
@@ -572,7 +560,7 @@ macro nohess(ex)
                 push!(newargs, @match arg begin
                     :($x::BeijingRing) => :($x.x)
                     :($x::BeijingRing{$tp}) => :($x.x)
-                    _ => arg
+                    _ => NiLangCore.get_argname(arg)
                 end
                 )
             end
@@ -586,11 +574,16 @@ macro nohess(ex)
     end
 end
 
-@nohess ⊖(identity)(out!::BeijingRing, x)
-@nohess ⊖(identity)(out!, x::BeijingRing)
+@nohess ⊖(identity)(out!::BeijingRing, x::Real)
+@nohess ⊖(identity)(out!::Real, x::BeijingRing)
 for op in [:*, :/, :^]
-    @eval @nohess ⊖($op)(out!::BeijingRing, x::Number, y::Number)
-    @eval @nohess ⊖($op)(out!::Number, x, y::BeijingRing)
-    @eval @nohess ⊖($op)(out!::Number, x::BeijingRing, y::BeijingRing)
-    @eval @nohess ⊖($op)(out!::Number, x::BeijingRing, y)
+    @eval function (f::MinusEq{typeof($op)})(out!::BeijingRing, x::BeijingRing, y::BeijingRing)
+        invoke(MinusEq($op), Tuple{BeijingRing, Real, Real}, out!, x, y)
+    end
+    @eval @nohess ⊖($op)(out!::BeijingRing, x::IWrapper, y::IWrapper)
+    @eval @nohess ⊖($op)(out!::Real, x::Real, y::BeijingRing)
+    @eval @nohess ⊖($op)(out!::Real, x::BeijingRing, y::BeijingRing)
+    @eval @nohess ⊖($op)(out!::Real, x::BeijingRing, y::Real)
 end
+
+@nohess IROT(out!::BeijingRing, x::IWrapper, y::IWrapper)

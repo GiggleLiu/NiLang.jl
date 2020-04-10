@@ -4,7 +4,7 @@ using ..NiLang
 using NiLangCore
 using MLStyle, TupleTools
 
-import ..NiLang: ⊕, ⊖, NEG, CONJ, ROT, IROT, SWAP,
+import ..NiLang: ⊕, ⊖, NEG, ROT, IROT, SWAP,
     chfield, value
 
 export GVar, grad, Loss, NoGrad, @nograd

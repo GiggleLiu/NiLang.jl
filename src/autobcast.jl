@@ -9,7 +9,7 @@ A vectorized variable.
 
 Base.length(ab::AutoBcast) = length(ab.x)
 
-for F1 in [:NEG, :CONJ]
+for F1 in [:NEG]
     @eval @inline function $F1(a!::AutoBcast)
         @instr @invcheckoff for i=1:length(a!)
             $F1(a!.x[i])
@@ -18,8 +18,8 @@ for F1 in [:NEG, :CONJ]
     end
 end
 
-for F2 in [:XOR, :SWAP, :((inf::PlusEq)), :((inf::MinusEq)), :((inf::XorEq))]
-    F2 != :SWAP && @eval @inline function $F2(a::AutoBcast, b)
+for F2 in [:SWAP, :((inf::PlusEq)), :((inf::MinusEq)), :((inf::XorEq))]
+    F2 != :SWAP && @eval @inline function $F2(a::AutoBcast, b::Real)
         @instr @invcheckoff for i=1:length(a)
             $F2(a.x[i], b)
         end
@@ -35,20 +35,20 @@ end
 
 for F3 in [:ROT, :IROT, :((inf::PlusEq)), :((inf::MinusEq)), :((inf::XorEq))]
     if !(F3 in [:ROT, :IROT])
-        @eval @inline function $F3(a::AutoBcast, b, c)
+        @eval @inline function $F3(a::AutoBcast, b::Real, c::Real)
             @instr @invcheckoff for i=1:length(a)
                 $F3(a.x[i], b, c)
             end
             a, b, c
         end
-        @eval @inline function $F3(a::AutoBcast, b, c::AutoBcast)
+        @eval @inline function $F3(a::AutoBcast, b::Real, c::AutoBcast)
             @instr @invcheckoff for i=1:length(a)
                 $F3(a.x[i], b, c.x[i])
             end
             a, b, c
         end
     end
-    @eval @inline function $F3(a::AutoBcast, b::AutoBcast, c)
+    @eval @inline function $F3(a::AutoBcast, b::AutoBcast, c::Real)
         @instr @invcheckoff for i=1:length(a)
             $F3(a.x[i], b.x[i], c)
         end

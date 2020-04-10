@@ -4,18 +4,13 @@
     NEG(grad(a!))
 end
 
-@i @inline function CONJ(a!::GVar)
-    CONJ(value(a!))
-    CONJ(grad(a!))
-end
-
 # +-
 @i @inline function ⊖(identity)(a!::GVar, b::GVar)
     value(a!) ⊖ value(b)
     grad(b) ⊕ grad(a!)
 end
-@nograd ⊖(identity)(a!, b::GVar)
-@nograd ⊖(identity)(a!::GVar, b)
+@nograd ⊖(identity)(a!::Real, b::GVar)
+@nograd ⊖(identity)(a!::GVar, b::Real)
 
 # +- (triple)
 @i @inline function ⊖(+)(out!::GVar, x::GVar, y::GVar)
@@ -24,12 +19,12 @@ end
     grad(y) += identity(grad(out!))
 end
 
-@i @inline function ⊖(+)(out!::GVar, x::GVar, y)
+@i @inline function ⊖(+)(out!::GVar, x::GVar, y::Real)
     value(out!) -= value(x) + value(y)
     grad(x) += identity(grad(out!))
 end
 
-@i @inline function ⊖(+)(out!::GVar, x, y::GVar)
+@i @inline function ⊖(+)(out!::GVar, x::Real, y::GVar)
     value(out!) -= value(x) + value(y)
     grad(y) += identity(grad(out!))
 end
@@ -40,12 +35,12 @@ end
     grad(y) -= identity(grad(out!))
 end
 
-@i @inline function ⊖(-)(out!::GVar, x, y::GVar)
+@i @inline function ⊖(-)(out!::GVar, x::Real, y::GVar)
     value(out!) -= value(x) + value(y)
     grad(y) -= identity(grad(out!))
 end
 
-@i @inline function ⊖(-)(out!::GVar, x::GVar, y)
+@i @inline function ⊖(-)(out!::GVar, x::GVar, y::Real)
     value(out!) -= value(x) + value(y)
     grad(x) += identity(grad(out!))
 end
@@ -63,12 +58,12 @@ end
     grad(y) += value(x) * grad(out!)
 end
 
-@i @inline function ⊖(*)(out!::GVar, x, y::GVar)
+@i @inline function ⊖(*)(out!::GVar, x::Real, y::GVar)
     value(out!) -= value(x) * value(y)
     grad(y) += value(x) * grad(out!)
 end
 
-@i @inline function ⊖(*)(out!::GVar, x::GVar, y)
+@i @inline function ⊖(*)(out!::GVar, x::GVar, y::Real)
     value(out!) -= value(x) * value(y)
     grad(x) += grad(out!) * value(y)
 end
@@ -86,7 +81,7 @@ end
     ~@routine
 end
 
-@i @inline function ⊖(/)(out!::GVar{T}, x, y::GVar) where T
+@i @inline function ⊖(/)(out!::GVar{T}, x::Real, y::GVar) where T
     value(out!) -= x/value(y)
     @routine @invcheckoff begin
         a1 ← zero(grad(out!))
@@ -98,7 +93,7 @@ end
     ~@routine
 end
 
-@i @inline function ⊖(/)(out!::GVar, x::GVar, y)
+@i @inline function ⊖(/)(out!::GVar, x::GVar, y::Real)
     value(out!) -= value(x)/y
     grad(x) += grad(out!)/y
 end
@@ -129,7 +124,7 @@ end
     ~@routine
 end
 
-@i @inline function ⊖(^)(out!::GVar{T}, x::GVar, n) where T
+@i @inline function ⊖(^)(out!::GVar{T}, x::GVar, n::Real) where T
     ⊖(^)(value(out!), value(x), n)
     @routine @invcheckoff begin
         anc1 ← zero(value(x))
@@ -144,7 +139,7 @@ end
     ~@routine
 end
 
-@i @inline function ⊖(^)(out!::GVar{T}, x, n::GVar) where T
+@i @inline function ⊖(^)(out!::GVar{T}, x::Real, n::GVar) where T
     ⊖(^)(value(out!), x, value(n))
     # get jac of n
     @routine @invcheckoff begin
@@ -170,10 +165,10 @@ end
 end
 
 for op in [:*, :/, :^, :+, :-]
-    @eval @nograd ⊖($op)(out!::GVar, x, y)
-    @eval @nograd ⊖($op)(out!, x, y::GVar)
-    @eval @nograd ⊖($op)(out!, x::GVar, y::GVar)
-    @eval @nograd ⊖($op)(out!, x::GVar, y)
+    @eval @nograd ⊖($op)(out!::GVar, x::Real, y::Real)
+    @eval @nograd ⊖($op)(out!::Real, x::Real, y::GVar)
+    @eval @nograd ⊖($op)(out!::Real, x::GVar, y::GVar)
+    @eval @nograd ⊖($op)(out!::Real, x::GVar, y::Real)
 end
 
 @i @inline function ⊖(exp)(out!::GVar, x::GVar{T}) where T
@@ -212,8 +207,8 @@ end
 end
 
 for op in [:exp, :log, :sin, :cos]
-    @eval @nograd ⊖($op)(out!, x::GVar)
-    @eval @nograd ⊖($op)(out!::GVar, x)
+    @eval @nograd ⊖($op)(out!::Real, x::GVar)
+    @eval @nograd ⊖($op)(out!::GVar, x::Real)
 end
 
 @i @inline function IROT(a!::GVar, b!::GVar, θ::GVar)
@@ -228,7 +223,7 @@ end
     ROT(grad(a!), grad(b!), π/2)
 end
 
-@i @inline function IROT(a!::GVar, b!::GVar, θ)
+@i @inline function IROT(a!::GVar, b!::GVar, θ::Real)
     IROT(value(a!), value(b!), θ)
     NEG(θ)
     θ ⊖ π/2
@@ -238,12 +233,17 @@ end
     ROT(grad(a!), grad(b!), π/2)
 end
 
-@nograd IROT(a!, b!, θ::GVar)
+@nograd IROT(a!::Real, b!::Real, θ::GVar)
 
 export primitive_grad
 function primitive_grad end
 
 @i function (mf::MinusEq)(out!::GVar, args...; kwargs...)
     value(out!) -= mf.f(value.(args)...; kwargs...)
-    grad.(args) .+= identity.(NiLangCore.wrap_tuple(primitive_grad(mf.f, value.(args)...; kwargs...)))
+    grad.(args) .+= grad(out!) .* primitive_grad(mf.f, value.(args)...; kwargs...)
+end
+
+@i function (mf::MinusEq)(out!::GVar, x::GVar; kwargs...)
+    value(out!) -= mf.f(value(x); kwargs...)
+    grad(x) += identity(primitive_grad(mf.f, value(x); kwargs...))
 end

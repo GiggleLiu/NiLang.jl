@@ -95,7 +95,7 @@ end
     @i function f1(x) #TODO fix this broken test!
         mulint(x, 3)
     end
-    for op in [NEG, CONJ] #, f1, ~f1]
+    for op in [NEG] #, f1, ~f1]
         @show op
         h1 = local_hessian(op, (0.3,))
         h2 = local_hessian_numeric(op, (0.3,))

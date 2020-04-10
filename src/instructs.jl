@@ -1,4 +1,4 @@
-export XOR, SWAP, NEG, CONJ, FLIP
+export SWAP, NEG, FLIP
 export ROT, IROT
 export ipop!, ipush!
 export mulint, divint
@@ -36,34 +36,18 @@ loaddata(::Type{T}, x::TX) where {T<:IWrapper, TX} = T(x)
 """
     NEG(a!) -> -a!
 """
-@inline function NEG(a!::Number)
+@inline function NEG(a!::Real)
     -a!
 end
 @selfdual NEG
-
-"""
-    CONJ(a!) -> a!'
-"""
-@inline function CONJ(a!::Number)
-    conj(a!)
-end
-@selfdual CONJ
 
 @inline FLIP(b::Bool) = !b
 @selfdual FLIP
 
 """
-    XOR(a!, b) -> a! ⊻ b, b
-"""
-@inline function XOR(a!::Number, b::Number)
-    a! ⊻ b, b
-end
-@selfdual XOR
-
-"""
     SWAP(a!, b!) -> b!, a!
 """
-@inline function SWAP(a!::Number, b!::Number)
+@inline function SWAP(a!::Real, b!::Real)
     b!, a!
 end
 @selfdual SWAP
@@ -84,7 +68,7 @@ end
 \\end{align}
 ```
 """
-@inline function ROT(i::Number, j::Number, θ::Number)
+@inline function ROT(i::Real, j::Real, θ::Real)
     a, b = rot(i, j, θ)
     a, b, θ
 end
@@ -92,13 +76,13 @@ end
 """
     IROT(a!, b!, θ) -> ROT(a!, b!, -θ)
 """
-@inline function IROT(i::Number, j::Number, θ::Number)
+@inline function IROT(i::Real, j::Real, θ::Real)
     i, j, _ = ROT(i, j, -θ)
     i, j, θ
 end
 @dual ROT IROT
 
-for F1 in [:NEG, :CONJ]
+for F1 in [:NEG]
     @eval @inline function $F1(a!::IWrapper)
         @instr $F1(value(a!))
         a!
@@ -108,35 +92,38 @@ for F1 in [:NEG, :CONJ]
 end
 
 for F2 in [:XOR, :SWAP, :((inf::PlusEq)), :((inf::MinusEq)), :((inf::XorEq))]
-    @eval @inline @generated function $F2(a, b)
-        if !(a <: IWrapper || b <: IWrapper)
-            return :(throw(MethodError($($(QuoteNode(F2))), (a, b))))
-        end
-        param_a = a <: IWrapper ? :(value(a)) : :(a)
-        param_b = b <: IWrapper ? :(value(b)) : :(b)
-        quote
-            @instr $($(QuoteNode(F2)))($param_a, $param_b)
-            a, b
-        end
+    @eval @inline function $F2(a::IWrapper, b::Real)
+        @instr $(NiLangCore.get_argname(F2))(value(a), b)
+        a, b
+    end
+    @eval @inline function $F2(a::IWrapper, b::IWrapper)
+        @instr $(NiLangCore.get_argname(F2))(value(a), value(b))
+        a, b
+    end
+    @eval @inline function $F2(a::Real, b::IWrapper)
+        @instr $(NiLangCore.get_argname(F2))(a, value(b))
+        a, b
     end
 end
 
-for F2 in [:XOR, :SWAP]
+for F2 in [:SWAP]
     @eval NiLangCore.nouts(::typeof($F2)) = $(F2 == :SWAP ? 2 : 1)
     @eval NiLangCore.nargs(::typeof($F2)) = 2
 end
 
+function type_except(::Type{TT}, ::Type{T2}) where {TT, T2}
+    N = length(TT.parameters)
+    setdiff(Base.Iterators.product(zip(TT.parameters, repeat([T2], N))...), [ntuple(x->T2, N)])
+end
+
 for F3 in [:ROT, :IROT, :((inf::PlusEq)), :((inf::MinusEq)), :((inf::XorEq))]
-    @eval @inline @generated function $F3(a, b, c)
-        if !(a <: IWrapper || b <: IWrapper || c <: IWrapper)
-            return :(throw(MethodError($($(QuoteNode(F3))), (a, b, c))))
-        end
-        param_a = a <: IWrapper ? :(value(a)) : :(a)
-        param_b = b <: IWrapper ? :(value(b)) : :(b)
-        param_c = c <: IWrapper ? :(value(c)) : :(c)
-        quote
-            @instr $($(QuoteNode(F3)))($param_a, $param_b, $param_c)
-            a, b, c
+    PS = (:a, :b, :c)
+    for PTS in type_except(Tuple{IWrapper, IWrapper, IWrapper}, Real)
+        params = map((P,PT)->PT <: IWrapper ? :(value($P)) : P, PS, PTS)
+        params_ts = map((P,PT)->:($P::$PT), PS, PTS)
+        @eval @inline function $F3($(params_ts...))
+            @instr $F3($(params...))
+            ($(PS...),)
         end
     end
 end
