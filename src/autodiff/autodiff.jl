@@ -16,6 +16,5 @@ include("checks.jl")
 include("instructs.jl")
 include("jacobian.jl")
 include("hessian_backback.jl")
-include("taylor.jl")
 
 end

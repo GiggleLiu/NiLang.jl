@@ -240,7 +240,7 @@ function primitive_grad end
 
 @i function (mf::MinusEq)(out!::GVar, args...; kwargs...)
     value(out!) -= mf.f(value.(args)...; kwargs...)
-    grad.(args) .+= grad(out!) .* primitive_grad(mf.f, value.(args)...; kwargs...)
+    grad.(args) .+= (@skip! grad(out!)) .* primitive_grad(mf.f, value.(args)...; kwargs...)
 end
 
 @i function (mf::MinusEq)(out!::GVar, x::GVar; kwargs...)

@@ -64,3 +64,24 @@ function jacobian(::Type{T}, f, args; kwargs...) where T
     (~f)(args...; kwargs...)
     return jac
 end
+
+function match_eltype(args)
+    types = Any[_eltype.(args)...]
+    hasfloat = any(t->t <: AbstractFloat, types)
+    hasfixed = any(t->t <: Fixed, types)
+    if hasfloat && hasfixed
+        error("Float point number and Fixed point numbers are not compatible!")
+    end
+    if hasfloat
+        promote_type(filter(x->x <: AbstractFloat, types)...)
+    elseif hasfixed
+        promote_type(filter(x->x <: Fixed, types)...)
+    else
+        promote_type(types...)
+    end
+end
+
+_eltype(x) = typeof(x)
+_eltype(::Type{T}) where T = T
+_eltype(::Type{<:AbstractArray{T}}) where T = _eltype(T)
+_eltype(x::AbstractArray{T}) where T = _eltype(T)
