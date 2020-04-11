@@ -28,7 +28,7 @@ function tset(value, tp::Tuple, iloss)
 end
 
 function update_var(args, iarg, i::Int, val)
-    args[iargs][i] += val
+    args[iarg][i] += val
     args
 end
 
