@@ -45,6 +45,7 @@ Attach a gradient field to `x`.
     end
 end
 GVar(x::Complex) = Complex(GVar(x.re), GVar(x.im))
+GVar(x::Complex, y::Complex) = Complex(GVar(x.re, y.re), GVar(x.im, y.im))
 (_::Inv{GVar})(x::Complex) = Complex((~GVar)(x.re), (~GVar)(x.im))
 
 Base.copy(b::GVar) = GVar(b.x, copy(b.g))

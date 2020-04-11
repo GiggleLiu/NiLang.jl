@@ -27,6 +27,7 @@ end
 @testset "complex GVar" begin
     a = 1.0+ 2im
     @test GVar(a) == Complex(GVar(1.0), GVar(2.0))
+    @test GVar(a, a) == Complex(GVar(1.0, 1.0), GVar(2.0, 2.0))
 end
 
 @i function fr(f, loss, args...; il)
