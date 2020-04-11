@@ -10,6 +10,9 @@ using Test
         @test check_grad(opm(^), (1.0, 2.0, 2); verbose=true, iloss=1)
         @test check_grad(opm(^), (1.0, 2.0, 2.0); verbose=true, iloss=1)
         @test check_grad(opm(abs), (1.0, -2.0); verbose=true, iloss=1)
+        @test check_grad(opm(abs2), (1.0, -2.0); verbose=true, iloss=1)
+        @test check_grad(opm(atan), (1.0, -2.0); verbose=true, iloss=1)
+        @test check_grad(opm(atan), (1.0, -2.0, 1.5); verbose=true, iloss=1)
         @test check_grad(opm(exp), (1.0, 2.0); verbose=true, iloss=1)
         @test check_grad(opm(log), (1.0, 2.0); verbose=true, iloss=1)
         @test check_grad(opm(sin), (1.0, 2.0); verbose=true, iloss=1)
@@ -23,6 +26,14 @@ using Test
     @test check_grad(ROT, (1.0, 2.0, 2.0); verbose=true, iloss=2)
     @test check_grad(IROT, (1.0, 2.0, 2.0); verbose=true, iloss=1)
     @test check_grad(IROT, (1.0, 2.0, 2.0); verbose=true, iloss=2)
+end
+
+@testset "sincos" begin
+    @i function f(s, c, x)
+        (s, c) += sincos(x)
+    end
+    @test check_grad(f, (1.0, 2.0, 2.0); verbose=true, iloss=1)
+    @test check_grad(f, (1.0, 2.0, 2.0); verbose=true, iloss=2)
 end
 
 @testset "AD over pop" begin

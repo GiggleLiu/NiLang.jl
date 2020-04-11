@@ -155,6 +155,33 @@ end
     ~@routine
 end
 
+@i @inline function ⊖(atan)(out!::GVar{T}, y::GVar, x::GVar) where T
+    ⊖(atan)(value(out!), value(y), value(x))
+    @routine @invcheckoff begin
+        xy2 ← zero(T)
+        jac_x ← zero(T)
+        jac_y ← zero(T)
+        xy2 += abs2(value(x))
+        xy2 += abs2(value(y))
+        jac_y += value(x) / xy2
+        jac_x += (-value(y)) / xy2
+    end
+    grad(y) += grad(out!) * jac_y
+    grad(x) += grad(out!) * jac_x
+    ~@routine
+end
+
+@i @inline function ⊖(atan)(out!::GVar{T}, x::GVar) where T
+    ⊖(atan)(value(out!), value(x))
+    @routine @invcheckoff begin
+        xy2 ← zero(T)
+        xy2 += abs2(value(x))
+        xy2 += identity(1)
+    end
+    grad(x) += grad(out!) / xy2
+    ~@routine
+end
+
 @i @inline function ⊖(abs)(out!::GVar, x::GVar{T}) where T
     value(out!) -= abs(value(x))
     if (x > 0, ~)
@@ -162,6 +189,16 @@ end
     else
         grad(x) ⊖ grad(out!)
     end
+end
+
+@i @inline function ⊖(abs2)(out!::GVar, x::GVar{T}) where T
+    value(out!) -= abs2(value(x))
+    @routine @invcheckoff begin
+        x2 ← zero(T)
+        x2 += 2 * value(x)
+    end
+    grad(x) += grad(out!) * x2
+    ~@routine
 end
 
 for op in [:*, :/, :^, :+, :-]
@@ -206,10 +243,25 @@ end
     ~@routine
 end
 
+@i @inline function ⊖(sincos)(out!::Tuple{T1,T1}, x::GVar{T}) where {T1<:GVar, T}
+    @routine @invcheckoff begin
+        s ← zero(T)
+        c ← zero(T)
+        (s, c) += sincos(value(x))
+    end
+    value.(out!) -= identity((s, c))
+    grad(x) += grad(tget(out!, 1)) * c
+    grad(x) -= grad(tget(out!, 2)) * s
+    ~@routine
+end
+
 for op in [:exp, :log, :sin, :cos]
     @eval @nograd ⊖($op)(out!::Real, x::GVar)
     @eval @nograd ⊖($op)(out!::GVar, x::Real)
 end
+
+@nograd ⊖(sincos)(out!::Tuple{<:Real,<:Real}, x::GVar)
+@nograd ⊖(sincos)(out!::Tuple{<:GVar,<:GVar}, x::Real)
 
 @i @inline function IROT(a!::GVar, b!::GVar, θ::GVar)
     IROT(value(a!), value(b!), value(θ))

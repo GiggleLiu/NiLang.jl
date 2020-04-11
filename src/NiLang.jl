@@ -10,6 +10,7 @@ const Fixed43 = Q20f43
 
 include("utils.jl")
 include("instructs.jl")
+include("complex.jl")
 include("autobcast.jl")
 
 include("autodiff/autodiff.jl")

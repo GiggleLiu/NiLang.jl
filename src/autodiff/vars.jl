@@ -32,6 +32,8 @@ Attach a gradient field to `x`.
 
     @i function GVar(x::Integer)
     end
+    @i function GVar(x::Function)
+    end
     @i function GVar(x::AbstractArray)
         GVar.(x)
     end
@@ -42,6 +44,9 @@ Attach a gradient field to `x`.
         (~NoGrad)(x)
     end
 end
+GVar(x::Complex) = Complex(GVar(x.re), GVar(x.im))
+(_::Inv{GVar})(x::Complex) = Complex((~GVar)(x.re), (~GVar)(x.im))
+
 Base.copy(b::GVar) = GVar(b.x, copy(b.g))
 Base.zero(x::GVar) = GVar(Base.zero(x.x), Base.zero(x.g))
 Base.zero(::Type{<:GVar{T}}) where T = GVar(zero(T))
@@ -59,9 +64,12 @@ Get the gradient field of `var`.
 chfield(x::GVar, ::typeof(value), xval::GVar) = GVar(xval, x.g)
 
 grad(gv::T) where T = zero(T)
+grad(gv::Complex) where T = Complex(grad(gv.re), grad(gv.im))
 grad(gv::AbstractArray{T}) where T = grad.(gv)
+grad(gv::Function) = 0
 chfield(x::T, ::typeof(grad), g::T) where T = (@invcheck iszero(g) || g≈0; x)
 chfield(x::GVar, ::typeof(grad), g::GVar) where T = GVar(x.x, g)
+chfield(x::Complex, ::typeof(grad), g::Complex) where T = Complex(GVar(x.re, g.re), GVar(x.im, g.im))
 
 # NOTE: superwarning: check value only to make ancilla gradient descardable.
 NiLangCore.deanc(x::GVar, val::GVar) = NiLangCore.deanc(value(x), value(val))

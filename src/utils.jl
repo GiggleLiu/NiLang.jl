@@ -6,8 +6,7 @@ export rot, plshift, prshift, arshift
 rotate variables `a` and `b` by an angle `θ`
 """
 function rot(a, b, θ)
-    c = cos(θ)
-    s = sin(θ)
+    s, c = sincos(θ)
     a*c-b*s, a*s+b*c
 end
 

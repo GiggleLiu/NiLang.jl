@@ -1,0 +1,20 @@
+@i function ⊕(angle)(r!::T, x::Complex{T}) where T<:GVar
+    r! += atan(x.im, x.re)
+end
+
+@i function ⊕(abs2)(y!::T, a::Complex{T}) where T<:GVar
+    y! += a.re^2
+    y! += a.im^2
+end
+
+@i function ⊕(abs)(y!::T, a::Complex{T}) where T<:GVar
+    @routine @invcheckoff begin
+        y2 ← zero(y!)
+        y2 += abs2(a)
+    end
+    y! += y2 ^ 0.5
+    ~@routine
+end
+
+Base.zero(x::Complex{T}) where T<:GVar = Complex(zero(T), zero(T))
+Base.zero(::Type{Complex{T}}) where T<:GVar = Complex(zero(T), zero(T))

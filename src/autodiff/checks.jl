@@ -21,41 +21,66 @@ nparams(x::AbstractFloat) = 1
 nparams(x::GVar) = 1
 
 function tset(vfunc::Function, tp::Tuple, iloss)
-    map(i->i===iloss ? vfunc(tp[i]) : tp[i], 1:length(tp))
+    map(i->i===iloss ? vfunc(tp[i]) : tp[i], (1:length(tp)...,))
 end
 function tset(value, tp::Tuple, iloss)
-    map(i->i===iloss ? value : tp[i], 1:length(tp))
+    map(i->i===iloss ? value : tp[i], (1:length(tp)...,))
+end
+
+function update_var(args, iarg, i::Int, val)
+    args[iargs][i] += val
+    args
+end
+
+function update_var(args, iarg, ::Nothing, val)
+    tset(x->chfield(x, value, value(x) + val), args, iarg)
+end
+
+function ng_single(::Type{T}, f, args, kwargs, iarg, i, iloss, δ) where T
+    args = update_var(args, iarg, i, T(δ/2))
+    @instr f(args...; kwargs...)
+    pos = value(args[iloss])
+    @instr (~f)(args...; kwargs...)
+    args = update_var(args, iarg, i, -T(δ))
+    @instr f(args...; kwargs...)
+    neg = value(args[iloss])
+    @instr (~f)(args...; kwargs...)
+    args = update_var(args, iarg, i, T(δ/2))
+    (pos - neg)/δ
+end
+
+function ng_single(::Type{T}, f, args, kwargs, iarg, i, iloss, δ) where T<:Complex
+    res = zero(T)
+    for dd = [δ, im*δ]
+        args = update_var(args, iarg, i, dd/2)
+        @instr f(args...; kwargs...)
+        pos = value(args[iloss])
+        @instr (~f)(args...; kwargs...)
+        args = update_var(args, iarg, i, -dd)
+        @instr f(args...; kwargs...)
+        neg = value(args[iloss])
+        @instr (~f)(args...; kwargs...)
+        args = update_var(args, iarg, i, dd/2)
+        if dd == δ
+            res += (pos - neg)/δ
+        else
+            res += im*(pos - neg)/δ
+        end
+    end
+    res
 end
 
 function ng(f, args, iarg; iloss::Int, δ=1e-5, kwargs...)
     x = args[iarg]
+    T = eltype(x)
     if x isa AbstractArray
-        T = eltype(x)
         res = zero(x)
         for i = 1:length(x)
-            args[iarg][i] += T(δ/2)
-            @instr f(args...; kwargs...)
-            pos = value(args[iloss])
-            @instr (~f)(args...; kwargs...)
-            args[iarg][i] -= T(δ)
-            @instr f(args...; kwargs...)
-            neg = value(args[iloss])
-            @instr (~f)(args...; kwargs...)
-            args[iarg][i] += T(δ/2)
-            res[i] = (pos - neg)/δ
+            res[i] = ng_single(T, f, args, kwargs, iarg, i, iloss, δ)
         end
         return res
     else
-        args = tset(x->chfield(x, value, value(x) + δ/2), args, iarg)
-        @instr f(args...; kwargs...)
-        pos = value(args[iloss])
-        @instr (~f)(args...; kwargs...)
-        args = tset(x->chfield(x, value, value(x) - δ), args, iarg)
-        @instr f(args...; kwargs...)
-        neg = value(args[iloss])
-        @instr (~f)(args...; kwargs...)
-        args = tset(x->chfield(x, value, value(x) + δ/2), args, iarg)
-        (pos - neg)/δ
+        ng_single(T, f, args, kwargs, iarg, nothing, iloss, δ)
     end
 end
 
