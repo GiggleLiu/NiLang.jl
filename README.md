@@ -9,6 +9,7 @@ It features:
 
 * an instruction level (i.e. only backward rules of `+`, `-`, `*` and `/` are required) automatic differentiation engine,
 * a reversible language with abstraction and arrays,
+* complex value support
 
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://GiggleLiu.github.io/NiLang.jl/stable)
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://GiggleLiu.github.io/NiLang.jl/dev)
