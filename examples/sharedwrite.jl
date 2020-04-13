@@ -1,8 +1,8 @@
-# # An example of the shared write problem on GPU
+# # The shared write problem on GPU
 
 # We will write a GPU version of `axpy!` function.
 
-# ## axpy! functions
+# ## The main program
 
 using KernelAbstractions
 using NiLang, NiLang.AD
@@ -39,7 +39,7 @@ cuy! = y! |> CuArray
 cux = x |> CuArray
 α = 0.4
 
-# ## Check this function is correct
+# ## Check the correctness of results
 
 using Test
 cu_axpy!(cuy!, α, cux)
@@ -47,7 +47,7 @@ cu_axpy!(cuy!, α, cux)
 (~cu_axpy!)(cuy!, α, cux)
 @test cuy! ≈ y!
 
-# ## Check gradients
+# Let's check the gradients
 lsout = 0.0
 @instr loss'(Val(1), lsout, cuy!, α, cux)
 
@@ -57,11 +57,11 @@ grad.(cux)
 # you will see `0.0`.
 grad(α)
 
-# ## Why?
-# Because a scalar is not allowed to change in a CUDA kernel.
+# ## Why some gradients not correct?
+# In the above example, `α` is a scalar, whereas a scalar is not allowed to change in a CUDA kernel.
 # What if we change `α` to a CuArray?
 
-# #### Try 1: using a vector of `α`
+# ## This one works: using a vector of `α`
 @i @kernel function axpy_kernel(y!, α, x)
     @invcheckoff begin
         i ← @index(Global)
@@ -79,7 +79,7 @@ lsout = 0.0
 # You will see correct answer
 grad.(cuβ)
 
-# #### Try 2: using a vector of `α`, but shared read.
+# ## This one has the shared write problem: using a vector of `α`, but shared read.
 @i @kernel function axpy_kernel(y!, α, x)
     @invcheckoff begin
         i ← @index(Global)
@@ -103,7 +103,7 @@ cuβ = [0.4] |> CuArray
 # @instr loss'(Val(1), lsout, cuy!, cuβ, cux)
 # ```
 
-# Because, shared write is not allowed!
+# Because, shared write is not allowed. We need someone clever enough to solve this problem for us.
 
 # ## Conclusion
 # * Shared scalar: the gradient of a scalar will not be updated.

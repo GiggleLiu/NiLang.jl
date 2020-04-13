@@ -7,9 +7,11 @@
 NiLang.jl (逆lang), is a reversible domain specific language (DSL) in Julia.
 It features:
 
-* an instruction level (i.e. only backward rules of `+`, `-`, `*` and `/` are required) automatic differentiation engine,
+* any program written in NiLang is differentiable,
 * a reversible language with abstraction and arrays,
-* complex value support
+* complex values
+
+[Why reversible computing is the future?](https://giggleliu.github.io/NiLang.jl/dev/why/)
 
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://GiggleLiu.github.io/NiLang.jl/stable)
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://GiggleLiu.github.io/NiLang.jl/dev)
