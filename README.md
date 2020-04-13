@@ -1,17 +1,18 @@
 # NiLang
 
+NiLang.jl (逆lang), is a reversible domain-specific language (DSL) that allow a program to go back to the past.
+
+![NiLang](docs/src/asset/logo.jpg)
+
 * Requires Julia version >= 1.3.
 * If test breaks, try using the master branch of `NiLangCore`.
 
 
-NiLang.jl (逆lang), is a reversible domain specific language (DSL) in Julia.
-It features:
+NiLang features:
 
 * any program written in NiLang is differentiable,
 * a reversible language with abstraction and arrays,
 * complex values
-
-[Why reversible computing is the future?](https://giggleliu.github.io/NiLang.jl/dev/why/)
 
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://GiggleLiu.github.io/NiLang.jl/stable)
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://GiggleLiu.github.io/NiLang.jl/dev)
@@ -20,6 +21,8 @@ It features:
 
 > The strangeness of reversible computing is mainly due to
 > our lack of experience with it.—Henry Baker, 1992
+
+Please check [why reversible computing is the future of computing](https://giggleliu.github.io/NiLang.jl/dev/why/).
 
 ## To Start
 ```
