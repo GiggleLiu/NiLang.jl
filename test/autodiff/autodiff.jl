@@ -4,6 +4,7 @@ include("vars.jl")
 include("gradfunc.jl")
 
 include("instructs.jl")
+include("complex.jl")
 include("manual.jl")
 include("jacobian.jl")
 include("hessian_backback.jl")
