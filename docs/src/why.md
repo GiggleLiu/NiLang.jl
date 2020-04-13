@@ -1,7 +1,7 @@
 # What is Reversible Computing and why do we need it
 
 # what is reversible computing
-Reversible computing is a computing paradigm that can deterministically undo all the previous changes, which requires user not erasing any information during computations. It boomed during 1970-2005, however, but runs into a winter after that. The following book covers most of reversible computing that we want to know, especially the software part.
+Reversible computing is a computing paradigm that can deterministically undo all the previous changes, which requires user not erasing any information during computations. It boomed during 1970-2005, however, but runs into a winter after that. The following book covers most of reversible computing that you want to know, especially the software part.
 
 ![Introduction to Reversible Computing](asset/revcomp.jpg)
 
@@ -31,8 +31,10 @@ In reversible programming, [differentiable programming is directly achievable](h
 
 ## Embrace Reversible Computing: Software goes first
 
-Unlike traditional programming paradigm.
+1. Reversible hardwares relies on reversible software and compiling techniques.
+The inverse is not true. Reversible hardware is an energy efficient host for reversible programs.
 
+2. Reversible programming is already useful in machine learning, it is technical smooth to embrace reversible computing from the software side.
 
 
 ## FAQ
