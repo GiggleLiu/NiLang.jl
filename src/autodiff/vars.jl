@@ -34,9 +34,6 @@ Attach a gradient field to `x`.
     end
     @i function GVar(x::Function)
     end
-    @i function GVar(x::AbstractArray)
-        GVar.(x)
-    end
     @i function GVar(x::Tuple)
         GVar.(x)
     end
@@ -47,6 +44,9 @@ end
 GVar(x::Complex) = Complex(GVar(x.re), GVar(x.im))
 GVar(x::Complex, y::Complex) = Complex(GVar(x.re, y.re), GVar(x.im, y.im))
 (_::Inv{GVar})(x::Complex) = Complex((~GVar)(x.re), (~GVar)(x.im))
+GVar(x::AbstractArray) = GVar.(x)
+GVar(x::AbstractArray, y::AbstractArray) = GVar.(x, y)
+(_::Inv{GVar})(x::AbstractArray) = (~GVar).(x)
 
 Base.copy(b::GVar) = GVar(b.x, copy(b.g))
 Base.zero(x::GVar) = GVar(Base.zero(x.x), Base.zero(x.g))

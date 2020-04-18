@@ -30,18 +30,18 @@ end
 end
 
 @i @inline function ⊖(-)(out!::GVar, x::GVar, y::GVar)
-    value(out!) -= value(x) + value(y)
+    value(out!) -= value(x) - value(y)
     grad(x) += identity(grad(out!))
     grad(y) -= identity(grad(out!))
 end
 
 @i @inline function ⊖(-)(out!::GVar, x::Real, y::GVar)
-    value(out!) -= value(x) + value(y)
+    value(out!) -= value(x) - value(y)
     grad(y) -= identity(grad(out!))
 end
 
 @i @inline function ⊖(-)(out!::GVar, x::GVar, y::Real)
-    value(out!) -= value(x) + value(y)
+    value(out!) -= value(x) - value(y)
     grad(x) += identity(grad(out!))
 end
 
@@ -200,6 +200,8 @@ end
     grad(x) += grad(out!) * x2
     ~@routine
 end
+@nograd ⊖(abs2)(a!::GVar, b::Real)
+@nograd ⊖(abs2)(a!::Real, b::GVar)
 
 for op in [:*, :/, :^, :+, :-]
     @eval @nograd ⊖($op)(out!::GVar, x::Real, y::Real)
