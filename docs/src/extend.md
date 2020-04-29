@@ -112,6 +112,17 @@ julia> check_inv(ROT, (1.0, 2.0, 3.0))
 true
 ```
 
+For self-reversible functions, one can declare the reversibility for it like this
+```julia
+"""
+    SWAP(a!, b!) -> b!, a!
+"""
+@inline function SWAP(a!::Real, b!::Real)
+    b!, a!
+end
+@selfdual SWAP
+```
+
 To bind gradients for this multi-in, multi-out function.
 The general approach is *Binding the backward rule on its inverse*!
 
