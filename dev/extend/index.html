@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>How to extend · NiLang.jl</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link href="../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><h1>NiLang.jl</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../search/"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../">Home</a></li><li><a class="toctext" href="../why/">What and Why</a></li><li><span class="toctext">Examples</span><ul><li><a class="toctext" href="../examples/besselj/">Bessel function</a></li><li><a class="toctext" href="../examples/sparse/">Sparse matrices</a></li><li><a class="toctext" href="../examples/sharedwrite/">The shared write problem on GPU</a></li></ul></li><li><span class="toctext">API &amp; Manual</span><ul><li><a class="toctext" href="../instructions/">Instruction Reference</a></li><li class="current"><a class="toctext" href>How to extend</a><ul class="internal"><li><a class="toctext" href="#Extend-,-and-for-irreversible-one-out-functions-1">Extend <code>+=</code>, <code>-=</code> and <code>⊻=</code> for irreversible one-out functions</a></li><li><a class="toctext" href="#Reversible-multi-in-multi-out-functions-1">Reversible multi-in multi-out functions</a></li></ul></li><li><a class="toctext" href="../api/">API Manual</a></li></ul></li></ul></nav><article id="docs"><header><nav><ul><li>API &amp; Manual</li><li><a href>How to extend</a></li></ul><a class="edit-page" href="https://github.com/GiggleLiu/NiLang.jl/blob/master/docs/src/extend.md#L"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>How to extend</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="How-to-extend-1" href="#How-to-extend-1">How to extend</a></h1><h2><a class="nav-anchor" id="Extend-,-and-for-irreversible-one-out-functions-1" href="#Extend-,-and-for-irreversible-one-out-functions-1">Extend <code>+=</code>, <code>-=</code> and <code>⊻=</code> for irreversible one-out functions</a></h2><p>It directly works</p><pre><code class="language-julia">julia&gt; using SpecialFunctions, NiLang
+
+julia&gt; x, y = 2.1, 1.0
+(2.1, 1.0)
+
+julia&gt; @instr y += besselj0(x)
+2.1
+
+julia&gt; x, y
+(2.1, 1.7492472503018073)
+
+julia&gt; @instr ~(y += besselj0(x))
+2.1
+
+julia&gt; x, y
+(2.1, 1.0)</code></pre><p>Here the statement</p><pre><code class="language-julia">@instr y += besselj0(x)</code></pre><p>is mapped to</p><pre><code class="language-julia">@instr ⊕(besselj0)(y, x)</code></pre><p>However, doing this does not give you correct gradients. For <code>y += scalar_out_function(x)</code>, one can bind the backward rules like</p><pre><code class="language-julia">julia&gt; using ChainRules, NiLang.AD
+
+julia&gt; besselj0_back(x) = ChainRules.rrule(besselj0, x)[2](1.0)[2]
+besselj0_back (generic function with 1 method)
+
+julia&gt; primitive_grad(::typeof(besselj0), x::Real) = besselj0_back(x)
+primitive_grad (generic function with 1 method)
+
+julia&gt; xg, yg = GVar(x), GVar(y, 1.0)
+(GVar(2.1, 0.0), GVar(1.0, 1.0))
+
+julia&gt; @instr yg -= besselj0(xg)
+GVar(2.1, -0.5682921357570385)
+
+julia&gt; xg, yg
+(GVar(2.1, -0.5682921357570385), GVar(0.8333930196680097, 1.0))
+
+julia&gt; @instr yg += besselj0(xg)
+GVar(2.1, 0.0)
+
+julia&gt; xg, yg
+(GVar(2.1, 0.0), GVar(1.0, 1.0))
+
+julia&gt; NiLang.AD.check_grad(⊕(besselj0), (1.0, 2.1); iloss=1)
+true
+
+julia&gt; using BenchmarkTools
+
+julia&gt; @benchmark ⊕(besselj0)($yg, $xg)
+BenchmarkTools.Trial: 
+  memory estimate:  0 bytes
+  allocs estimate:  0
+  --------------
+  minimum time:     451.523 ns (0.00% GC)
+  median time:      459.431 ns (0.00% GC)
+  mean time:        477.419 ns (0.00% GC)
+  maximum time:     857.036 ns (0.00% GC)
+  --------------
+  samples:          10000
+  evals/sample:     197</code></pre><p>Good!</p><h2><a class="nav-anchor" id="Reversible-multi-in-multi-out-functions-1" href="#Reversible-multi-in-multi-out-functions-1">Reversible multi-in multi-out functions</a></h2><p>It is easy to do, define two normal Julia functions reversible to each other, using the macro <code>@dual</code> to tell the compiler they are reversible to each other.</p><p>For example, a pair of dual functions <code>ROT</code> and <code>IROT</code> that already defined in NiLang.</p><pre><code class="language-julia">&quot;&quot;&quot;
+    ROT(a!, b!, θ) -&gt; a!&#39;, b!&#39;, θ
+</code></pre><p>math \begin{align}     {\rm ROT}(a!, b!, \theta)  = \begin{bmatrix}         \cos(\theta) &amp; - \sin(\theta)\\
+        \sin(\theta)  &amp; \cos(\theta)     \end{bmatrix}     \begin{bmatrix}         a!\\
+        b!     \end{bmatrix}, \end{align}</p><pre><code class="language-none">&quot;&quot;&quot;
+@inline function ROT(i::Real, j::Real, θ::Real)
+    a, b = rot(i, j, θ)
+    a, b, θ
+end
+
+&quot;&quot;&quot;
+    IROT(a!, b!, θ) -&gt; ROT(a!, b!, -θ)
+&quot;&quot;&quot;
+@inline function IROT(i::Real, j::Real, θ::Real)
+    i, j, _ = ROT(i, j, -θ)
+    i, j, θ
+end
+@dual ROT IROT</code></pre><p>One can easily check the reversibility by typing</p><pre><code class="language-julia">julia&gt; check_inv(ROT, (1.0, 2.0, 3.0))
+true</code></pre><p>To bind gradients for this multi-in, multi-out function. The general approach is <em>Binding the backward rule on its inverse</em>!</p><pre><code class="language-julia">@i @inline function IROT(a!::GVar, b!::GVar, θ::GVar)
+    IROT(value(a!), value(b!), value(θ))
+    NEG(value(θ))
+    value(θ) ⊖ π/2
+    ROT(grad(a!), grad(b!), value(θ))
+    grad(θ) += value(a!) * grad(a!)
+    grad(θ) += value(b!) * grad(b!)
+    value(θ) ⊕ π/2
+    NEG(value(θ))
+    ROT(grad(a!), grad(b!), π/2)
+end
+
+@i @inline function IROT(a!::GVar, b!::GVar, θ::Real)
+    IROT(value(a!), value(b!), θ)
+    NEG(θ)
+    θ ⊖ π/2
+    ROT(grad(a!), grad(b!), θ)
+    θ ⊕ π/2
+    NEG(θ)
+    ROT(grad(a!), grad(b!), π/2)
+end
+
+@nograd IROT(a!::Real, b!::Real, θ::GVar)</code></pre><p>When this inverse function is called, the backward rules are automatically applied.</p><p>Good! This method can also be extended to linear algebra functions, however, the memory allocation overhead is high because one need to wrap each element with <code>GVar</code>.</p><footer><hr/><a class="previous" href="../instructions/"><span class="direction">Previous</span><span class="title">Instruction Reference</span></a><a class="next" href="../api/"><span class="direction">Next</span><span class="title">API Manual</span></a></footer></article></body></html>
