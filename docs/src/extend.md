@@ -85,24 +85,11 @@ Good!
 It is easy to do, define two normal Julia functions reversible to each other,
 using the macro `@dual` to tell the compiler they are reversible to each other.
 
-For example, a pair of dual functions `ROT` and `IROT` that already defined in NiLang.
+For example, a pair of dual functions `ROT` (2D rotation) and `IROT` (inverse rotation) that already defined in NiLang.
 
 ```julia
 """
     ROT(a!, b!, θ) -> a!', b!', θ
-
-```math
-\\begin{align}
-    {\\rm ROT}(a!, b!, \\theta)  = \\begin{bmatrix}
-        \\cos(\\theta) & - \\sin(\\theta)\\\\
-        \\sin(\\theta)  & \\cos(\\theta)
-    \\end{bmatrix}
-    \\begin{bmatrix}
-        a!\\\\
-        b!
-    \\end{bmatrix},
-\\end{align}
-```
 """
 @inline function ROT(i::Real, j::Real, θ::Real)
     a, b = rot(i, j, θ)
