@@ -5,6 +5,16 @@ export mulint, divint
 
 const GLOBAL_STACK = []
 
+"""
+    NoGrad{T} <: IWrapper{T}
+    NoGrad(x)
+
+A `NoGrad(x)` is equivalent to `GVar^{-1}(x)`, which cancels the `GVar` wrapper.
+"""
+@pure_wrapper NoGrad
+
+const NullType{T} = Union{NoGrad{T}, Partial{T}}
+
 ############# global stack operations ##########
 @inline function ipush!(x)
     push!(GLOBAL_STACK, x)
@@ -29,7 +39,7 @@ end
 end
 
 loaddata(::Type{T}, x::T) where T = x
-loaddata(::Type{T}, x::TX) where {T<:IWrapper, TX} = T(x)
+loaddata(::Type{T}, x::TX) where {T<:NullType, TX} = T(x)
 
 @dual ipop! ipush!
 
@@ -83,7 +93,7 @@ end
 @dual ROT IROT
 
 for F1 in [:NEG]
-    @eval @inline function $F1(a!::IWrapper)
+    @eval @inline function $F1(a!::NullType)
         @instr $F1(value(a!))
         a!
     end
@@ -92,15 +102,15 @@ for F1 in [:NEG]
 end
 
 for F2 in [:XOR, :SWAP, :((inf::PlusEq)), :((inf::MinusEq)), :((inf::XorEq))]
-    @eval @inline function $F2(a::IWrapper, b::Real)
+    @eval @inline function $F2(a::NullType, b::Real)
         @instr $(NiLangCore.get_argname(F2))(value(a), b)
         a, b
     end
-    @eval @inline function $F2(a::IWrapper, b::IWrapper)
+    @eval @inline function $F2(a::NullType, b::NullType)
         @instr $(NiLangCore.get_argname(F2))(value(a), value(b))
         a, b
     end
-    @eval @inline function $F2(a::Real, b::IWrapper)
+    @eval @inline function $F2(a::Real, b::NullType)
         @instr $(NiLangCore.get_argname(F2))(a, value(b))
         a, b
     end
@@ -118,8 +128,8 @@ end
 
 for F3 in [:ROT, :IROT, :((inf::PlusEq)), :((inf::MinusEq)), :((inf::XorEq))]
     PS = (:a, :b, :c)
-    for PTS in type_except(Tuple{IWrapper, IWrapper, IWrapper}, Real)
-        params = map((P,PT)->PT <: IWrapper ? :(value($P)) : P, PS, PTS)
+    for PTS in type_except(Tuple{NullType, NullType, NullType}, Real)
+        params = map((P,PT)->PT <: NullType ? :(value($P)) : P, PS, PTS)
         params_ts = map((P,PT)->:($P::$PT), PS, PTS)
         @eval @inline function $F3($(params_ts...))
             @instr $F3($(params...))

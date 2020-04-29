@@ -1,11 +1,3 @@
-"""
-    NoGrad{T} <: IWrapper{T}
-    NoGrad(x)
-
-A `NoGrad(x)` is equivalent to `GVar^{-1}(x)`, which cancels the `GVar` wrapper.
-"""
-@pure_wrapper NoGrad
-
 ######## GVar, a bundle that records gradient
 """
     GVar{T,GT} <: IWrapper{T}
@@ -93,15 +85,6 @@ end
 Base.show(io::IO, gv::GVar) = print(io, "GVar($(gv.x), $(gv.g))")
 Base.show(io::IO, ::MIME"plain/text", gv::GVar) = Base.show(io, gv)
 # interfaces
-
-"""
-    Loss{T} <: IWrapper{T}
-    Loss(x)
-
-Wrapper used to mark the loss variable.
-"""
-@pure_wrapper Loss
-grad(x::Loss) = grad(x.x)
 
 """
     @nograd f(args...)

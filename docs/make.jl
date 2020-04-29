@@ -21,6 +21,7 @@ makedocs(;
            ],
         "API & Manual" => Any[
             "instructions.md",
+            "extend.md",
             "api.md",
            ]
     ],

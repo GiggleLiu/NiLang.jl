@@ -34,7 +34,6 @@ end
 
 @testset "assign tuple" begin
     x = 0.3
-    z = Loss(0.3)
     @instr for i=1:length(x) GVar(x) end
     @test x === GVar(0.3)
 end

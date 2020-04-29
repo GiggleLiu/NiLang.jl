@@ -299,5 +299,9 @@ end
 
 @i function (mf::MinusEq)(out!::GVar, x::GVar; kwargs...)
     value(out!) -= mf.f(value(x); kwargs...)
-    grad(x) += identity(primitive_grad(mf.f, value(x); kwargs...))
+    grad(x) += (@skip! grad(out!)) * primitive_grad(mf.f, value(x); kwargs...)
+end
+
+function loaddata(::Type{T}, x) where T<:GVar
+    T(x)
 end

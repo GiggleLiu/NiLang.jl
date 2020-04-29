@@ -22,6 +22,7 @@ Depth = 1
 Pages = [
     "grammar.md",
     "instructions.md",
+    "extend.md",
     "api.md",
 ]
 Depth = 2
