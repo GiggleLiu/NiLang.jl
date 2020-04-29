@@ -53,11 +53,9 @@ BenchmarkTools.Trial:
   maximum time:     857.036 ns (0.00% GC)
   --------------
   samples:          10000
-  evals/sample:     197</code></pre><p>Good!</p><h2><a class="nav-anchor" id="Reversible-multi-in-multi-out-functions-1" href="#Reversible-multi-in-multi-out-functions-1">Reversible multi-in multi-out functions</a></h2><p>It is easy to do, define two normal Julia functions reversible to each other, using the macro <code>@dual</code> to tell the compiler they are reversible to each other.</p><p>For example, a pair of dual functions <code>ROT</code> and <code>IROT</code> that already defined in NiLang.</p><pre><code class="language-julia">&quot;&quot;&quot;
+  evals/sample:     197</code></pre><p>Good!</p><h2><a class="nav-anchor" id="Reversible-multi-in-multi-out-functions-1" href="#Reversible-multi-in-multi-out-functions-1">Reversible multi-in multi-out functions</a></h2><p>It is easy to do, define two normal Julia functions reversible to each other, using the macro <code>@dual</code> to tell the compiler they are reversible to each other.</p><p>For example, a pair of dual functions <code>ROT</code> (2D rotation) and <code>IROT</code> (inverse rotation) that already defined in NiLang.</p><pre><code class="language-julia">&quot;&quot;&quot;
     ROT(a!, b!, θ) -&gt; a!&#39;, b!&#39;, θ
-</code></pre><p>math \begin{align}     {\rm ROT}(a!, b!, \theta)  = \begin{bmatrix}         \cos(\theta) &amp; - \sin(\theta)\\
-        \sin(\theta)  &amp; \cos(\theta)     \end{bmatrix}     \begin{bmatrix}         a!\\
-        b!     \end{bmatrix}, \end{align}</p><pre><code class="language-none">&quot;&quot;&quot;
+&quot;&quot;&quot;
 @inline function ROT(i::Real, j::Real, θ::Real)
     a, b = rot(i, j, θ)
     a, b, θ
@@ -71,7 +69,13 @@ end
     i, j, θ
 end
 @dual ROT IROT</code></pre><p>One can easily check the reversibility by typing</p><pre><code class="language-julia">julia&gt; check_inv(ROT, (1.0, 2.0, 3.0))
-true</code></pre><p>To bind gradients for this multi-in, multi-out function. The general approach is <em>Binding the backward rule on its inverse</em>!</p><pre><code class="language-julia">@i @inline function IROT(a!::GVar, b!::GVar, θ::GVar)
+true</code></pre><p>For self-reversible functions, one can declare the reversibility for it like this</p><pre><code class="language-julia">&quot;&quot;&quot;
+    SWAP(a!, b!) -&gt; b!, a!
+&quot;&quot;&quot;
+@inline function SWAP(a!::Real, b!::Real)
+    b!, a!
+end
+@selfdual SWAP</code></pre><p>To bind gradients for this multi-in, multi-out function. The general approach is <em>Binding the backward rule on its inverse</em>!</p><pre><code class="language-julia">@i @inline function IROT(a!::GVar, b!::GVar, θ::GVar)
     IROT(value(a!), value(b!), value(θ))
     NEG(value(θ))
     value(θ) ⊖ π/2
