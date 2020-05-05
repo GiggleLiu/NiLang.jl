@@ -6,6 +6,7 @@ NiLang.jl (逆lang), is a reversible domain-specific language (DSL) that allow a
 
 * Requires Julia version >= 1.3.
 * If test breaks, try using the master branch of `NiLangCore`.
+* **The `'` notation has been removed recently!**
 
 
 NiLang features:
@@ -73,7 +74,7 @@ julia> y!, x = 0.0, 1.6
 (0.0, 1.6)
 
 # first order gradients
-julia> @instr iexp'(Val(1), y!, x)
+julia> @instr Grad(iexp)(Val(1), y!, x)
 
 julia> grad(x)
 4.9530324244260555
@@ -84,7 +85,7 @@ julia> y!, x = 0.0, 1.6
 # second order gradient by differentiate first order gradients
 julia> using ForwardDiff: Dual
 
-julia> _, hxy, hxx = iexp'(Val(1), 
+julia> _, hxy, hxx = Grad(iexp)(Val(1), 
         Dual(y!, zero(y!)), Dual(x, one(x)));
 
 julia> grad(hxx).partials[1]

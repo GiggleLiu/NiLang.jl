@@ -3,7 +3,7 @@ export Grad, NGrad, Hessian, gradient
 """
     NGrad{N,FT} <: Function
 
-Obtain gradients `f'(Val(i), args..., kwargs...)`, where `i` is the index of loss in `args`.
+Obtain gradients `Grad(f)(Val(i), args..., kwargs...)`, where `i` is the index of loss in `args`. `Grad` object calls forward first, and then backward.
 """
 struct NGrad{N,FT} <: Function
     f::FT
@@ -15,14 +15,11 @@ end
 const Grad{FT} = NGrad{1,FT}
 const Hessian{FT} = NGrad{2,FT}
 
-Base.adjoint(f::Function) = Grad(f)
-Base.adjoint(f::NGrad{N}) where {N} = NGrad{N+1}(f.f)
 Base.show_function(io::IO, b::NGrad{N}, compact::Bool) where {N} = print(io, "$(b.f)"*"'"^N)
 Base.show_function(io::IO, ::MIME"text/plain", b::NGrad{N}, compact::Bool) where {N} = print(io, b)
 Base.display(bf::NGrad) = print(bf)
 (_::Type{Inv{NGrad{N}}})(f::NGrad{M}) where {M, N} = NGrad{M-N}(f.f)
 (_::Type{Inv{NGrad{M}}})(f::NGrad{M}) where {M} = f.f
-#Grad(f::Inv) = Inv(f.f')
 
 
 @i function (g::Grad)(il::Val{iloss}, args...; kwargs...) where iloss

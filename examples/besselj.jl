@@ -76,17 +76,17 @@ end
 # The reason why the "approximate uncomputing" trick works here lies in the fact that from the mathematic perspective the state in ``n``th step ``\{s_n, z\}`` contains the same amount of information as the state in the ``n-1``th step ``\{s_{n-1}, z\}`` except some special points, it is highly possible to find an equation to uncompute the previous state from the current state.
 # This trick can be used extensively in many other application. It mitigated the artifitial irreversibility brought by the number system that we have adopt at the cost of precision.
 
-# To obtain gradients, one use **ibesselj'**
+# To obtain gradients, one call **Grad(ibesselj)**
 
 y, x = 0.0, 1.0
-ibesselj'(Val(1), y, 2, x)
+Grad(ibesselj)(Val(1), y, 2, x)
 
-# Here, **ibesselj'** is a callable instance of type **Grad{typeof(ibesselj)}}**.
+# Here, **Grad(ibesselj)** is a callable instance of type **Grad{typeof(ibesselj)}}**.
 # The first parameter `Val(1)` indicates the first argument is the loss.
 
 # To obtain second order gradients, one can Feed dual numbers to this gradient function.
 using ForwardDiff: Dual
-_, hxy, _, hxx = ibesselj'(Val(1), Dual(y, zero(y)), 2, Dual(x, one(x)))
+_, hxy, _, hxx = Grad(ibesselj)(Val(1), Dual(y, zero(y)), 2, Dual(x, one(x)))
 println("The hessian dy^2/dx^2 is $(grad(hxx).partials[1])")
 
 # Here, the gradient field is a Dual number, it has a field partials that stores the derivative with respect to `x`.
@@ -169,7 +169,7 @@ println("The hessian dy^2/dx^2 is $(grad(hxx).partials[1])")
 # ForwardDiff gives the best performance because it is designed for functions with single input.
 # It is even faster than manually derived gradients
 # ```math
-# J_{\nu}'(z) = \frac{J_{\nu-1} - J_{\nu+1}}{2}
+# \frac{\partial J_{\nu}(z)}{\partial z} = \frac{J_{\nu-1} - J_{\nu+1}}{2}
 # ```
 # NiLang.AD is the reversible differential programming implementation, it considers only the backward pass.
 # The benchmark of its GPU version is estimated on Nvidia Titan V by broadcasting the gradient function on CUDA array of size ``2^17`` and take average.
