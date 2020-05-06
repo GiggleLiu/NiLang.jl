@@ -83,7 +83,7 @@ end
         # to ensure mean(v2) > mean(v1)
         # if mean(v1)+0.1 - mean(v2) > 0, punish it.
         out! += exp(m1)
-        out! -= identity(1)
+        DEC(out!)
     end
     ~@routine
 end

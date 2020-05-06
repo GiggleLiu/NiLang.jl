@@ -20,6 +20,8 @@ using Test
         @test check_grad(opm(/), (1.0, 2.0, 2.0); verbose=true, iloss=1)
     end
     @test check_grad(NEG, (1.0,); verbose=true, iloss=1)
+    @test check_grad(INC, (1.0,); verbose=true, iloss=1)
+    @test check_grad(DEC, (1.0,); verbose=true, iloss=1)
     @test check_grad(mulint, (1.5, 2); verbose=true, iloss=1)
     @test check_grad(divint, (1.5, 2); verbose=true, iloss=1)
     @test check_grad(ROT, (1.0, 2.0, 2.0); verbose=true, iloss=1)
@@ -47,4 +49,17 @@ end
     end
 
     @test check_grad(mean, (0.0, [1,2,3.0, 4.0]); iloss=1)
+end
+
+@testset "AD over pipe" begin
+    @i function mean(out!, anc, x)
+        for i=1:length(x)
+            #(anc, x[i]) |> ⊕(identity) |> SWAP
+            ⊕(identity)(anc, x[i])
+            SWAP(anc, x[i])
+        end
+        out! += anc / length(x)
+    end
+
+    @test check_grad(mean, (0.0, 0.0, [1,2,3.0, 4.0]); iloss=1, verbose=true)
 end

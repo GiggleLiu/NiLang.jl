@@ -45,7 +45,7 @@ end
         anc1 += halfz_power_nu/fact_nu
         out_anc += identity(anc1)
         while (abs(unwrap(anc1)) > atol && abs(unwrap(anc4)) < atol, k!=0)
-            k += identity(1)
+            INC(k)
             @routine begin
                 anc5 += identity(k)
                 anc5 += identity(ν)
@@ -64,7 +64,7 @@ end
 # where the **ifactorial** is defined as
 
 @i function ifactorial(out!, n)
-    out! += identity(1)
+    INC(out!)
     for i=1:n
         mulint(out!, i)
     end

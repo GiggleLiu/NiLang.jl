@@ -2,6 +2,7 @@ export SWAP, NEG, FLIP
 export ROT, IROT
 export ipop!, ipush!
 export mulint, divint
+export INC, DEC
 
 const GLOBAL_STACK = []
 
@@ -53,6 +54,22 @@ end
 
 @inline FLIP(b::Bool) = !b
 @selfdual FLIP
+
+"""
+    INC(a!) -> a! + 1
+"""
+@inline function INC(a!::Real)
+    a! + one(a!)
+end
+
+"""
+    DEC(a!) -> a! - 1
+"""
+@inline function DEC(a!::Real)
+    a! - one(a!)
+end
+@dual INC DEC
+
 
 """
     SWAP(a!, b!) -> b!, a!

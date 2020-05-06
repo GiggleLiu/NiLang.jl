@@ -28,21 +28,21 @@ Base.display(bf::NGrad) = print(bf)
 @i function (g::Grad)(il::Val{iloss}, args...; kwargs...) where iloss
     protectf(g).f(args...; kwargs...)
     GVar.(args)
-    grad(tget(args,iloss)) += identity(1)
+    INC(grad(tget(args,iloss)))
     (~protectf(g).f)(args...; kwargs...)
 end
 
 @i function (g::Grad)(args...; iloss::Int, kwargs...)
     protectf(g).f(args...; kwargs...)
     GVar.(args)
-    grad(tget(args,iloss)) += identity(1)
+    INC(grad(tget(args,iloss)))
     (~protectf(g).f)(args...; kwargs...)
 end
 
 function gradient(::Val{iloss}, f, args; kwargs...) where iloss
     args = f(args...; kwargs...)
     args = NiLangCore.wrap_tuple(GVar.(args))
-    @instr grad(tget(args ,iloss)) += identity(1)
+    @instr INC(grad(tget(args ,iloss)))
     grad.(NiLangCore.wrap_tuple((~f)(args...; kwargs...)))
 end
 

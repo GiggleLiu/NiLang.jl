@@ -90,3 +90,13 @@ end
     @test check_inv(test, (3.0,))
     @test length(NiLang.GLOBAL_STACK) == l
 end
+
+@testset "INC, DEC" begin
+    x = Int32(2)
+    @instr INC(x)
+    @test x === Int32(3)
+    @instr DEC(x)
+    @test x === Int32(2)
+    @instr (x,) |> INC |> DEC |> DEC
+    @test x === Int32(1)
+end

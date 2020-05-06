@@ -4,6 +4,10 @@
     NEG(grad(a!))
 end
 
+@i @inline function DEC(a!::GVar)
+    DEC(value(a!))
+end
+
 # +-
 @i @inline function ⊖(identity)(a!::GVar, b::GVar)
     value(a!) ⊖ value(b)
@@ -109,9 +113,9 @@ end
         jac1 ← zero(value(x))
         jac2 ← zero(value(x))
 
-        value(n) -= identity(1)
+        DEC(value(n))
         anc1 += value(x)^value(n)
-        value(n) += identity(1)
+        INC(value(n))
         jac1 += anc1 * value(n)
 
         # get grad of n
@@ -130,9 +134,9 @@ end
         anc1 ← zero(value(x))
         jac ← zero(value(x))
 
-        value(n) -= identity(1)
+        DEC(value(n))
         anc1 += value(x)^n
-        value(n) += identity(1)
+        INC(value(n))
         jac += anc1 * n
     end
     grad(x) += grad(out!) * jac
@@ -176,7 +180,7 @@ end
     @routine @invcheckoff begin
         xy2 ← zero(T)
         xy2 += abs2(value(x))
-        xy2 += identity(1)
+        INC(xy2)
     end
     grad(x) += grad(out!) / xy2
     ~@routine

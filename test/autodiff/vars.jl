@@ -8,6 +8,8 @@ using Test
     @test g1 === GVar(0.0, 0.5)
     @test_throws InvertibilityError (~GVar)(g1)
     @test !almost_same(GVar(0.0), GVar(0.0, 1.0))
+    zero(GVar(3.0, 2.0)) == GVar(0.0)
+    one(GVar(3.0, 2.0)) == GVar(1.0)
 end
 
 

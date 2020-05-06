@@ -47,7 +47,7 @@ using NiLang, NiLang.AD
     @routine begin
         anc1 += identity(1)
         while (value(anc1) > atol, iplus != 0)
-            iplus += identity(1)
+            INC(iplus)
             anc2 += anc1 * x
             anc3 += anc2 / iplus
             expout += identity(anc3)

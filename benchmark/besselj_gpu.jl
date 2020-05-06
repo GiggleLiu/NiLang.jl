@@ -3,7 +3,7 @@ using CuArrays, CUDAnative, GPUArrays
 using BenchmarkTools
 
 @i function ifactorial(out!, n)
-    out! += identity(1)
+    INC(out!)
     @invcheckoff for i=1:n
         mulint(out!, i)
     end
@@ -27,9 +27,9 @@ end
         jac1 ← zero(value(x))
         jac2 ← zero(value(x))
 
-        value(n) -= identity(1)
+        DEC(value(n))
         anc1 += CUDAnative.pow(value(x), value(n))
-        value(n) += identity(1)
+        INC(value(n))
         jac1 += anc1 * value(n)
 
         # get grad of n
@@ -48,9 +48,9 @@ end
         anc1 ← zero(value(x))
         jac ← zero(value(x))
 
-        value(n) -= identity(1)
+        DEC(value(n))
         anc1 += CUDAnative.pow(value(x), n)
-        value(n) += identity(1)
+        INC(value(n))
         jac += anc1 * n
     end
     grad(x) += grad(out!) * jac
@@ -100,7 +100,7 @@ end
         anc1 += halfz_power_nu/fact_nu
         out_anc += identity(anc1)
         while (abs(unwrap(anc1)) > atol && abs(unwrap(anc4)) < atol, k!=0)
-            k += identity(1)
+            INC(k)
             @routine begin
                 anc5 += identity(k)
                 anc5 += identity(ν)

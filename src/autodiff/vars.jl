@@ -43,7 +43,10 @@ GVar(x::AbstractArray, y::AbstractArray) = GVar.(x, y)
 Base.copy(b::GVar) = GVar(b.x, copy(b.g))
 Base.zero(x::GVar) = GVar(Base.zero(x.x), Base.zero(x.g))
 Base.zero(::Type{<:GVar{T}}) where T = GVar(zero(T))
+Base.one(x::GVar) = GVar(Base.one(x.x), Base.zero(x.g))
+Base.one(::Type{<:GVar{T}}) where T = GVar(one(T))
 Base.adjoint(b::GVar) = GVar(b.x', b.g')
+Base.isapprox(x::GVar, y::GVar; kwargs...) = isapprox(x.x, y.x; kwargs...) && isapprox(x.g, y.g; kwargs...)
 
 # define kernel and field views
 """
