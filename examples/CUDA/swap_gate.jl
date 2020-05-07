@@ -44,7 +44,7 @@ end
 end
 
 loss(0.0, CuArray(randn(128)))
-loss'(Loss(0.0), CuArray(randn(128)))
+Grad(loss)(Loss(0.0), CuArray(randn(128)))
 
 ####################### A different loss ###############
 @i function loss(out!, state::CuVector, target::CuVector)
