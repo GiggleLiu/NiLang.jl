@@ -5,14 +5,14 @@ version = "0.3.2"
 
 [deps]
 FixedPointNumbers = "53c48c17-4a7d-5ca2-90c5-79b7896eea93"
-MLStyle = "d8e11817-5142-5d16-987a-aa16d5891078"
+MatchCore = "5dd3f0b1-72a9-48ad-ae6e-79f673da005f"
 NiLangCore = "575d3204-02a4-11ea-3f62-238caa8bf11e"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 TupleTools = "9d95972d-f1c8-5527-a6e0-b4b365fa01f6"
 
 [compat]
+MatchCore = "0.1"
 FixedPointNumbers = "0.6"
-MLStyle = "0.3"
 NiLangCore = "0.5"
 Reexport = "0.2"
 TupleTools = "1.2"

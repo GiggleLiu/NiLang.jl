@@ -95,11 +95,11 @@ Base.show(io::IO, ::MIME"plain/text", gv::GVar) = Base.show(io, gv)
 Mark `f(args...)` as having no gradients.
 """
 macro nograd(ex)
-    @match ex begin
+    @smatch ex begin
         :($f($(args...))) => begin
             newargs = []
             for arg in args
-                push!(newargs, @match arg begin
+                push!(newargs, @smatch arg begin
                     :($x::GVar) => :($x.x)
                     :($x::VecGVar) => :($x.x)
                     :($x::GVar{$tp}) => :($x.x)
