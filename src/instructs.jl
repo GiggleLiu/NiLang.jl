@@ -74,7 +74,7 @@ end
 """
     SWAP(a!, b!) -> b!, a!
 """
-@inline function SWAP(a!::Real, b!::Real)
+@inline function SWAP(a!::T, b!::T) where T
     b!, a!
 end
 @selfdual SWAP

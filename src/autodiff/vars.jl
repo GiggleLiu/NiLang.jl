@@ -69,13 +69,9 @@ chfield(x::Complex, ::typeof(grad), g::Complex) where T = Complex(GVar(x.re, g.r
 
 # NOTE: superwarning: check value only to make ancilla gradient descardable.
 NiLangCore.deanc(x::GVar, val::GVar) = NiLangCore.deanc(value(x), value(val))
-function NiLangCore.deanc(x::AbstractArray{<:GVar}, val::AbstractArray{<:GVar})
-    for (xi, vali) in zip(x, val)
-        NiLangCore.deanc(value(xi), value(vali))
-    end
+function deanc(x::T, val::T) where {T<:AbstractArray}
+   x === val || deanc.(x, val)
 end
-
-#NiLangCore.almost_same(a::GVar, b::GVar) = NiLangCore.almost_same(value(a), value(b))
 
 # constructors and deconstructors
 Base.:-(x::GVar) = GVar(-x.x, -x.g)

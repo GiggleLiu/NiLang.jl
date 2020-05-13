@@ -31,7 +31,7 @@ end
 
 @testset "i" begin
     @i function test1(a, b, out)
-        a ⊕ b
+        a += identity(b)
         out += a * b
     end
 
@@ -39,7 +39,7 @@ end
         out ← 0.0
         test1(a, b, out)
         (~test1)(a, b, out)
-        a ⊕ b
+        a += identity(b)
     end
 
     # compute (a+b)*b -> out
@@ -54,12 +54,12 @@ end
 @testset "broadcast" begin
     # compute (a+b)*b -> out
     @i function test1(a, b)
-        a .⊕ b
+        a .+= identity.(b)
     end
     @i function test2(a, b, out, loss)
-        a .⊕ b
+        a .+= identity.(b)
         out .+= (a .* b)
-        loss ⊕ out[1]
+        loss += identity(out[1])
     end
 
     x = [3, 1.0]
@@ -73,10 +73,10 @@ end
 @testset "broadcast 2" begin
     # compute (a+b)*b -> out
     @i function test1(a, b)
-        a ⊕ b
+        a += identity(b)
     end
     @i function test2(a, b, out)
-        a ⊕ b
+        a += identity(b)
         out += (a * b)
     end
 
@@ -98,7 +98,7 @@ end
 @testset "function call function" begin
     # compute (a+b)*b -> out
     @i function test1(a, b)
-        a ⊕ b
+        a += identity(b)
     end
 
     @i function test2(a, b, out)
@@ -127,8 +127,8 @@ end
     end
 
     # compute (a+b)*b -> out
-    @test isreversible(test1')
-    @test isreversible(~test1')
+    @test isreversible(test1', Tuple{Number, Any,Any})
+    @test isreversible(~test1', Tuple{Number, Any,Any})
     @test (~test1)' != ~(test1') # this is not true
 end
 
