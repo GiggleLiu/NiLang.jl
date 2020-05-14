@@ -83,6 +83,9 @@ end
 
 Base.show(io::IO, gv::GVar) = print(io, "GVar($(gv.x), $(gv.g))")
 Base.show(io::IO, ::MIME"plain/text", gv::GVar) = Base.show(io, gv)
+
+# used in log number iszero function.
+Base.isfinite(x::GVar) = isfinite(x.x)
 # interfaces
 
 """
