@@ -1,8 +1,7 @@
-# NiLang
-
-NiLang.jl (逆lang), is a reversible domain-specific language (DSL) that allow a program to go back to the past.
 
 <img src="docs/src/asset/logo3.png" width=400px/>
+
+NiLang.jl (逆lang), is a reversible domain-specific language (DSL) that allow a program to go back to the past.
 
 * Requires Julia version >= 1.3.
 * If test breaks, try using the master branch of `NiLangCore`.
