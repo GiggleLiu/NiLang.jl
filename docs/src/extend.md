@@ -130,11 +130,11 @@ The general approach is *Binding the backward rule on its inverse*!
 @i @inline function IROT(a!::GVar, b!::GVar, θ::GVar)
     IROT(value(a!), value(b!), value(θ))
     NEG(value(θ))
-    value(θ) ⊖ π/2
+    value(θ) -= π/2
     ROT(grad(a!), grad(b!), value(θ))
     grad(θ) += value(a!) * grad(a!)
     grad(θ) += value(b!) * grad(b!)
-    value(θ) ⊕ π/2
+    value(θ) += π/2
     NEG(value(θ))
     ROT(grad(a!), grad(b!), π/2)
 end
@@ -142,9 +142,9 @@ end
 @i @inline function IROT(a!::GVar, b!::GVar, θ::Real)
     IROT(value(a!), value(b!), θ)
     NEG(θ)
-    θ ⊖ π/2
+    θ -= π/2
     ROT(grad(a!), grad(b!), θ)
-    θ ⊕ π/2
+    θ += π/2
     NEG(θ)
     ROT(grad(a!), grad(b!), π/2)
 end

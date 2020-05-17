@@ -69,13 +69,9 @@ chfield(x::Complex, ::typeof(grad), g::Complex) where T = Complex(GVar(x.re, g.r
 
 # NOTE: superwarning: check value only to make ancilla gradient descardable.
 NiLangCore.deanc(x::GVar, val::GVar) = NiLangCore.deanc(value(x), value(val))
-function NiLangCore.deanc(x::AbstractArray{<:GVar}, val::AbstractArray{<:GVar})
-    for (xi, vali) in zip(x, val)
-        NiLangCore.deanc(value(xi), value(vali))
-    end
+function deanc(x::T, val::T) where {T<:AbstractArray}
+   x === val || deanc.(x, val)
 end
-
-#NiLangCore.almost_same(a::GVar, b::GVar) = NiLangCore.almost_same(value(a), value(b))
 
 # constructors and deconstructors
 Base.:-(x::GVar) = GVar(-x.x, -x.g)
@@ -87,6 +83,9 @@ end
 
 Base.show(io::IO, gv::GVar) = print(io, "GVar($(gv.x), $(gv.g))")
 Base.show(io::IO, ::MIME"plain/text", gv::GVar) = Base.show(io, gv)
+
+# used in log number iszero function.
+Base.isfinite(x::GVar) = isfinite(x.x)
 # interfaces
 
 """
@@ -95,11 +94,11 @@ Base.show(io::IO, ::MIME"plain/text", gv::GVar) = Base.show(io, gv)
 Mark `f(args...)` as having no gradients.
 """
 macro nograd(ex)
-    @match ex begin
+    @smatch ex begin
         :($f($(args...))) => begin
             newargs = []
             for arg in args
-                push!(newargs, @match arg begin
+                push!(newargs, @smatch arg begin
                     :($x::GVar) => :($x.x)
                     :($x::VecGVar) => :($x.x)
                     :($x::GVar{$tp}) => :($x.x)

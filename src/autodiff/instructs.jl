@@ -10,8 +10,8 @@ end
 
 # +-
 @i @inline function ⊖(identity)(a!::GVar, b::GVar)
-    value(a!) ⊖ value(b)
-    grad(b) ⊕ grad(a!)
+    value(a!) -= identity(value(b))
+    grad(b) += identity(grad(a!))
 end
 @nograd ⊖(identity)(a!::Real, b::GVar)
 @nograd ⊖(identity)(a!::GVar, b::Real)
@@ -189,9 +189,9 @@ end
 @i @inline function ⊖(abs)(out!::GVar, x::GVar{T}) where T
     value(out!) -= abs(value(x))
     if (x > 0, ~)
-        grad(x) ⊕ grad(out!)
+        grad(x) += identity(grad(out!))
     else
-        grad(x) ⊖ grad(out!)
+        grad(x) -= identity(grad(out!))
     end
 end
 
@@ -272,11 +272,11 @@ end
 @i @inline function IROT(a!::GVar, b!::GVar, θ::GVar)
     IROT(value(a!), value(b!), value(θ))
     NEG(value(θ))
-    value(θ) ⊖ π/2
+    value(θ) -= identity(π/2)
     ROT(grad(a!), grad(b!), value(θ))
     grad(θ) += value(a!) * grad(a!)
     grad(θ) += value(b!) * grad(b!)
-    value(θ) ⊕ π/2
+    value(θ) += identity(π/2)
     NEG(value(θ))
     ROT(grad(a!), grad(b!), π/2)
 end
@@ -284,9 +284,9 @@ end
 @i @inline function IROT(a!::GVar, b!::GVar, θ::Real)
     IROT(value(a!), value(b!), θ)
     NEG(θ)
-    θ ⊖ π/2
+    θ -= identity(π/2)
     ROT(grad(a!), grad(b!), θ)
-    θ ⊕ π/2
+    θ += identity(π/2)
     NEG(θ)
     ROT(grad(a!), grad(b!), π/2)
 end

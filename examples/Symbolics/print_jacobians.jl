@@ -7,11 +7,11 @@ NiLang.AD.isvar(sym::Basic) = true
 @i @inline function NiLang.IROT(a!::GVar{<:Basic}, b!::GVar{<:Basic}, θ::GVar{<:Basic})
     IROT(value(a!), value(b!), value(θ))
     NEG(value(θ))
-    value(θ) ⊖ Basic(π)/2
+    value(θ) -= Basic(π)/2
     ROT(grad(a!), grad(b!), value(θ))
     grad(θ) += value(a!) * grad(a!)
     grad(θ) += value(b!) * grad(b!)
-    value(θ) ⊕ Basic(π)/2
+    value(θ) += Basic(π)/2
     NEG(value(θ))
     ROT(grad(a!), grad(b!), Basic(π)/2)
 end

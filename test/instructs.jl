@@ -1,9 +1,9 @@
 using NiLang
 using Test
 
-@testset "⊕, ⊖" begin
+@testset "identity" begin
     x, y = 0.2, 0.5
-    @instr x ⊕ y
+    @instr x += identity(y)
     @test x == 0.7 && y==0.5
 end
 

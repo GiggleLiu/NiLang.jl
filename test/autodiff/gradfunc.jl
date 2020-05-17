@@ -28,7 +28,7 @@ end
 
 @testset "i" begin
     @i function test1(a, b, out)
-        a ⊕ b
+        a += identity(b)
         out += a * b
     end
 
@@ -36,7 +36,7 @@ end
         out ← 0.0
         test1(a, b, out)
         (~test1)(a, b, out)
-        a ⊕ b
+        a += identity(b)
     end
 
     # compute (a+b)*b -> out
@@ -51,12 +51,12 @@ end
 @testset "broadcast" begin
     # compute (a+b)*b -> out
     @i function test1(a, b)
-        a .⊕ b
+        a .+= identity.(b)
     end
     @i function test2(a, b, out, loss)
-        a .⊕ b
+        a .+= identity.(b)
         out .+= (a .* b)
-        loss ⊕ out[1]
+        loss += identity(out[1])
     end
 
     x = [3, 1.0]
@@ -70,10 +70,10 @@ end
 @testset "broadcast 2" begin
     # compute (a+b)*b -> out
     @i function test1(a, b)
-        a ⊕ b
+        a += identity(b)
     end
     @i function test2(a, b, out)
-        a ⊕ b
+        a += identity(b)
         out += (a * b)
     end
 
@@ -95,7 +95,7 @@ end
 @testset "function call function" begin
     # compute (a+b)*b -> out
     @i function test1(a, b)
-        a ⊕ b
+        a += identity(b)
     end
 
     @i function test2(a, b, out)
@@ -122,10 +122,8 @@ end
         add(a, b)
         out += a * b
     end
-
-    # compute (a+b)*b -> out
-    @test isreversible(Grad(test1))
-    @test isreversible(~Grad(test1))
+    @test isreversible(Grad(test1), Tuple{Number, Any,Any})
+    @test isreversible(~Grad(test1), Tuple{Number, Any,Any})
     @test Grad(~test1) != ~(Grad(test1)) # this is not true
 end
 
