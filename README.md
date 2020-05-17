@@ -32,37 +32,91 @@ pkg> add NiLang
 ```
 
 ## Examples
-1. Compute exp function from Taylor expansion
+1. Compute sparse matrix multiplication
 
 ```julia
-using NiLang, NiLang.AD
+using NiLang
+using SparseArrays: SparseMatrixCSC, AbstractSparseMatrix, nonzeros, rowvals, getcolptr
 
-@i function iexp(out!, x::T; atol::Real=1e-14) where T
-    anc1 ← zero(T)
-    anc2 ← zero(T)
-    anc3 ← zero(T)
-    iplus ← 0
-    expout ← zero(T)
-
-    out! += identity(1)
-    @routine begin
-        anc1 += identity(1)
-        while (value(anc1) > atol, iplus != 0)
-            INC(iplus)
-            anc2 += anc1 * x
-            anc3 += anc2 / iplus
-            expout += identity(anc3)
-            # speudo inverse
-            anc1 -= anc2 / x
-            anc2 -= anc3 * iplus
-            SWAP(anc1, anc3)
+@i function mul!(C::StridedVecOrMat, A::AbstractSparseMatrix, B::StridedVector{T}, α::Number, β::Number) where T
+    @safe size(A, 2) == size(B, 1) || throw(DimensionMismatch())
+    @safe size(A, 1) == size(C, 1) || throw(DimensionMismatch())
+    @safe size(B, 2) == size(C, 2) || throw(DimensionMismatch())
+    nzv ← nonzeros(A)
+    rv ← rowvals(A)
+    if (β != 1, ~)
+        @safe error("only β = 1 is supported, got β = $(β).")
+    end
+    # Here, we close the reversibility check inside the loop to increase performance
+    @invcheckoff for k = 1:size(C, 2)
+        @inbounds for col = 1:size(A, 2)
+            αxj ← zero(T)
+            αxj += B[col,k] * α
+            for j = getcolptr(A)[col]:(getcolptr(A)[col + 1] - 1)
+                C[rv[j], k] += nzv[j]*αxj
+            end
+            αxj -= B[col,k] * α
         end
     end
-
-    out! += identity(expout)
-
-    ~@routine
 end
+```
+
+To back propagate the gradient
+```
+julia> using SparseArrays: sprand
+
+julia> import SparseArrays
+
+julia> using BenchmarkTools
+
+julia> n = 1000;
+
+julia> sp1 = sprand(ComplexF64, n, n,0.1);
+
+julia> v = randn(ComplexF64, n);
+
+julia> out = zero(v);
+
+julia> @benchmark SparseArrays.mul!($(copy(out)), $sp1, $v, 0.5+0im, 1)
+BenchmarkTools.Trial: 
+  memory estimate:  0 bytes
+  allocs estimate:  0
+  --------------
+  minimum time:     226.005 μs (0.00% GC)
+  median time:      235.590 μs (0.00% GC)
+  mean time:        244.868 μs (0.00% GC)
+  maximum time:     2.750 ms (0.00% GC)
+  --------------
+  samples:          10000
+  evals/sample:     1
+
+julia> @benchmark mul!($(copy(out)), $(sp1), $v, 0.5+0im, 1)
+BenchmarkTools.Trial: 
+  memory estimate:  64 bytes
+  allocs estimate:  1
+  --------------
+  minimum time:     194.011 μs (0.00% GC)
+  median time:      207.218 μs (0.00% GC)
+  mean time:        257.364 μs (0.00% GC)
+  maximum time:     2.324 ms (0.00% GC)
+  --------------
+  samples:          10000
+  evals/sample:     1
+
+julia> using NiLang.AD
+
+julia> @benchmark (~mul!)($(GVar(copy(out))), $(GVar(sp1)), $(GVar(v)), $(GVar(0.5)), 1)
+BenchmarkTools.Trial: 
+  memory estimate:  64 bytes
+  allocs estimate:  1
+  --------------
+  minimum time:     719.223 μs (0.00% GC)
+  median time:      767.744 μs (0.00% GC)
+  mean time:        790.198 μs (0.00% GC)
+  maximum time:     7.231 ms (0.00% GC)
+  --------------
+  samples:          6291
+  evals/sample:     1
 ```
 
 To understand the grammar, see the [README](https://github.com/GiggleLiu/NiLangCore.jl) of NiLangCore.
