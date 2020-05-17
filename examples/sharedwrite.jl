@@ -49,7 +49,7 @@ cu_axpy!(cuy!, α, cux)
 
 # Let's check the gradients
 lsout = 0.0
-@instr loss'(Val(1), lsout, cuy!, α, cux)
+@instr Grad(loss)(Val(1), lsout, cuy!, α, cux)
 
 # you will see a correct vector `[0.4, 0.4, 0.4 ...]`
 grad.(cux)
@@ -74,7 +74,7 @@ cuy! = y! |> CuArray
 cux = x |> CuArray
 cuβ = repeat([0.4], 100) |> CuArray
 lsout = 0.0
-@instr loss'(Val(1), lsout, cuy!, cuβ, cux)
+@instr Grad(loss)(Val(1), lsout, cuy!, cuβ, cux)
 
 # You will see correct answer
 grad.(cuβ)
@@ -100,7 +100,7 @@ cuβ = [0.4] |> CuArray
 # >        Run Julia on debug level 2 for device stack traces.
 
 # ```julia
-# @instr loss'(Val(1), lsout, cuy!, cuβ, cux)
+# @instr Grad(loss)(Val(1), lsout, cuy!, cuβ, cux)
 # ```
 
 # Because, shared write is not allowed. We need someone clever enough to solve this problem for us.

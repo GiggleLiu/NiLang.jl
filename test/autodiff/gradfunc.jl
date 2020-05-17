@@ -4,23 +4,20 @@ import NiLang: ⊕, ⊖
 const add = ⊕(identity)
 
 @testset "NGrad" begin
-    @test exp''' isa NGrad{3,typeof(exp)}
     @test NGrad{3}(exp) isa NGrad{3,typeof(exp)}
-    @test (~NGrad{2})(exp''') isa NGrad{1,typeof(exp)}
-    @test (~NGrad{3})(exp''') === exp
 end
 
 @testset "instr" begin
     x, y = 3.0, 4.0
-    @instr (add)'(x, y; iloss=1)
+    @instr Grad(add)(x, y; iloss=1)
     @test grad(x) == 1.0
     @test grad(y) == 1.0
-    @test check_inv((add)', (3.0, 4.0); verbose=true, atol=1e-5, iloss=1)
+    @test check_inv(Grad(add), (3.0, 4.0); verbose=true, atol=1e-5, iloss=1)
     x, y = 3.0, 4.0
     @test check_grad(add, (x, y); iloss=1)
 
     x, y = 3.0, 4.0
-    (add)'(x, NoGrad(y); iloss=1)
+    Grad(add)(x, NoGrad(y); iloss=1)
     @test grad(y) === 0.0
 
     @test check_inv(⊕(*), (0.4, 0.4, 0.5))
@@ -125,11 +122,9 @@ end
         add(a, b)
         out += a * b
     end
-
-    # compute (a+b)*b -> out
-    @test isreversible(test1', Tuple{Number, Any,Any})
-    @test isreversible(~test1', Tuple{Number, Any,Any})
-    @test (~test1)' != ~(test1') # this is not true
+    @test isreversible(Grad(test1), Tuple{Number, Any,Any})
+    @test isreversible(~Grad(test1), Tuple{Number, Any,Any})
+    @test Grad(~test1) != ~(Grad(test1)) # this is not true
 end
 
 @testset "gradient" begin
