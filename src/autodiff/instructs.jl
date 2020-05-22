@@ -306,6 +306,10 @@ end
     grad(x) += (@skip! grad(out!)) * primitive_grad(mf.f, value(x); kwargs...)
 end
 
-function loaddata(::Type{T}, x) where T<:GVar
+function loaddata(::Type{GVar{T}}, x::T) where T
     T(x)
+end
+
+function loaddata(::Type{T}, x::T) where T <: GVar
+    x
 end
