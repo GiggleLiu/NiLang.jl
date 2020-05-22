@@ -197,12 +197,8 @@ end
 
 @i @inline function ⊖(abs2)(out!::GVar, x::GVar{T}) where T
     value(out!) -= abs2(value(x))
-    @routine @invcheckoff begin
-        x2 ← zero(T)
-        x2 += 2 * value(x)
-    end
-    grad(x) += grad(out!) * x2
-    ~@routine
+    grad(x) += grad(out!) * value(x)
+    grad(x) += grad(out!) * value(x)
 end
 @nograd ⊖(abs2)(a!::GVar, b::Real)
 @nograd ⊖(abs2)(a!::Real, b::GVar)
@@ -306,10 +302,14 @@ end
     grad(x) += (@skip! grad(out!)) * primitive_grad(mf.f, value(x); kwargs...)
 end
 
-function loaddata(::Type{GVar{T}}, x::T) where T
-    T(x)
+function loaddata(::Type{TG}, x::T) where {T,TG<:GVar{T}}
+    TG(x)
 end
 
 function loaddata(::Type{T}, x::T) where T <: GVar
     x
+end
+
+function loaddata(::Type{AGT}, x::AT) where {T, GT, AT<:AbstractArray{T}, AGT<:AbstractArray{GVar{T,T}}}
+    map(x->GVar(x, zero(x)), x)
 end

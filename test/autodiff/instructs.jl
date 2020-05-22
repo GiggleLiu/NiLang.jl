@@ -63,3 +63,21 @@ end
 
     @test check_grad(mean, (0.0, 0.0, [1,2,3.0, 4.0]); iloss=1, verbose=true)
 end
+
+@testset "push, load data" begin
+    stack = []
+    val = ipush!(stack, [1,2,3])[2]
+    @test val == Int[]
+    val = ipush!(stack, 3.0)[2]
+    @test val == 0.0
+    ipush!(stack, 3.0)
+    @test_throws InvertibilityError ipop!(stack, GVar(3.0))
+    ipush!(stack, 3.0)
+    @test ipop!(stack, GVar(0.0))[2] == GVar(3.0)
+    x = [1.0, 2.0, 3.0]
+    ipush!(stack, x)
+    @test ipop!(stack, empty(x))[2] == GVar.([1,2,3.0])
+    x = [1.0, 2.0, 3.0]
+    ipush!(stack, x)
+    @test ipop!(stack, empty(x))[2] == [1,2,3.0]
+end
