@@ -1,5 +1,5 @@
 
-<img src="docs/src/asset/logo3.png" width=400px/>
+<img src="docs/src/asset/logo3.png" width=500px/>
 
 NiLang.jl (逆lang), is a reversible domain-specific language (DSL) that allow a program to go back to the past.
 
