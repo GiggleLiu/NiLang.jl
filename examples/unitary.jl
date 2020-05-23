@@ -3,7 +3,6 @@
 # One of the simplest ways to parametrize a unitary matrix is representing a unitary matrix as a product of two-level unitary operations. A real unitary matrix of size $N$ can be parametrized compactly by $N(N-1)/2$ rotation operations
 #
 # ```math
-# \begin{align}
 #    {\rm ROT}(a!, b!, \theta)  = \left(\begin{matrix}
 #        \cos(\theta) & - \sin(\theta)\\
 #        \sin(\theta)  & \cos(\theta)
@@ -12,7 +11,6 @@
 #        a!\\
 #        b!
 #    \end{matrix}\right),
-# \end{align}
 # ```
 #
 # where $\theta$ is the rotation angle, `a!` and `b!` are target registers.
