@@ -1,0 +1,161 @@
+\subsection{Backward rules for instructions}\label{app:jacobians}
+For function $\vec{y} = f(\vec{x})$, its Jacobian is $J_{ij} = \frac{\partial y_i}{\partial x_j}$ and its Hessian is $H^k_{ij} = \frac{\partial y_k}{x_i x_j}$.
+We have the following local Jacobians and Hessians on the above instructions.
+
+\begin{multicols}{2}
+\begin{enumerate}
+    \item $a \mathrel+= b$
+
+\begin{align*}
+    &J = \left(\begin{matrix}
+1 & 1\\
+0 & 1
+\end{matrix}\right)\\
+    &H = \mathbf{0}
+\end{align*}
+
+The inverse is $a \mathrel-= b$, and its Jacobian is the inverse of the matrix above.
+
+\begin{align*}
+J(f^{-1}) = J^{-1} = \left(\begin{matrix}
+1 & -1\\
+0 & 1
+\end{matrix}\right)
+\end{align*}
+
+In the following, we omit the Jacobians and Hessians of inverse functions.
+
+\item $a\mathrel+=b*c$
+
+\begin{align*}
+    &J = \left(\begin{matrix}
+1 & c & b\\
+0 & 1 & 0\\
+0 & 0 & 1
+\end{matrix}\right)\\
+    &H^a_{bc} = H^a_{cb} = 1, else ~0
+\end{align*}
+
+\item $a\mathrel+=b/c$
+
+\begin{align*}
+    &J = \left(\begin{matrix}
+1 & 1/c &-b/c^2\\
+0 & 1 & 0\\
+0 & 0 & 1
+\end{matrix}\right)\\
+    &H^a_{cc} = 2b/c^3,\\
+    &H^a_{bc} = H^a_{cb} = -1/c^2, else ~ 0
+\end{align*}
+
+\item $a\mathrel+=b^c$
+
+
+\begin{align*}
+    &J = \left(\begin{matrix}
+1 &  cb^{c-1} &   b^c \log b \\
+0 & 1 & 0\\
+0 & 0 & 1
+\end{matrix}\right)\\
+    &H^a_{bc} = H^a_{cb} = b^{c-1} + c b^{c-1}\log b,\\
+    &H^a_{bb} = (c-1)c b^{c-2},\\
+    &H^a_{cc} = b^c\log^2b, else ~0
+\end{align*}
+
+\item $a\mathrel+=e^b$
+
+\begin{align*}
+    &J = \left(\begin{matrix}
+1 &  e^b \\
+0 & 1
+\end{matrix}\right)\\
+    &H^a_{bb} = e^b, else ~0
+\end{align*}
+
+\item $a\mathrel+=\log b$
+
+\begin{align*}
+    &J = \left(\begin{matrix}
+1 &  1/b \\
+0 & 1
+\end{matrix}\right)\\
+    &H^a_{bb} = -1/b^2, else ~0
+\end{align*}
+
+\item $a\mathrel+=\sin b$
+
+\begin{align*}
+    &J = \left(\begin{matrix}
+1 &  \cos b \\
+0 & 1
+\end{matrix}\right)\\
+    &H^a_{bb} = -\sin b, else ~0
+\end{align*}
+
+\item $a\mathrel+=\cos b$
+
+\begin{align*}
+    &J = \left(\begin{matrix}
+1 &  -\sin b \\
+0 & 1
+\end{matrix}\right)\\
+    &H^a_{bb} = -\cos b, else ~0
+\end{align*}
+
+\item $a \mathrel+= \vert b\vert$
+
+\begin{align*}
+    &J = \left(\begin{matrix}
+1 &  {\rm sign} (b) \\
+0 & 1
+\end{matrix}\right)\\
+    &H = \mathbf{0}
+\end{align*}
+
+\item $a = -a$
+
+\begin{align*}
+    &J = \left(\begin{matrix}
+-1
+\end{matrix}\right)\\
+    &H = \mathbf{0}
+\end{align*}
+
+\item ${\rm SWAP}(a, b) = (b, a)$
+
+\begin{align*}
+    &J = \left(\begin{matrix}
+0 & 1 \\
+1 & 0
+\end{matrix}\right)\\
+    &H = \mathbf{0}
+\end{align*}
+
+\item \begin{align*}
+{\rm ROT}(a, b, \theta)  = \left(\begin{matrix}
+        \cos\theta & - \sin\theta\\
+        \sin\theta  & \cos\theta
+    \end{matrix}\right)
+    \left(\begin{matrix}
+        a\\
+        b
+    \end{matrix}\right)
+\end{align*}
+
+\begin{align*}
+    &J = \left(\begin{matrix}
+        \cos\theta & - \sin\theta & -b\cos\theta-a\sin \theta\\
+        \sin\theta  & \cos\theta & a\cos\theta -b\sin\theta\\
+        0 & 0 & 1
+    \end{matrix}\right)\\
+    &H^a_{a\theta} = H^a_{\theta, a} = -\sin\theta,\\
+    &H^a_{b\theta} = H^a_{\theta, b} = -\cos\theta,\\
+    &H^a_{\theta\theta} = -a\cos\theta + b\sin\theta,\\
+    &H^b_{a\theta} = H^b_{\theta a} = \cos\theta,\\
+    &H^b_{b\theta} = H^b_{\theta b} = -\sin\theta,\\
+    &H^b_{\theta\theta} = -b\cos\theta-a\sin\theta, else ~0
+\end{align*}
+\end{enumerate}
+\end{multicols}
+
+
