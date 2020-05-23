@@ -6,15 +6,14 @@ os:
 julia:
   - 1.4
   - nightly
-matrix:
-  allow_failures:
-    - julia: nightly
-  fast_finish: true
 notifications:
   email: false
 after_success:
   - julia -e 'using Pkg; Pkg.add("Coverage"); using Coverage; Codecov.submit(process_folder())'
 jobs:
+  allow_failures:
+    - julia: nightly
+  fast_finish: true
   include:
     - stage: "Documentation"
       julia: 1.4
