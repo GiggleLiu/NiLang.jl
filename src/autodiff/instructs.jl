@@ -72,34 +72,36 @@ end
     grad(x) += grad(out!) * value(y)
 end
 
-@i @inline function ⊖(/)(out!::GVar{T}, x::GVar, y::GVar) where T
-    value(out!) -= value(x)/value(y)
+for DIV in [:/, :÷]
+@eval @i @inline function ⊖($DIV)(out!::GVar{T}, x::GVar, y::GVar) where T
+    value(out!) -= $DIV(value(x), value(y))
     @routine @invcheckoff begin
         a1 ← zero(grad(out!))
         a2 ← zero(grad(out!))
         a1 += value(x)*grad(out!)
-        a2 += a1/value(y)
+        a2 += $DIV(a1, value(y))
     end
-    grad(x) += grad(out!)/value(y)
-    grad(y) -= a2/value(y)
+    grad(x) += $DIV(grad(out!), value(y))
+    grad(y) -= $DIV(a2, value(y))
     ~@routine
 end
 
-@i @inline function ⊖(/)(out!::GVar{T}, x::Real, y::GVar) where T
-    value(out!) -= x/value(y)
+@eval @i @inline function ⊖($DIV)(out!::GVar{T}, x::Real, y::GVar) where T
+    value(out!) -= $DIV(x, value(y))
     @routine @invcheckoff begin
         a1 ← zero(grad(out!))
         a2 ← zero(grad(out!))
         a1 += x*grad(out!)
-        a2 += a1/value(y)
+        a2 += $DIV(a1, value(y))
     end
-    grad(y) -= a2/value(y)
+    grad(y) -= $DIV(a2, value(y))
     ~@routine
 end
 
-@i @inline function ⊖(/)(out!::GVar, x::GVar, y::Real)
-    value(out!) -= value(x)/y
-    grad(x) += grad(out!)/y
+@eval @i @inline function ⊖($DIV)(out!::GVar, x::GVar, y::Real)
+    value(out!) -= $DIV(value(x), y)
+    grad(x) += $DIV(grad(out!), y)
+end
 end
 
 @i @inline function ⊖(^)(out!::GVar{T}, x::GVar, n::GVar) where T
@@ -197,12 +199,8 @@ end
 
 @i @inline function ⊖(abs2)(out!::GVar, x::GVar{T}) where T
     value(out!) -= abs2(value(x))
-    @routine @invcheckoff begin
-        x2 ← zero(T)
-        x2 += 2 * value(x)
-    end
-    grad(x) += grad(out!) * x2
-    ~@routine
+    grad(x) += grad(out!) * value(x)
+    grad(x) += grad(out!) * value(x)
 end
 @nograd ⊖(abs2)(a!::GVar, b::Real)
 @nograd ⊖(abs2)(a!::Real, b::GVar)
@@ -306,10 +304,14 @@ end
     grad(x) += (@skip! grad(out!)) * primitive_grad(mf.f, value(x); kwargs...)
 end
 
-function loaddata(::Type{GVar{T}}, x::T) where T
-    T(x)
+function loaddata(::Type{TG}, x::T) where {T,TG<:GVar{T}}
+    TG(x)
 end
 
 function loaddata(::Type{T}, x::T) where T <: GVar
     x
+end
+
+function loaddata(::Type{AGT}, x::AT) where {T, GT, AT<:AbstractArray{T}, AGT<:AbstractArray{GVar{T,T}}}
+    map(x->GVar(x, zero(x)), x)
 end

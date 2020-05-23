@@ -75,6 +75,7 @@ end
 
 # constructors and deconstructors
 Base.:-(x::GVar) = GVar(-x.x, -x.g)
+Base.iszero(x::GVar) = iszero(x.x)
 
 ## variable mapping
 function (_::Type{Inv{GVar}})(x::GVar{<:GVar,<:GVar})

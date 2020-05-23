@@ -19,25 +19,29 @@ const NullType{T} = Union{NoGrad{T}, Partial{T}}
 ############# global stack operations ##########
 @inline function ipush!(x)
     push!(GLOBAL_STACK, x)
-    zero(x)
+    cleared(x)
 end
-#
+
 # TODO: fix this patch!
 @inline function ipop!(x::T) where T
-    @invcheck x zero(x)
+    @invcheck x cleared(x)
     loaddata(T, pop!(GLOBAL_STACK))
 end
 
 ############# local stack operations ##########
 @inline function ipush!(stack, x)
     push!(stack, x)
-    stack, zero(x)
+    stack, cleared(x)
 end
 
 @inline function ipop!(stack, x::T) where T
-    @invcheck x zero(x)
+    @invcheck x cleared(x)
     stack, loaddata(T, pop!(stack))
 end
+
+cleared(x) = zero(x)
+cleared(x::AbstractArray{T,N}) where {T,N} = similar(x, zeros(Int, N)...)
+cleared(x::AbstractVector{T}) where {T} = empty(x)
 
 loaddata(::Type{T}, x::T) where T = x
 loaddata(::Type{T}, x::TX) where {T<:NullType, TX} = T(x)
