@@ -1,13 +1,16 @@
 export jacobian, jacobian_repeat
 
+function jacobian_repeat(f, args; kwargs...)
+    jacobian_repeat(match_eltype(args), f, args; kwargs...)
+end
+
 """
-    jacobian_repeat(f, args...; kwargs...)
+    jacobian_repeat([T], f, args...; kwargs...)
 
 Get the Jacobian matrix for function `f(args..., kwargs...)` by computing one row (gradients) a time.
 """
-function jacobian_repeat(f, args; kwargs...)
+function jacobian_repeat(::Type{T}, f, args; kwargs...) where T
     narg = length(args)
-    T = match_eltype(args)
     res = zeros(T, narg, narg)
     for i = 1:narg
         res[i,:] .= gradient(f, args; iloss=i, kwargs...)

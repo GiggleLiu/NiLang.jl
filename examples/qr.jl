@@ -80,19 +80,14 @@ end
 # `dot` and `norm2` are reversible functions to compute dot product and vector norm.
 # One can quickly check the correctness of the gradient function
 
-# ```julia repl
-# julia> A  = randn(4,4);
-#
-# julia> q, r = zero(A), zero(A);
-#
-# julia> @i function test1(out, q, r, A)
-#           qr(q, r, A)
-#           isum(out, q)
-#       end
-#
-# julia> check_grad(test1, (0.0, q, r, A); iloss=1)
-# true
-# ```
+A  = randn(4,4)
+q, r = zero(A), zero(A)
+@i function test1(out, q, r, A)
+    qr(q, r, A)
+    isum(out, q)
+end
+
+check_grad(test1, (0.0, q, r, A); iloss=1)
 
 # Here, the loss function `test1` is defined as the sum of the output unitary matrix `q`.
 # The `check_grad` function is a gradient checker function defined in module `NiLang.AD`.

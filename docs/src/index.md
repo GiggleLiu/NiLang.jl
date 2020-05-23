@@ -18,10 +18,11 @@ Depth = 1
 ## Examples
 ```@contents
 Pages = [
+    "examples/fib.md",
     "examples/besselj.md",
     "examples/sparse.md",
+    "examples/unitary.md",
     "examples/qr.md",
-    "examples/sharedwrite.md",
 ]
 Depth = 1
 ```
@@ -33,6 +34,7 @@ Pages = [
     "grammar.md",
     "instructions.md",
     "extend.md",
+    "examples/sharedwrite.md",
     "api.md",
 ]
 Depth = 2

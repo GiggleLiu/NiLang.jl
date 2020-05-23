@@ -72,8 +72,12 @@ julia> out, a, x, y, z = (~r_loss)(out, a, x, y, z)
  [1.1603953198942412, 0.5562855137395296, 1.9650050430758796])
 ```
 
-Values are restored.
-
+Values are restored. Here, instead of assigning variables one by one,
+one can also use the macro `@instr`
+```julia
+@instr r_loss(out, a, x, y, z)
+```
+`@instr` macro is for executing a reversible statement.
 
 ## My first reversible AD program
 
