@@ -6,11 +6,21 @@ Check [our paper](https://arxiv.org/abs/2003.04617)!
 
 Welcome for discussion in [Julia slack](https://slackinvite.julialang.org/), **#autodiff** channel.
 
+## Tutorials
+```@contents
+Pages = [
+    "tutorial.md",
+    "examples/port_zygote.md",
+]
+Depth = 1
+```
+
 ## Examples
 ```@contents
 Pages = [
     "examples/besselj.md",
     "examples/sparse.md",
+    "examples/qr.md",
     "examples/sharedwrite.md",
 ]
 Depth = 1
