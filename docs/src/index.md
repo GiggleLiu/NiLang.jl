@@ -15,6 +15,10 @@ Pages = [
 Depth = 1
 ```
 
+Also see blog posts
+* [How to write a program differentiably](https://nextjournal.com/giggle/how-to-write-a-program-differentiably)
+* [Simulate a reversible Turing machine in 50 lines of code](https://nextjournal.com/giggle/rtm50)
+
 ## Examples
 ```@contents
 Pages = [
