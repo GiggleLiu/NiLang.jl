@@ -1,4 +1,4 @@
-# Tutorial
+# My first NiLang program
 
 ## Basic Statements
 
@@ -21,7 +21,7 @@
 
 The condition in if and while statements are a bit hard to digest, please refer our paper [arXiv:2003.04617](https://arxiv.org/abs/2003.04617).
 
-## My first NiLang program
+## A reversible program
 
 Our first program is to compute a loss function defined as
 
