@@ -4,6 +4,10 @@ export Grad, NGrad, Hessian, gradient
     NGrad{N,FT} <: Function
 
 Obtain gradients `Grad(f)(Val(i), args..., kwargs...)`, where `i` is the index of loss in `args`. `Grad` object calls forward first, and then backward.
+
+!!! note
+    `Val(1)` is specially optimized, so putting the loss as the first parameter can avoid potential overhead.
+```
 """
 struct NGrad{N,FT} <: Function
     f::FT
@@ -29,6 +33,14 @@ Base.display(bf::NGrad) = print(bf)
     (~protectf(g).f)(args...; kwargs...)
 end
 
+@i function (g::Grad)(il::Val{1}, x, ys...; kwargs...)
+    protectf(g).f(x, ys...; kwargs...)
+    GVar(x)
+    INC(grad(x))
+    GVar.(ys)
+    (~protectf(g).f)(x, ys...; kwargs...)
+end
+
 @i function (g::Grad)(args...; iloss::Int, kwargs...)
     protectf(g).f(args...; kwargs...)
     GVar.(args)
@@ -36,11 +48,14 @@ end
     (~protectf(g).f)(args...; kwargs...)
 end
 
-function gradient(::Val{iloss}, f, args; kwargs...) where iloss
-    args = f(args...; kwargs...)
-    args = NiLangCore.wrap_tuple(GVar.(args))
-    @instr INC(grad(tget(args ,iloss)))
-    grad.(NiLangCore.wrap_tuple((~f)(args...; kwargs...)))
+@generated function gradient(::Val{iloss}, f, args::NTuple{N,Any}; kwargs...) where {iloss,N}
+    newres = gensym()
+    newargs = Any[:(GVar($newres[$i])) for i=1:N]
+    newargs[iloss] = :(GVar($newres[$iloss], one($newres[$iloss])))
+    quote
+        $newres = f(args...; kwargs...)
+        grad.(NiLangCore.wrap_tuple((~f)($(newargs...); kwargs...)))
+    end
 end
 
 gradient(f, args; iloss::Int, kwargs...) = gradient(Val(iloss), f, args; kwargs...)

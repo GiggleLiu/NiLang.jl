@@ -25,9 +25,9 @@ The condition in if and while statements are a bit hard to digest, please refer 
 
 Our first program is to compute a loss function defined as
 
-$$
+```math
 \mathcal{L} = {\vec z}^T(a\vec{x} + \vec{y}),
-$$
+```
 
 where $\vec x$, $\vec y$ and $\vec{z}$ are column vectors, $a$ is a scalar.
 

@@ -37,9 +37,9 @@ function hessian_numeric(f, args; iloss::Int, η=1e-5, kwargs...)
     for i = 1:narg
         if nparams(args[i]) == 1
             @instr value(largs[i]) += η/2
-            gpos = gradient(f, largs; iloss=iloss, kwargs...)
+            gpos = gradient(f, (largs...,); iloss=iloss, kwargs...)
             @instr value(largs[i]) -= identity(η)
-            gneg = gradient(f, largs; iloss=iloss, kwargs...)
+            gneg = gradient(f, (largs...,); iloss=iloss, kwargs...)
             @instr value(largs[i]) += η/2
             res[:,i] .= (gpos .- gneg)./η
         end
