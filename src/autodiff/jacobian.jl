@@ -1,90 +1,58 @@
 export jacobian, jacobian_repeat
 
-function jacobian_repeat(f, args; kwargs...)
-    jacobian_repeat(match_eltype(args), f, args; kwargs...)
-end
-
 """
-    jacobian_repeat([T], f, args...; kwargs...)
+    jacobian_repeat(f, args...; iin::Int, iout::Int=iin, kwargs...)
 
-Get the Jacobian matrix for function `f(args..., kwargs...)` by computing one row (gradients) a time.
+Get the Jacobian matrix for function `f(args..., kwargs...)` using repeated computing gradients for each output.
+One can use key word arguments `iin` and `iout` to specify the input and output tensor.
 """
-function jacobian_repeat(::Type{T}, f, args; kwargs...) where T
-    narg = length(args)
-    res = zeros(T, narg, narg)
-    for i = 1:narg
-        res[i,:] .= gradient(f, args; iloss=i, kwargs...)
+function jacobian_repeat(f, args...; iin::Int, iout::Int=iin, kwargs...)
+    _check_input(args, iin, iout)
+    N = length(args[iout])
+    res = zeros(eltype(args[iin]), length(args[iin]), N)
+    for i = 1:N
+        xargs = copy.(args)
+        xargs = NiLangCore.wrap_tuple(f(xargs...; kwargs...))
+        xargs = GVar.(xargs)
+        xargs[iout][i] = GVar(value(xargs[iout][i]), one(eltype(args[iout])))
+        res[:,i] .= grad.(NiLangCore.wrap_tuple((~f)(xargs...; kwargs...))[iin])
     end
     return res
 end
 
-function wrap_jacobian(::Type{T}, args) where T
-    # get number of parameters
-    N = 0
-    for arg in args
-        if NiLang.AD.isvar(arg)
-            N += length(arg)
-        end
-    end
-
-    # jacobian matrix
-    jac = zeros(T, N, N)
-    for i=1:N
-        jac[i,i] = 1
-    end
-
-    k = 0
-    res = []
-    for arg in args
-        if NiLang.AD.isvar(arg)
-            if arg isa AbstractArray
-                ri = similar(arg, GVar{T, Vector{T}})
-                for l=1:length(arg)
-                    k += 1
-                    ri[k] = GVar(arg[l], AutoBcast(view(jac,:,k)))
-                end
-            else
-                k += 1
-                ri = GVar(arg, AutoBcast(view(jac, :, k)))
-            end
-            push!(res, ri)
-        else
-            push!(res, nothing)
-        end
-    end
-    jac, res
-end
-
 """
-    jacobian(f, args; kwargs...)
+    jacobian(f, args...; iin::Int, iout::Int=iin, kwargs...)
 
-Get the Jacobian matrix for function `f(args..., kwargs...)` by use vectorized variables in the gradient field.
+Get the Jacobian matrix for function `f(args..., kwargs...)` using vectorized variables in the gradient field.
+One can use key word arguments `iin` and `iout` to specify the input and output tensor.
 """
-jacobian(f, args; kwargs...) = jacobian(Float64, f, args; kwargs...)
-function jacobian(::Type{T}, f, args; kwargs...) where T
-    args = f(args...; kwargs...)
-    jac, args = wrap_jacobian(T, args)
-    (~f)(args...; kwargs...)
-    return jac
+function jacobian(f, args...; iin::Int, iout::Int=iin, kwargs...)
+    _check_input(args, iin, iout)
+    args = NiLangCore.wrap_tuple(f(args...; kwargs...))
+    _args = map(i-> i==iout ? wrap_jacobian(args[i]) : GVar(args[i]), 1:length(args))
+    _args = NiLangCore.wrap_tuple((~f)(_args...; kwargs...))
+    out = zeros(eltype(args[iin]), length(args[iin]), length(args[iout]))
+    for i=1:length(args[iin])
+        @inbounds out[i,:] .= grad(_args[iin][i]).x
+    end
+    out
 end
 
-function match_eltype(args)
-    types = Any[_eltype.(args)...]
-    hasfloat = any(t->t <: AbstractFloat, types)
-    hasfixed = any(t->t <: Fixed, types)
-    if hasfloat && hasfixed
-        error("Float point number and Fixed point numbers are not compatible!")
-    end
-    if hasfloat
-        promote_type(filter(x->x <: AbstractFloat, types)...)
-    elseif hasfixed
-        promote_type(filter(x->x <: Fixed, types)...)
-    else
-        promote_type(types...)
-    end
+function wrap_jacobian(outarray::AbstractArray{T}) where T
+    N = length(outarray)
+    map(k->GVar(outarray[k], AutoBcast(onehot(T, N, k))), 1:N)
 end
 
-_eltype(x) = typeof(x)
-_eltype(::Type{T}) where T = T
-_eltype(::Type{<:AbstractArray{T}}) where T = _eltype(T)
-_eltype(x::AbstractArray{T}) where T = _eltype(T)
+function onehot(::Type{T}, N::Int, k::Int) where T
+    res = zeros(T, N)
+    res[k] = one(T)
+    res
+end
+
+function _check_input(args, iin, iout)
+    if !(args[iin] isa AbstractArray && args[iout] isa AbstractArray)
+        throw(ArgumentError("argument at position $iin and $iout are not arrays."))
+    elseif (eltype(args[iin]) != eltype(args[iout]))
+        throw(ArgumentError("argument at position $iin and $iout do not have the same type."))
+    end
+end

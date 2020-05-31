@@ -4,7 +4,7 @@ NiLang is a reversible eDSL that can run backwards. The motation is to support s
 
 Check [our paper](https://arxiv.org/abs/2003.04617)!
 
-Welcome for discussion in [Julia slack](https://slackinvite.julialang.org/), **#autodiff** channel.
+Welcome for discussion in [Julia slack](https://slackinvite.julialang.org/), **#autodiff** and **#reversible-commputing** channel.
 
 ## Tutorials
 ```@contents
