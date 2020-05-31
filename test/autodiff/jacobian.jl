@@ -1,5 +1,6 @@
 using NiLang, NiLang.AD
 using Test
+using NiLang.AD: wrap_bcastgrad
 
 @i function asarrayfunc(params; f, kwargs...)
     if (length(params) == 1, ~)
@@ -9,6 +10,17 @@ using Test
     elseif (length(params) == 3, ~)
         f(params[1], params[2], params[3]; kwargs...)
     end
+end
+
+@testset "bcastgrad" begin
+    T = AutoBcast{Int, 4}
+    @test wrap_bcastgrad(T, ones(10)) == [GVar(1.0, AutoBcast(ones(4))) for i=1:10]
+    @test wrap_bcastgrad(T, 3) == 3
+    @test wrap_bcastgrad(T, NoGrad(3.0)) == 3.0
+    @test wrap_bcastgrad(T, 3.0) == GVar(3.0, AutoBcast(ones(4)))
+    @test wrap_bcastgrad(T, (3.0,)) == (GVar(3.0, AutoBcast(ones(4))),)
+    @test wrap_bcastgrad(T, exp) == exp
+    @test wrap_bcastgrad(T, Inv(exp)) == Inv(exp)
 end
 
 @testset "jacobians" begin

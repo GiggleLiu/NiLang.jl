@@ -49,4 +49,6 @@ using Test
     @test a.x == [7,8,9.0]
     @test b == 2.0
     @test c == 3.0
+
+    @test zero(AutoBcast{Int,3}) == AutoBcast([0, 0, 0])
 end

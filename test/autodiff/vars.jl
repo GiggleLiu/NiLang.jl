@@ -11,6 +11,7 @@ using Test
     @test zero(GVar(3.0, 2.0)) == GVar(0.0)
     @test one(GVar(3.0, 2.0)) == GVar(1.0)
     @test iszero(GVar(0.0, 2.0))
+    @test zero(GVar(2, AutoBcast([1, 0, 0]))) == GVar(0, AutoBcast([0, 0, 0]))
 end
 
 
