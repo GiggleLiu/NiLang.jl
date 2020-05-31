@@ -29,7 +29,8 @@ One can use key word arguments `iin` and `iout` to specify the input and output 
 function jacobian(f, args...; iin::Int, iout::Int=iin, kwargs...)
     _check_input(args, iin, iout)
     args = NiLangCore.wrap_tuple(f(args...; kwargs...))
-    _args = map(i-> i==iout ? wrap_jacobian(args[i]) : GVar(args[i]), 1:length(args))
+    ABT = AutoBcast{eltype(args[iout]), length(args[iout])}
+    _args = map(i-> i==iout ? wrap_jacobian(ABT, args[i]) : wrap_bcastgrad(ABT, args[i]), 1:length(args))
     _args = NiLangCore.wrap_tuple((~f)(_args...; kwargs...))
     out = zeros(eltype(args[iin]), length(args[iin]), length(args[iout]))
     for i=1:length(args[iin])
@@ -38,9 +39,20 @@ function jacobian(f, args...; iin::Int, iout::Int=iin, kwargs...)
     out
 end
 
-function wrap_jacobian(outarray::AbstractArray{T}) where T
-    N = length(outarray)
-    map(k->GVar(outarray[k], AutoBcast(onehot(T, N, k))), 1:N)
+function wrap_jacobian(::Type{AutoBcast{T,N}}, outarray::AbstractArray{T}) where {T,N}
+    map(k->GVar(outarray[k], AutoBcast{T,N}(onehot(T, N, k))), LinearIndices(outarray))
+end
+function wrap_bcastgrad(::Type{AutoBcast{T,N}}, x::XT) where {T,N,XT}
+    GVar(x, zero(AutoBcast{XT,N}))
+end
+function wrap_bcastgrad(::Type{AutoBcast{T,N}}, x::Union{Integer, Function}) where {T,N,XT}
+    x
+end
+function wrap_bcastgrad(::Type{AutoBcast{T,N}}, x::NoGrad) where {T,N,XT}
+    (~NoGrad)(x)
+end
+function wrap_bcastgrad(::Type{AutoBcast{T,N}}, x::Union{Tuple,AbstractArray}) where {T,N,XT}
+    wrap_bcastgrad.(AutoBcast{T,N}, x)
 end
 
 function onehot(::Type{T}, N::Int, k::Int) where T
