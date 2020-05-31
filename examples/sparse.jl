@@ -69,3 +69,5 @@ out! = SparseArrays.dot(a, b)
 # Here, we have turned off the reversibility check off to achieve better performance.
 # By writing sparse matrix multiplication and other sparse matrix operations reversibly,
 # we will have a differentiable sparse matrix library with proper performance.
+
+# See my another blog post for [reversible sparse matrix multiplication](https://nextjournal.com/giggle/how-to-write-a-program-differentiably).
