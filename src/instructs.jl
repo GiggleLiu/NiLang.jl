@@ -122,7 +122,7 @@ for F1 in [:NEG]
     @eval NiLangCore.nargs(::typeof($F1)) = 1
 end
 
-for F2 in [:XOR, :SWAP, :((inf::PlusEq)), :((inf::MinusEq)), :((inf::XorEq))]
+for F2 in [:SWAP, :((inf::PlusEq)), :((inf::MinusEq)), :((inf::XorEq))]
     @eval @inline function $F2(a::NullType, b::Real)
         @instr $(NiLangCore.get_argname(F2))(value(a), b)
         a, b

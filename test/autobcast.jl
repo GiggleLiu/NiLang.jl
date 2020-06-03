@@ -4,13 +4,25 @@ using Test
 @testset "auto bcast" begin
     a = AutoBcast([1.0, 2.0, 3.0])
     @instr NEG(a)
-    @test a.x == [-1,-2,-3.0]
+    @test a.x == [-1.0,-2.0,-3.0]
+    a = AutoBcast([1.0, 2.0, 3.0])
+    @instr INC(a)
+    @test a.x == [2.0,3.0,4.0]
+    @instr DEC(a)
+    @test a.x == [1.0,2.0,3.0]
+
+    a = AutoBcast([false, true, true])
+    @instr FLIP(a)
+    @test a.x == [true, false, false]
 
     a = AutoBcast([1.0, 2.0, 3.0])
     b = AutoBcast([1.0, 2.0, 4.0])
     @instr a += identity(b)
     @test a.x == [2,4,7.0]
     @test b.x == [1,2,4.0]
+    @instr SWAP(a, b)
+    @test b.x == [2,4,7.0]
+    @test a.x == [1,2,4.0]
 
     a = AutoBcast([1.0, 2.0, 3.0])
     b = 2.0

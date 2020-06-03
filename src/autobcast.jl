@@ -16,9 +16,9 @@ Base.zero(::Type{AutoBcast{T,N}}) where {T,N} = AutoBcast{T,N}(zeros(T, N))
 Base.:-(x::AutoBcast) = AutoBcast(-x.x)
 Base.length(ab::AutoBcast{T,N}) where {T, N} = N
 
-for F1 in [:NEG]
-    @eval @inline function $F1(a!::AutoBcast)
-        @instr @invcheckoff for i=1:length(a!)
+for F1 in [:NEG, :INC, :FLIP, :DEC]
+    @eval function $F1(a!::AutoBcast)
+        @instr @invcheckoff @inbounds for i=1:length(a!)
             $F1(a!.x[i])
         end
         a!
@@ -26,14 +26,14 @@ for F1 in [:NEG]
 end
 
 for F2 in [:SWAP, :((inf::PlusEq)), :((inf::MinusEq)), :((inf::XorEq))]
-    F2 != :SWAP && @eval @inline function $F2(a::AutoBcast, b::Real)
-        @instr @invcheckoff for i=1:length(a)
+    F2 != :SWAP && @eval function $F2(a::AutoBcast, b::Real)
+        @instr @invcheckoff @inbounds for i=1:length(a)
             $F2(a.x[i], b)
         end
         a, b
     end
-    @eval @inline function $F2(a::AutoBcast, b::AutoBcast)
-        @instr @invcheckoff for i=1:length(a)
+    @eval function $F2(a::AutoBcast, b::AutoBcast)
+        @instr @invcheckoff @inbounds for i=1:length(a)
             $F2(a.x[i], b.x[i])
         end
         a, b
@@ -42,27 +42,27 @@ end
 
 for F3 in [:ROT, :IROT, :((inf::PlusEq)), :((inf::MinusEq)), :((inf::XorEq))]
     if !(F3 in [:ROT, :IROT])
-        @eval @inline function $F3(a::AutoBcast, b::Real, c::Real)
-            @instr @invcheckoff for i=1:length(a)
+        @eval function $F3(a::AutoBcast, b::Real, c::Real)
+            @instr @invcheckoff @inbounds for i=1:length(a)
                 $F3(a.x[i], b, c)
             end
             a, b, c
         end
-        @eval @inline function $F3(a::AutoBcast, b::Real, c::AutoBcast)
+        @eval function $F3(a::AutoBcast, b::Real, c::AutoBcast)
             @instr @invcheckoff for i=1:length(a)
                 $F3(a.x[i], b, c.x[i])
             end
             a, b, c
         end
     end
-    @eval @inline function $F3(a::AutoBcast, b::AutoBcast, c::Real)
-        @instr @invcheckoff for i=1:length(a)
+    @eval function $F3(a::AutoBcast, b::AutoBcast, c::Real)
+        @instr @invcheckoff @inbounds for i=1:length(a)
             $F3(a.x[i], b.x[i], c)
         end
         a, b, c
     end
-    @eval @inline function $F3(a::AutoBcast, b::AutoBcast, c::AutoBcast)
-        @instr @invcheckoff for i=1:length(a)
+    @eval function $F3(a::AutoBcast, b::AutoBcast, c::AutoBcast)
+        @instr @invcheckoff @inbounds for i=1:length(a)
             $F3(a.x[i], b.x[i], c.x[i])
         end
         a, b, c
