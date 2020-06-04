@@ -1,10 +1,19 @@
+# # NICE network
+# For the definition of this network and concepts of normalizing flow,
+# please refer this nice blog: https://lilianweng.github.io/lil-log/2018/10/13/flow-based-deep-generative-models.html,
+# and the pytorch notebook: https://github.com/GiggleLiu/marburg/blob/master/notebooks/nice.ipynb
+
 using NiLang, NiLang.AD
 using LinearAlgebra
 using DelimitedFiles
 using Plots
 
+# `include` the optimizer, you can find it under the `Adam.jl` file in the `examples/` folder.
 include("Adam.jl")
 
+
+# ## Model definition
+# First, define the single layer transformation and its behavior under `GVar` - the gradient wrapper.
 struct NiceLayer{T}
     W1::Matrix{T}
     b1::Vector{T}
@@ -13,20 +22,31 @@ struct NiceLayer{T}
 end
 NiLang.AD.GVar(x::NiceLayer) = NiceLayer(GVar(x.W1), GVar(x.b1), GVar(x.W2), GVar(x.b2))
 
-function random_nice_network(nparams::Int, nhidden::Int, nlayer::Int; scale=0.1)
-    random_nice_network(Float64, nparams, nhidden, nlayer; scale=scale)
+"""collect parameters in the `layer` into a vector `out`."""
+function collect_params!(out, layer::NiceLayer)
+    a, b, c, d = length(layer.W1), length(layer.b1), length(layer.W2), length(layer.b2)
+    out[1:a] .= vec(layer.W1)
+    out[a+1:a+b] .= layer.b1
+    out[a+b+1:a+b+c] .= vec(layer.W2)
+    out[a+b+c+1:end] .= layer.b2
+    return out
 end
 
-function random_nice_network(::Type{T}, nparams::Int, nhidden::Int, nlayer::Int; scale=0.1) where T
-    nin = nparams÷2
-    scale = T(scale)
-    NiceLayer{T}[NiceLayer(randn(T, nhidden, nin)*scale, randn(T, nhidden)*scale,
-            randn(T, nin, nhidden)*scale, randn(T, nin)*scale) for _ = 1:nlayer]
+"""dispatch vectorized parameters `out` into the `layer`."""
+function dispatch_params!(layer::NiceLayer, out)
+    a, b, c, d = length(layer.W1), length(layer.b1), length(layer.W2), length(layer.b2)
+    vec(layer.W1) .= out[1:a]
+    layer.b1 .= out[a+1:a+b]
+    vec(layer.W2) .= out[a+b+1:a+b+c]
+    layer.b2 .= out[a+b+c+1:end]
+    return layer
 end
-
-const NiceNetwork{T} = Vector{NiceLayer{T}}
 
 nparameters(n::NiceLayer) = length(n.W1) + length(n.b1) + length(n.W2) + length(n.b2)
+
+# Then, we define `network` and how to access the parameters.
+const NiceNetwork{T} = Vector{NiceLayer{T}}
+
 nparameters(n::NiceNetwork) = sum(nparameters, n)
 
 function collect_params(n::NiceNetwork{T}) where T
@@ -50,29 +70,20 @@ function dispatch_params!(network::NiceNetwork, out)
     return network
 end
 
-function collect_params!(out, layer::NiceLayer)
-    a, b, c, d = length(layer.W1), length(layer.b1), length(layer.W2), length(layer.b2)
-    out[1:a] .= vec(layer.W1)
-    out[a+1:a+b] .= layer.b1
-    out[a+b+1:a+b+c] .= vec(layer.W2)
-    out[a+b+c+1:end] .= layer.b2
-    return out
+function random_nice_network(nparams::Int, nhidden::Int, nlayer::Int; scale=0.1)
+    random_nice_network(Float64, nparams, nhidden, nlayer; scale=scale)
 end
 
-function dispatch_params!(layer::NiceLayer, out)
-    a, b, c, d = length(layer.W1), length(layer.b1), length(layer.W2), length(layer.b2)
-    vec(layer.W1) .= out[1:a]
-    layer.b1 .= out[a+1:a+b]
-    vec(layer.W2) .= out[a+b+1:a+b+c]
-    layer.b2 .= out[a+b+c+1:end]
-    return layer
+function random_nice_network(::Type{T}, nparams::Int, nhidden::Int, nlayer::Int; scale=0.1) where T
+    nin = nparams÷2
+    scale = T(scale)
+    NiceLayer{T}[NiceLayer(randn(T, nhidden, nin)*scale, randn(T, nhidden)*scale,
+            randn(T, nin, nhidden)*scale, randn(T, nin)*scale) for _ = 1:nlayer]
 end
 
-@i function relu(y!, x::T) where T
-    if (x > 0, ~)
-        y! += identity(x)
-    end
-end
+
+# ## Loss function
+# Good! We still need to define some utilities like `affine!` transformation.
 
 @i function affine!(y!, W, b, x)
     @safe @assert size(W) == (length(y!), length(x)) && length(b) == length(y!)
@@ -85,6 +96,10 @@ end
         @inbounds y![i] += identity(b[i])
     end
 end
+
+# In each layer, we use the information in `x` to update `y!`.
+# During computing, we use to vector type ancillas `y1` and `y1a`,
+# both of them can be uncomputed at the end of the function.
 
 @i function nice_layer!(x::AbstractVector{T}, layer::NiceLayer{T},
                 y!::AbstractVector{T}) where T
@@ -102,6 +117,8 @@ end
     ~@routine
 end
 
+# A nice network always transforms inputs reversibly.
+# We update one half of `x!` a time, so that input and output memory space do not clash.
 @i function nice_network!(x!::AbstractVector{T}, network::NiceNetwork{T}) where T
     @invcheckoff for i=1:length(network)
         np ← length(x!)
@@ -112,6 +129,8 @@ end
         end
     end
 end
+
+# How to obtain the log-probability of a data.
 
 @i function logp!(out!::T, x!::AbstractVector{T}, network::NiceNetwork{T}) where T
     (~nice_network!)(x!, network)
@@ -125,6 +144,8 @@ end
     end
 end
 
+# The negative-log-likelihood loss function
+
 @i function nice_nll!(out!::T, cum!::T, xs!::Matrix{T}, network::NiceNetwork{T}) where T
     @invcheckoff for i=1:size(xs!, 2)
         @inbounds logp!(cum!, view(xs!,:,i), network)
@@ -132,57 +153,7 @@ end
     out! -= cum!/size(xs!, 2)
 end
 
-# bijectivity check
-using Test
-@testset "nice" begin
-    num_vars = 4
-    model = random_nice_network(num_vars, 10, 3)
-    z = randn(num_vars)
-    x, _ = nice_network!(z, model)
-    z_infer, _ = (~nice_network!)(x, model)
-    @test z_infer ≈ z
-    newparams = randn(nparameters(model))
-    dispatch_params!(model, newparams)
-    @test collect_params(model) ≈ newparams
-    @test check_inv(logp!, (0.0, x, model))
-end
-
-@testset "nice logp" begin
-    z1 = [0.5, 0.2]
-    z2 = [-0.5, 1.2]
-    model = random_nice_network(2, 10, 4)
-    x1 = nice_network!(copy(z1), model)[1]
-    x2 = nice_network!(copy(z2), model)[1]
-    p1 = logp!(0.0, copy(x1), model)[1]
-    p2 = logp!(0.0, copy(x2), model)[1]
-    pz1 = exp(-sum(abs2, z1)/2)
-    pz2 = exp(-sum(abs2, z2)/2)
-    @test exp(p1 - p2) ≈ pz1/pz2
-    @test nice_nll!(0.0, 0.0, hcat(x1, x2), model)[1] ≈ -log(pz1 * pz2)/2
-
-    xs = hcat(x1, x2)
-    gmodel = Grad(nice_nll!)(Val(1), 0.0, 0.0, copy(xs), model)[end]
-
-    for i=1:10, j=1:4
-        model[j].W2[i] -= 1e-4
-        a = nice_nll!(0.0, 0.0, copy(xs), model)[1]
-        model[j].W2[i] += 2e-4
-        b = nice_nll!(0.0, 0.0, copy(xs), model)[1]
-        model[j].W2[i] -= 1e-4
-        ng = (b-a)/2e-4
-        @test gmodel[j].W2[i].g ≈ ng
-    end
-
-    for i=1:10, j=1:4
-        model[j].W1[i] -= 1e-4
-        a = nice_nll!(0.0, 0.0, copy(xs), model)[1]
-        model[j].W1[i] += 2e-4
-        b = nice_nll!(0.0, 0.0, copy(xs), model)[1]
-        model[j].W1[i] -= 1e-4
-        ng = (b-a)/2e-4
-        @test gmodel[j].W1[i].g ≈ ng
-    end
-end
+# ## Training
 
 function train(x_data, model; num_epochs = 800)
     num_vars = size(x_data, 1)
@@ -211,7 +182,15 @@ function showmodel(x_data, model; nsamples=2000)
     scatter!(zs[1,:], zs[2,:])
 end
 
-import Random; Random.seed!(22)
+# you can find the training data in `examples/` folder
 x_data = Matrix(readdlm(joinpath(@__DIR__, "train.dat"))')
-model = random_nice_network(Float64, size(x_data, 1), 10, 4; scale=1)
-@time model = train(x_data, model; num_epochs=800)
+
+import Random; Random.seed!(22)
+model = random_nice_network(Float64, size(x_data, 1), 10, 4; scale=0.1)
+
+# Before training, the distribution looks like
+# ![before](../../asset/nice_before.png)
+model = train(x_data, model; num_epochs=800)
+
+# After training, the distribution looks like
+# ![before](../../asset/nice_after.png)

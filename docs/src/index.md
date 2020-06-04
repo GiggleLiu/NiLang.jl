@@ -27,6 +27,7 @@ Pages = [
     "examples/sparse.md",
     "examples/unitary.md",
     "examples/qr.md",
+    "examples/nice.md",
 ]
 Depth = 1
 ```
