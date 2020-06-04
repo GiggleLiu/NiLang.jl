@@ -5,7 +5,7 @@ Reversible computing is a computing paradigm that can deterministically undo all
 
 ![Introduction to Reversible Computing](asset/revcomp.jpg)
 
-## Why reversible computing is the future: a physicist's perspective
+## Why reversible computing is the future of computing: a physicist's perspective
 
 Reversible computing can do anything traditional computing can do. It can be simulated on a irreversible device, but sometimes need either more space or time or both. So, why are people still interested in reversible computing?
 
