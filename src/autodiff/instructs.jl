@@ -247,6 +247,18 @@ end
     ~@routine
 end
 
+@i @inline function ⊖(tanh)(out!::GVar, x::GVar{T}) where T
+    @routine @invcheckoff begin
+        anc1 ← zero(value(x))
+        anc2 ← one(value(x))
+        anc1 += tanh(value(x))
+        anc2 -= anc1^2
+    end
+    value(out!) -= identity(anc1)
+    grad(x) += grad(out!) * anc2
+    ~@routine
+end
+
 @i @inline function ⊖(sincos)(out!::Tuple{T1,T1}, x::GVar{T}) where {T1<:GVar, T}
     @routine @invcheckoff begin
         s ← zero(T)
@@ -259,7 +271,7 @@ end
     ~@routine
 end
 
-for op in [:exp, :log, :sin, :cos]
+for op in [:exp, :log, :sin, :cos, :tanh]
     @eval @nograd ⊖($op)(out!::Real, x::GVar)
     @eval @nograd ⊖($op)(out!::GVar, x::Real)
 end

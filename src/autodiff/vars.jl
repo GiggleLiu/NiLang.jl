@@ -17,11 +17,6 @@ Attach a gradient field to `x`.
     function GVar(x::T, g::GT) where {T,GT}
         new{T,GT}(x, g)
     end
-    @i function GVar(x::T) where T
-        g ← zero(x)
-        x ← new{T,T}(x, g)
-    end
-
     @i function GVar(x::Integer)
     end
     @i function GVar(x::Function)
@@ -31,6 +26,26 @@ Attach a gradient field to `x`.
     end
     @i function GVar(x::NoGrad)
         (~NoGrad)(x)
+    end
+end
+
+function GVar(x::T) where T<:Real
+    GVar(x, zero(x))
+end
+
+function (_::Type{Inv{GVar}})(x::GVar{T}) where T<:Real
+    @invcheck x.g zero(x.x)
+    x.x
+end
+
+@generated function GVar(x::T) where T
+    quote
+        $(getfield(T.name.module, nameof(T)))($([:(GVar(getfield(x, $(QuoteNode(NAME))))) for NAME in fieldnames(T)]...))
+    end
+end
+@generated function (_::Type{Inv{GVar}})(x::T) where T
+    quote
+        $(getfield(T.name.module, nameof(T)))($([:((~GVar)(getfield(x, $(QuoteNode(NAME))))) for NAME in fieldnames(T)]...))
     end
 end
 GVar(x::Complex) = Complex(GVar(x.re), GVar(x.im))

@@ -28,6 +28,7 @@ Pages = [
     "examples/unitary.md",
     "examples/qr.md",
     "examples/nice.md",
+    "examples/realnvp.md",
 ]
 Depth = 1
 ```

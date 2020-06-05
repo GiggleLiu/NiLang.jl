@@ -19,8 +19,79 @@ struct NiceLayer{T}
     b1::Vector{T}
     W2::Matrix{T}
     b2::Vector{T}
+    y1::Vector{T}
+    y1a::Vector{T}
 end
-NiLang.AD.GVar(x::NiceLayer) = NiceLayer(GVar(x.W1), GVar(x.b1), GVar(x.W2), GVar(x.b2))
+NiLang.AD.GVar(x::NiceLayer) = NiceLayer(GVar(x.W1), GVar(x.b1), GVar(x.W2), GVar(x.b2), GVar(x.y1), GVar(x.y1a))
+
+"""Apply a single NICE transformation."""
+@i function nice_layer!(x::AbstractVector{T}, layer::NiceLayer{T},
+                y!::AbstractVector{T}) where T
+    @routine @invcheckoff begin
+        affine!(layer.y1, layer.W1, layer.b1, x)
+        @inbounds for i=1:length(layer.y1)
+            if (layer.y1[i] > 0, ~)
+                layer.y1a[i] += identity(layer.y1[i])
+            end
+        end
+    end
+    affine!(y!, layer.W2, layer.b2, layer.y1a)
+    ~@routine
+    ## clean up accumulated rounding error, since this memory is reused.
+    @safe layer.y1 .= zero(T)
+end
+
+# Here, in each layer, we use the information in `x` to update `y!`.
+# During computing, we use the `y1` and `y1a` fields of the network as ancilla space,
+# both of them can be uncomputed at the end of the function.
+# However, we need to erase small numbers to make sure the rounding error does not accumulate.
+
+# We still need to define some utilities like `affine!` transformation.
+
+@i function affine!(y!, W, b, x)
+    @safe @assert size(W) == (length(y!), length(x)) && length(b) == length(y!)
+    @invcheckoff for j=1:size(W, 2)
+        for i=1:size(W, 1)
+            @inbounds y![i] += W[i,j]*x[j]
+        end
+    end
+    @invcheckoff for i=1:size(W, 1)
+        @inbounds y![i] += identity(b[i])
+    end
+end
+
+# A nice network always transforms inputs reversibly.
+# We update one half of `x!` a time, so that input and output memory space do not clash.
+const NiceNetwork{T} = Vector{NiceLayer{T}}
+
+"""Apply a the whole NICE network."""
+@i function nice_network!(x!::AbstractVector{T}, network::NiceNetwork{T}) where T
+    @invcheckoff for i=1:length(network)
+        np ← length(x!)
+        if (i%2==0, ~)
+            @inbounds nice_layer!(view(x!,np÷2+1:np), network[i], view(x!,1:np÷2))
+        else
+            @inbounds nice_layer!(view(x!,1:np÷2), network[i], view(x!,np÷2+1:np))
+        end
+    end
+end
+
+function random_nice_network(nparams::Int, nhidden::Int, nlayer::Int; scale=0.1)
+    random_nice_network(Float64, nparams, nhidden, nlayer; scale=scale)
+end
+
+function random_nice_network(::Type{T}, nparams::Int, nhidden::Int, nlayer::Int; scale=0.1) where T
+    nin = nparams÷2
+    scale = T(scale)
+    y1 = zeros(T, nhidden)
+    NiceLayer{T}[NiceLayer(randn(T, nhidden, nin)*scale, randn(T, nhidden)*scale,
+            randn(T, nin, nhidden)*scale, randn(T, nin)*scale, y1, zero(y1)) for _ = 1:nlayer]
+end
+
+# ## Parameter management
+
+nparameters(n::NiceLayer) = length(n.W1) + length(n.b1) + length(n.W2) + length(n.b2)
+nparameters(n::NiceNetwork) = sum(nparameters, n)
 
 """collect parameters in the `layer` into a vector `out`."""
 function collect_params!(out, layer::NiceLayer)
@@ -41,13 +112,6 @@ function dispatch_params!(layer::NiceLayer, out)
     layer.b2 .= out[a+b+c+1:end]
     return layer
 end
-
-nparameters(n::NiceLayer) = length(n.W1) + length(n.b1) + length(n.W2) + length(n.b2)
-
-# Then, we define `network` and how to access the parameters.
-const NiceNetwork{T} = Vector{NiceLayer{T}}
-
-nparameters(n::NiceNetwork) = sum(nparameters, n)
 
 function collect_params(n::NiceNetwork{T}) where T
     out = zeros(T, nparameters(n))
@@ -70,67 +134,9 @@ function dispatch_params!(network::NiceNetwork, out)
     return network
 end
 
-function random_nice_network(nparams::Int, nhidden::Int, nlayer::Int; scale=0.1)
-    random_nice_network(Float64, nparams, nhidden, nlayer; scale=scale)
-end
-
-function random_nice_network(::Type{T}, nparams::Int, nhidden::Int, nlayer::Int; scale=0.1) where T
-    nin = nparams÷2
-    scale = T(scale)
-    NiceLayer{T}[NiceLayer(randn(T, nhidden, nin)*scale, randn(T, nhidden)*scale,
-            randn(T, nin, nhidden)*scale, randn(T, nin)*scale) for _ = 1:nlayer]
-end
-
-
 # ## Loss function
-# Good! We still need to define some utilities like `affine!` transformation.
 
-@i function affine!(y!, W, b, x)
-    @safe @assert size(W) == (length(y!), length(x)) && length(b) == length(y!)
-    @invcheckoff for j=1:size(W, 2)
-        for i=1:size(W, 1)
-            @inbounds y![i] += W[i,j]*x[j]
-        end
-    end
-    @invcheckoff for i=1:size(W, 1)
-        @inbounds y![i] += identity(b[i])
-    end
-end
-
-# In each layer, we use the information in `x` to update `y!`.
-# During computing, we use to vector type ancillas `y1` and `y1a`,
-# both of them can be uncomputed at the end of the function.
-
-@i function nice_layer!(x::AbstractVector{T}, layer::NiceLayer{T},
-                y!::AbstractVector{T}) where T
-    @routine @invcheckoff begin
-        y1 ← zeros(T, size(layer.W1, 1))
-        y1a ← zero(y1)
-        affine!(y1, layer.W1, layer.b1, x)
-        for i=1:length(y1)
-            if (y1[i] > 0, ~)
-                @inbounds y1a[i] += identity(y1[i])
-            end
-        end
-    end
-    affine!(y!, layer.W2, layer.b2, y1a)
-    ~@routine
-end
-
-# A nice network always transforms inputs reversibly.
-# We update one half of `x!` a time, so that input and output memory space do not clash.
-@i function nice_network!(x!::AbstractVector{T}, network::NiceNetwork{T}) where T
-    @invcheckoff for i=1:length(network)
-        np ← length(x!)
-        if (i%2==0, ~)
-            @inbounds nice_layer!(view(x!,np÷2+1:np), network[i], view(x!,1:np÷2))
-        else
-            @inbounds nice_layer!(view(x!,1:np÷2), network[i], view(x!,np÷2+1:np))
-        end
-    end
-end
-
-# How to obtain the log-probability of a data.
+# To obtain the log-probability of a data.
 
 @i function logp!(out!::T, x!::AbstractVector{T}, network::NiceNetwork{T}) where T
     (~nice_network!)(x!, network)

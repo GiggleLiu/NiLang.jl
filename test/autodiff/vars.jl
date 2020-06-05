@@ -57,17 +57,13 @@ end
     @test x == (GVar(1.0, 0.1), GVar(2.0, 0.2))
 end
 
-#=
-gcond(f, args::Tuple, x...) = f, args, x...
-gcond(f, args::Tuple, x::GVar...) = f, f(args...), x...
-(_::Inv{typeof(gcond)})(f, args::Tuple, x::GVar...) = f, (~f)(args...), x...
-(_::Inv{typeof(gcond)})(f, args::Tuple, x...) = f, args, x...
-
-@testset "gcond" begin
-    f, args, x, y = ⊕(identity), (7.0, 2.0), GVar(1.0, 1.0), GVar(2.0, 1.0)
-    @test gcond(f, (a, b), x, y) == (⊕(identity), (9.0, 2.0), GVar(1.0, 1.0), GVar(2.0, 1.0))
-    @test (~gcond)(gcond(f, (a, b), x, y)...) == (f, args, x, y)
-    @test gcond(f, (a, b), x, b) == (f, args, x, b)
-    @test (~gcond)(gcond(f, (a, b), x, b)...) == (f, args, x, b)
+@testset "GVar over general type" begin
+    struct ABC{T1, T2}
+       a::T1
+       b::T1
+       c::T2
+    end
+    x = ABC(1, 2, 3.0)
+    @test GVar(x) == ABC(1, 2, GVar(3.0))
+    @test (~GVar)(ABC(1, 2, GVar(3.0))) == x
 end
-=#
