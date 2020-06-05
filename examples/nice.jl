@@ -85,7 +85,7 @@ end
 # ## Loss function
 # Good! We still need to define some utilities like `affine!` transformation.
 
-@i function affine!(y!, W, b, x)
+@i function affine!(y!::AbstractVector{T}, W, b, x::AbstractVector{T}) where T
     @safe @assert size(W) == (length(y!), length(x)) && length(b) == length(y!)
     @invcheckoff for j=1:size(W, 2)
         for i=1:size(W, 1)
@@ -94,6 +94,20 @@ end
     end
     @invcheckoff for i=1:size(W, 1)
         @inbounds y![i] += identity(b[i])
+    end
+end
+
+@i function affine!(y!::AbstractMatrix{T}, W, b, x::AbstractMatrix{T}) where T
+    @safe @assert size(W) == (size(y!, 1), size(x, 1)) && length(b) == size(y!, 1)
+    @invcheckoff for k=1:size(y!, 2)
+        for j=1:size(W, 2)
+            for i=1:size(W, 1)
+                if (j==1, ~)
+                    @inbounds y![i,k] += identity(b[i])
+                end
+                @inbounds y![i,k] += W[i,j]*x[j,k]
+            end
+        end
     end
 end
 
@@ -106,6 +120,20 @@ end
     @routine @invcheckoff begin
         y1 ← zeros(T, size(layer.W1, 1))
         y1a ← zero(y1)
+        affine!(y1, layer.W1, layer.b1, x)
+        for i=1:length(y1)
+            if (y1[i] > 0, ~)
+                @inbounds y1a[i] += identity(y1[i])
+            end
+        end
+    end
+    affine!(y!, layer.W2, layer.b2, y1a)
+    ~@routine
+end
+
+@i function nice_layer!(x::AbstractMatrix{T}, layer::NiceLayer{T},
+                y!::AbstractMatrix{T}, y1, y1a) where T
+    @routine @invcheckoff begin
         affine!(y1, layer.W1, layer.b1, x)
         for i=1:length(y1)
             if (y1[i] > 0, ~)
@@ -130,6 +158,22 @@ end
     end
 end
 
+@i function nice_network!(x!::AbstractMatrix{T}, network::NiceNetwork{T}) where T
+    @routine @invcheckoff begin
+        y1 ← zeros(T, size(network[1].W1, 1), size(x!, 2))
+        y1a ← zero(y1)
+    end
+    @invcheckoff for i=1:length(network)
+        np ← size(x!, 1)
+        if (i%2==0, ~)
+            @inbounds nice_layer!(view(x!,np÷2+1:np,:), network[i], view(x!,1:np÷2,:), y1, y1a)
+        else
+            @inbounds nice_layer!(view(x!,1:np÷2,:), network[i], view(x!,np÷2+1:np,:), y1, y1a)
+        end
+    end
+    ~@routine
+end
+
 # How to obtain the log-probability of a data.
 
 @i function logp!(out!::T, x!::AbstractVector{T}, network::NiceNetwork{T}) where T
@@ -144,12 +188,24 @@ end
     end
 end
 
-# The negative-log-likelihood loss function
+@i function logp!(out!::T, x!::AbstractMatrix{T}, network::NiceNetwork{T}) where T
+    (~nice_network!)(x!, network)
+    @invcheckoff for k=1:size(x!,2)
+        for i = 1:size(x!, 1)
+            @routine begin
+                xsq ← zero(T)
+                @inbounds xsq += x![i,k]^2
+            end
+            out! -= 0.5 * xsq
+            ~@routine
+        end
+    end
+end
+
+# Then we define the negative-log-likelihood loss function
 
 @i function nice_nll!(out!::T, cum!::T, xs!::Matrix{T}, network::NiceNetwork{T}) where T
-    @invcheckoff for i=1:size(xs!, 2)
-        @inbounds logp!(cum!, view(xs!,:,i), network)
-    end
+    logp!(cum!, xs!, network)
     out! -= cum!/size(xs!, 2)
 end
 
@@ -163,7 +219,7 @@ function train(x_data, model; num_epochs = 800)
         loss, a, b, c = nice_nll!(0.0, 0.0, copy(x_data), model)
         if epoch % 50 == 1
             println("epoch = $epoch, loss = $loss")
-            display(showmodel(x_data, model))
+            #display(showmodel(x_data, model))
         end
         _, _, _, gmodel = (~nice_nll!)(GVar(loss, 1.0), GVar(a), GVar(b), GVar(c))
         g = grad.(collect_params(gmodel))
@@ -190,7 +246,7 @@ model = random_nice_network(Float64, size(x_data, 1), 10, 4; scale=0.1)
 
 # Before training, the distribution looks like
 # ![before](../../asset/nice_before.png)
-model = train(x_data, model; num_epochs=800)
+@time model = train(x_data, model; num_epochs=800)
 
 # After training, the distribution looks like
 # ![before](../../asset/nice_after.png)
