@@ -180,9 +180,8 @@ end
 @i @inline function ⊖(atan)(out!::GVar{T}, x::GVar) where T
     ⊖(atan)(value(out!), value(x))
     @routine @invcheckoff begin
-        xy2 ← zero(T)
+        xy2 ← one(T)
         xy2 += abs2(value(x))
-        INC(xy2)
     end
     grad(x) += grad(out!) / xy2
     ~@routine
@@ -210,6 +209,18 @@ for op in [:*, :/, :^, :+, :-]
     @eval @nograd ⊖($op)(out!::Real, x::Real, y::GVar)
     @eval @nograd ⊖($op)(out!::Real, x::GVar, y::GVar)
     @eval @nograd ⊖($op)(out!::Real, x::GVar, y::Real)
+end
+
+@i @inline function ⊖(sqrt)(out!::GVar, x::GVar{T}) where T
+    @routine @invcheckoff begin
+        anc1 ← zero(value(x))
+        anc2 ← zero(value(x))
+        anc1 += sqrt(value(x))
+        anc2 += 2 * anc1
+    end
+    value(out!) -= identity(anc1)
+    grad(x) += grad(out!) / anc2
+    ~@routine
 end
 
 @i @inline function ⊖(exp)(out!::GVar, x::GVar{T}) where T
@@ -271,7 +282,7 @@ end
     ~@routine
 end
 
-for op in [:exp, :log, :sin, :cos, :tanh]
+for op in [:sqrt, :exp, :log, :sin, :cos, :tanh]
     @eval @nograd ⊖($op)(out!::Real, x::GVar)
     @eval @nograd ⊖($op)(out!::GVar, x::Real)
 end
