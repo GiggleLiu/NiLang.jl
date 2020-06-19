@@ -6,6 +6,9 @@ using Test, NiLang, NiLang.AD
     @instr imag(a) += identity(2)
     @test a == 3.0 + 4im
 
+    a = 1.0+ 2im
+    @instr a += complex(2.0, 2.0)
+    @test a == 3.0 + 4.0im
     @i function f(loss, a::Complex{T}, b) where T
         @routine begin
             c ← zero(a)
@@ -49,6 +52,8 @@ end
     z = 3.0 + 1.0im
     r = 4.0
     for opm in [⊕, ⊖]
+        @test check_inv(opm(complex), (1+2.0im, 2.0, 3.0); verbose=true)
+        @test ccheck_grad(opm(complex), (1+2.0im, 2.0, 3.0); verbose=true, iloss=1)
         for (subop, args) in [
             (opm(identity), (x,y)), (opm(+), (x, y, z)),
             (opm(-), (x, y, z)), (opm(*), (x, y, z)),

@@ -19,6 +19,8 @@ Attach a gradient field to `x`.
     end
     @i function GVar(x::Integer)
     end
+    @i function GVar(x::Bool)
+    end
     @i function GVar(x::Function)
     end
     @i function GVar(x::Tuple)

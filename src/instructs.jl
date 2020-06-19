@@ -62,14 +62,14 @@ end
 """
     INC(a!) -> a! + 1
 """
-@inline function INC(a!::Real)
+@inline function INC(a!::Number)
     a! + one(a!)
 end
 
 """
     DEC(a!) -> a! - 1
 """
-@inline function DEC(a!::Real)
+@inline function DEC(a!::Number)
     a! - one(a!)
 end
 @dual INC DEC

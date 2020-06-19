@@ -18,3 +18,5 @@ end
 
 Base.zero(x::Complex{T}) where T<:GVar = Complex(zero(T), zero(T))
 Base.zero(::Type{Complex{T}}) where T<:GVar = Complex(zero(T), zero(T))
+Base.one(x::Complex{T}) where T<:GVar = Complex(one(T), zero(T))
+Base.one(::Type{Complex{T}}) where T<:GVar = Complex(one(T), zero(T))

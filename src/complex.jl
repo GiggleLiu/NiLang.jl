@@ -142,6 +142,11 @@ end
     ~@routine
 end
 
+@i @inline function ⊕(complex)(y!::Complex{T}, a::T, b::T) where T
+    y!.re += identity(a)
+    y!.im += identity(b)
+end
+
 for OP in [:*, :/, :+, :-, :^]
     @eval @i @inline function ⊕($OP)(y!::Complex{T}, a::Real, b::Real) where T
         y!.re += $OP(a, b)

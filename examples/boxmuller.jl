@@ -3,7 +3,7 @@ using NiLang
 
 # In this tutorial, we introduce using Box-Muller method to transform a uniform distribution to a normal distribution.
 # The transformation and inverse transformation of `Box-Muller` method could be found in
-# https://mathworld.wolfram.com/Box-MullerTransformation.html
+# [this blog](https://mathworld.wolfram.com/Box-MullerTransformation.html)
 @i function boxmuller(x::T, y::T) where T
     @routine @invcheckoff begin
         θ ← zero(T)
@@ -66,7 +66,7 @@ Plots.histogram(x, bins = -3:0.1:3, label="normal",
 
 # backward
 @instr (~boxmuller).(x[1:N], x[N+1:end])
-Plots.histogram(x, bins = -3:0.03:3, label="uniform",
+Plots.histogram(x, bins = -3:0.1:3, label="uniform",
     legendfontsize=16, xtickfontsize=16, ytickfontsize=16)
 
 # ## Check the probability distribution function
@@ -83,4 +83,37 @@ ladj = log(abs(det(jac)))
 
 # check if it matches the `log(p/q)`.
 z1, z2 = boxmuller(0.5, 0.5)
+@test ladj ≈ log(1.0 / (normalpdf(z1) * normalpdf(z2)))
+
+# ## To obtaining Jacobian - a simpler approach
+# We can define a function that exactly reversible from the instruction level,
+# but costs more space for storing output.
+@i function boxmuller2(x1::T, x2::T, z1::T, z2::T) where T
+    @routine @invcheckoff begin
+        θ ← zero(T)
+        logx ← zero(T)
+        _2logx ← zero(T)
+
+        θ += 2π * x2
+        logx += log(x1)
+        _2logx += -2 * logx
+    end
+
+    ## store results
+    z1 += _2logx ^ 0.5
+    ROT(z1, z2, θ)
+    ~@routine
+end
+
+# However, this is not a bijector from that maps `x` to `z`,
+# because computing the backward just erases the content in `z`.
+# However, this function can be used to obtain `log(abs(det(jacobians)))`
+@i function f2(x::Vector, z::Vector)
+    boxmuller2(x[1], x[2], z[1], z[2])
+end
+jac = NiLang.AD.jacobian(f2, [0.5, 0.5], [0.0, 0.0], iin=1, iout=2)
+ladj = log(abs(det(jac)))
+
+# check if it matches the `log(p/q)`.
+_, _, z1, z2 = boxmuller2(0.5, 0.5, 0.0, 0.0)
 @test ladj ≈ log(1.0 / (normalpdf(z1) * normalpdf(z2)))
