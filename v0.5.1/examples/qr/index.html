@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>A simple QR decomposition · NiLang.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">NiLang.jl</span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../why/">What and Why</a></li><li><span class="tocitem">Tutorial</span><ul><li><a class="tocitem" href="../../tutorial/">My first NiLang program</a></li><li><a class="tocitem" href="../port_zygote/">How to port NiLang to Zygote</a></li></ul></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../fib/">Computing Fibonacci Numbers</a></li><li><a class="tocitem" href="../besselj/">Bessel function</a></li><li><a class="tocitem" href="../sparse/">Sparse matrices</a></li><li><a class="tocitem" href="../unitary/">Unitary matrix operations without allocation</a></li><li class="is-active"><a class="tocitem" href>A simple QR decomposition</a><ul class="internal"><li><a class="tocitem" href="#Functions-used-in-this-example-1"><span>Functions used in this example</span></a></li><li><a class="tocitem" href="#The-QR-decomposition-1"><span>The QR decomposition</span></a></li></ul></li><li><a class="tocitem" href="../nice/">NICE network</a></li><li><a class="tocitem" href="../realnvp/">RealNVP network</a></li><li><a class="tocitem" href="../boxmuller/">Box-Muller method to Generate normal distribution</a></li></ul></li><li><span class="tocitem">API &amp; Manual</span><ul><li><a class="tocitem" href="../../instructions/">Instruction Reference</a></li><li><a class="tocitem" href="../../extend/">How to extend</a></li><li><a class="tocitem" href="../sharedwrite/">The shared write problem on GPU</a></li><li><a class="tocitem" href="../../api/">API Manual</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>A simple QR decomposition</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>A simple QR decomposition</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/GiggleLiu/NiLang.jl/blob/master/examples/qr.jl" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="A-simple-QR-decomposition-1"><a class="docs-heading-anchor" href="#A-simple-QR-decomposition-1">A simple QR decomposition</a><a class="docs-heading-anchor-permalink" href="#A-simple-QR-decomposition-1" title="Permalink"></a></h1><h2 id="Functions-used-in-this-example-1"><a class="docs-heading-anchor" href="#Functions-used-in-this-example-1">Functions used in this example</a><a class="docs-heading-anchor-permalink" href="#Functions-used-in-this-example-1" title="Permalink"></a></h2><pre><code class="language-julia">using NiLang, NiLang.AD
+
+&quot;&quot;&quot;
+get the summation of an array.
+&quot;&quot;&quot;
+@i function isum(out!, x::AbstractArray)
+    for i=1:length(x)
+        out! += identity(x[i])
+    end
+end
+
+
+&quot;&quot;&quot;
+dot product.
+&quot;&quot;&quot;
+@i function dot(out!, v1::Vector{T}, v2) where T
+    for i = 1:length(v1)
+        out! += v1[i]&#39;*v2[i]
+    end
+end
+
+&quot;&quot;&quot;
+squared norm.
+&quot;&quot;&quot;
+@i function norm2(out!, vec::Vector{T}) where T
+    anc1 ← zero(T)
+    for i = 1:length(vec)
+        anc1 += identity(vec[i]&#39;)
+        out! += anc1*vec[i]
+        anc1 -= identity(vec[i]&#39;)
+    end
+end</code></pre><h2 id="The-QR-decomposition-1"><a class="docs-heading-anchor" href="#The-QR-decomposition-1">The QR decomposition</a><a class="docs-heading-anchor-permalink" href="#The-QR-decomposition-1" title="Permalink"></a></h2><p>Let us consider a naive implementation of QR decomposition from scratch. This implementation is just a proof of principle which does not consider reorthogonalization and other practical issues.</p><pre><code class="language-julia">@i function qr(Q, R, A::Matrix{T}) where T
+    anc_norm ← zero(T)
+    anc_dot ← zeros(T, size(A,2))
+    ri ← zeros(T, size(A,1))
+    for col = 1:size(A, 1)
+        ri .+= identity.(A[:,col])
+        for precol = 1:col-1
+            dot(anc_dot[precol], Q[:,precol], ri)
+            R[precol,col] +=
+                identity(anc_dot[precol])
+            for row = 1:size(Q,1)
+                ri[row] -=
+                    anc_dot[precol] * Q[row, precol]
+            end
+        end
+        norm2(anc_norm, ri)
+
+        R[col, col] += anc_norm^0.5
+        for row = 1:size(Q,1)
+            Q[row,col] += ri[row] / R[col, col]
+        end
+
+        ~begin
+            ri .+= identity.(A[:,col])
+            for precol = 1:col-1
+                dot(anc_dot[precol], Q[:,precol], ri)
+                for row = 1:size(Q,1)
+                    ri[row] -= anc_dot[precol] *
+                        Q[row, precol]
+                end
+            end
+            norm2(anc_norm, ri)
+        end
+    end
+end</code></pre><p>Here, in order to avoid frequent uncomputing, we allocate ancillas <code>ri</code> and <code>anc_dot</code> as vectors. The expression in <code>~</code> is used to uncompute <code>ri</code>, <code>anc_dot</code> and <code>anc_norm</code>. <code>dot</code> and <code>norm2</code> are reversible functions to compute dot product and vector norm. One can quickly check the correctness of the gradient function</p><pre><code class="language-julia">A  = randn(4,4)
+q, r = zero(A), zero(A)
+@i function test1(out, q, r, A)
+    qr(q, r, A)
+    isum(out, q)
+end
+
+check_grad(test1, (0.0, q, r, A); iloss=1)</code></pre><pre><code class="language-none">true</code></pre><p>Here, the loss function <code>test1</code> is defined as the sum of the output unitary matrix <code>q</code>. The <code>check_grad</code> function is a gradient checker function defined in module <code>NiLang.AD</code>.</p><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../unitary/">« Unitary matrix operations without allocation</a><a class="docs-footer-nextpage" href="../nice/">NICE network »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Friday 19 June 2020 21:17">Friday 19 June 2020</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
