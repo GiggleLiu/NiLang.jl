@@ -1,7 +1,6 @@
 export SWAP, FLIP
 export ROT, IROT
 export ipop!, ipush!
-export mulint, divint
 export INC, DEC
 
 const GLOBAL_STACK = []
@@ -184,24 +183,3 @@ end
 Base.:^(x::Integer, y::Fixed43) = Fixed43(x^(Float64(y)))
 Base.:^(x::Fixed43, y::Fixed43) = Fixed43(x^(Float64(y)))
 Base.:^(x::T, y::Fixed43) where T<:AbstractFloat = x^(T(y))
-
-"""
-    mulint(a!, b::Integer) -> a!*b, b
-"""
-@i @inline function mulint(a!, b::Integer)
-    @invcheckoff anc ← zero(a!)
-    anc += a! * b
-    a! -= anc/b
-    SWAP(a!, anc)
-    @invcheckoff anc → zero(a!)
-end
-
-@i @inline function mulint(a!::Integer, b::Integer)
-    @invcheckoff anc ← zero(a!)
-    anc += a! * b
-    a! -= anc ÷ b
-    SWAP(a!, anc)
-    @invcheckoff anc → zero(a!)
-end
-
-const divint = ~mulint
