@@ -6,13 +6,11 @@ using NiLang
     n1 ← zero(T)
     n2 ← zero(T)
     @routine begin
-        n1 += identity(n)
-        n1 -= identity(1)
-        n2 += identity(n)
-        n2 -= identity(2)
+        n1 += n - 1
+        n2 += n - 2
     end
     if (value(n) <= 2, ~)
-        out! += identity(1)
+        out! += 1
     else
         rfib(out!, n1)
         rfib(out!, n2)
@@ -29,7 +27,7 @@ end
     rfib(out, n!)
     while (out < z, n! != 0)
         ~rfib(out, n!)
-        n! += identity(1)
+        n! += 1
         rfib(out, n!)
     end
     ~rfib(out, n!)

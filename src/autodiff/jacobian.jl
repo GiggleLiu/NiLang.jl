@@ -11,7 +11,7 @@ function jacobian_repeat(f, args...; iin::Int, iout::Int=iin, kwargs...)
     N = length(args[iout])
     res = zeros(eltype(args[iin]), length(args[iin]), N)
     for i = 1:N
-        xargs = copy.(args)
+        xargs = _copy.(args)
         xargs = NiLangCore.wrap_tuple(f(xargs...; kwargs...))
         xargs = GVar.(xargs)
         @inbounds xargs[iout][i] = GVar(value(xargs[iout][i]), one(eltype(args[iout])))
@@ -19,6 +19,9 @@ function jacobian_repeat(f, args...; iin::Int, iout::Int=iin, kwargs...)
     end
     return res
 end
+
+_copy(x) = x
+_copy(x::AbstractArray) = copy(x)
 
 """
     jacobian(f, args...; iin::Int, iout::Int=iin, kwargs...)

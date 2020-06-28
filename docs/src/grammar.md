@@ -90,7 +90,7 @@ DataViews : 0
 
 DataView : DataView '[' <JuliaExpr> ']'
          | DataView '.' <ident>
-         | <JuliaExpr> '(' DataView ')'
+         | DataView '|>' <JuliaExpr>
          | DataView '\''
          | '-' DataView
          | Constant

@@ -32,7 +32,7 @@ using NiLang
         _halfsq ← zero(T)
         at += atan(y, x)
         if (y < 0, ~)
-            at += identity(T(2π))
+            at += T(2π)
         end
         sq += x ^ 2
         sq += y ^ 2

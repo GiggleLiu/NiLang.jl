@@ -2,23 +2,23 @@ using NiLang, NiLang.AD
 
 include("symlib.jl")
 NiLang.AD.isvar(sym::Basic) = true
+NiLang.AD.GVar(sym::Basic) = GVar(sym, zero(sym))
 
 # a patch for symbolic IROT
 @i @inline function NiLang.IROT(a!::GVar{<:Basic}, b!::GVar{<:Basic}, θ::GVar{<:Basic})
-    IROT(value(a!), value(b!), value(θ))
-    -(value(θ))
-    value(θ) -= Basic(π)/2
-    ROT(grad(a!), grad(b!), value(θ))
-    grad(θ) += value(a!) * grad(a!)
-    grad(θ) += value(b!) * grad(b!)
-    value(θ) += Basic(π)/2
-    -(value(θ))
-    ROT(grad(a!), grad(b!), Basic(π)/2)
+    IROT(a!.x, b!.x, θ.x)
+    -(θ.x)
+    θ.x -= Basic(π)/2
+    ROT(a!.g, b!.g, θ.x)
+    θ.g += a!.x * a!.g
+    θ.g += b!.x * b!.g
+    θ.x += Basic(π)/2
+    -(θ.x)
+    ROT(a!.g, b!.g, Basic(π)/2)
 end
 
 NiLang.INC(x::Basic) = x + one(x)
 NiLang.DEC(x::Basic) = x - one(x)
--(x::Basic) = -x
 @inline function NiLang.ROT(i::Basic, j::Basic, θ::Basic)
     a, b = rot(i, j, θ)
     a, b, θ
@@ -30,12 +30,12 @@ end
 Base.sincos(x::Basic) = (sin(x), cos(x))
 
 function printall()
-    syms = (Basic(:a), Basic(:b), Basic(:c))
+    syms = [Basic(:a), Basic(:b), Basic(:c)]
 
     for subop in [identity, *, /, ^, exp, log, sin, cos]
         for opm in [⊕, ⊖]
-            @show opm
             op = opm(subop)
+            @show op
             printone(op, syms)
         end
     end
@@ -45,10 +45,28 @@ function printall()
     # abs, conj
 end
 
+@i function jf1(op, x)
+    op(x[1])
+end
+
+@i function jf2(op, x)
+    op(x[1], x[2])
+end
+
+@i function jf3(op, x)
+    op(x[1], x[2], x[3])
+end
+
 """print the jacobian of one operator"""
 function printone(op, syms)
     n = nargs(op)
-    jac = jacobian_repeat(Basic, op, syms[1:nargs(op)])
+    if n==1
+        jac = jacobian_repeat(jf1, op, syms[1:1]; iin=2, iout=2)
+    elseif n==2
+        jac = jacobian_repeat(jf2, op, syms[1:2]; iin=2, iout=2)
+    elseif n==3
+        jac = jacobian_repeat(jf3, op, syms[1:3]; iin=2, iout=2)
+    end
     println("------ $op ------")
     pretty_print_matrix(jac)
 end

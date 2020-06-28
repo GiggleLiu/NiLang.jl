@@ -105,7 +105,7 @@ end
 end
 
 @i @inline function ⊖(^)(out!::GVar{T}, x::GVar, n::GVar) where T
-    ⊖(^)(out!.x, x.x, n)
+    ⊖(^)(out!.x, x.x, n.x)
 
     # grad x
     @routine @invcheckoff begin

@@ -18,6 +18,12 @@ using NiLang, NiLang.AD
     SWAP(out!, anc!)
 end
 
+@i @inline function imul(out!::Int, x::Int, anc!::Int)
+    anc! += out! * x
+    out! -= anc! ÷ x
+    SWAP(out!, anc!)
+end
+
 # Here, the definition of SWAP can be found in \App{app:instr}, ``anc! \approx 0`` is a *dirty ancilla*.
 # Line 2 computes the result and accumulates it to the dirty ancilla, we get an approximately correct output in **anc!**.
 # Line 3 "uncomputes" **out!** approximately by using the information stored in **anc!**, leaving a dirty zero state in register **out!**.
@@ -25,39 +31,30 @@ end
 # Finally, we have an approximately correct output and a dirtier ancilla.
 # With this multiplier, we implementation ``J_\nu`` as follows.
 
-@i function ibesselj(out!, ν, z; atol=1e-8)
+@i function ibesselj(out!::T, ν, z::T; atol=1e-8) where T
     @routine @invcheckoff begin
         k ← 0
         fact_nu ← zero(ν)
-        halfz ← zero(z)
-        halfz_power_nu ← zero(z)
-        halfz_power_2 ← zero(z)
-        out_anc ← zero(z)
-        anc1 ← zero(z)
-        anc2 ← zero(z)
-        anc3 ← zero(z)
-        anc4 ← zero(z)
-        anc5 ← zero(z)
+        @zeros T halfz halfz_power_nu halfz_power_2 out_anc anc1 anc2 anc3 anc4 anc5
         halfz += z / 2
         halfz_power_nu += halfz ^ ν
         halfz_power_2 += halfz ^ 2
         ifactorial(fact_nu, ν)
         anc1 += halfz_power_nu/fact_nu
-        out_anc += identity(anc1)
+        out_anc += anc1
         while (abs(unwrap(anc1)) > atol && abs(unwrap(anc4)) < atol, k!=0)
             INC(k)
             @routine begin
-                anc5 += identity(k)
-                anc5 += identity(ν)
+                anc5 += k + ν
                 anc2 -= k * anc5
                 anc3 += halfz_power_2 / anc2
             end
             imul(anc1, anc3, anc4)
-            out_anc += identity(anc1)
+            out_anc += anc1
             ~@routine
         end
     end
-    out! += identity(out_anc)
+    out! += out_anc
     ~@routine
 end
 
@@ -66,7 +63,7 @@ end
 @i function ifactorial(out!, n)
     INC(out!)
     for i=1:n
-        mulint(out!, i)
+        imul(out!, i, 0)
     end
 end
 
@@ -99,7 +96,7 @@ println("The hessian dy^2/dx^2 is $(grad(hxx).partials[1])")
 
 # ```julia
 # using CuArrays, GPUArrays, KernelAbstractions
-# 
+#
 # @i @kernel function bessel_kernel(out!, v, z)
 #     @invcheckoff i ← @index(Global)
 #     ibesselj(out![i], v, z[i])

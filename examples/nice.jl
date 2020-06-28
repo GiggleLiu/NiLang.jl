@@ -31,7 +31,7 @@ NiLang.AD.GVar(x::NiceLayer) = NiceLayer(GVar(x.W1), GVar(x.b1), GVar(x.W2), GVa
         affine!(layer.y1, layer.W1, layer.b1, x)
         @inbounds for i=1:length(layer.y1)
             if (layer.y1[i] > 0, ~)
-                layer.y1a[i] += identity(layer.y1[i])
+                layer.y1a[i] += layer.y1[i]
             end
         end
     end
@@ -56,7 +56,7 @@ end
         end
     end
     @invcheckoff for i=1:size(W, 1)
-        @inbounds y![i] += identity(b[i])
+        @inbounds y![i] += b[i]
     end
 end
 
