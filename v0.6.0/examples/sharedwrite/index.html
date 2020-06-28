@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>The shared write problem on GPU · NiLang.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">NiLang.jl</span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../why/">What and Why</a></li><li><span class="tocitem">Tutorial</span><ul><li><a class="tocitem" href="../../tutorial/">My first NiLang program</a></li><li><a class="tocitem" href="../port_zygote/">How to port NiLang to Zygote</a></li></ul></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../fib/">Computing Fibonacci Numbers</a></li><li><a class="tocitem" href="../besselj/">Bessel function</a></li><li><a class="tocitem" href="../sparse/">Sparse matrices</a></li><li><a class="tocitem" href="../unitary/">Unitary matrix operations without allocation</a></li><li><a class="tocitem" href="../qr/">A simple QR decomposition</a></li><li><a class="tocitem" href="../nice/">NICE network</a></li><li><a class="tocitem" href="../realnvp/">RealNVP network</a></li><li><a class="tocitem" href="../boxmuller/">Box-Muller method to Generate normal distribution</a></li></ul></li><li><span class="tocitem">API &amp; Manual</span><ul><li><a class="tocitem" href="../../instructions/">Instruction Reference</a></li><li><a class="tocitem" href="../../extend/">How to extend</a></li><li class="is-active"><a class="tocitem" href>The shared write problem on GPU</a><ul class="internal"><li><a class="tocitem" href="#The-main-program-1"><span>The main program</span></a></li><li><a class="tocitem" href="#Check-the-correctness-of-results-1"><span>Check the correctness of results</span></a></li><li><a class="tocitem" href="#Why-some-gradients-not-correct?-1"><span>Why some gradients not correct?</span></a></li><li><a class="tocitem" href="#This-one-works:-using-a-vector-of-α-1"><span>This one works: using a vector of <code>α</code></span></a></li><li><a class="tocitem" href="#This-one-has-the-shared-write-problem:-using-a-vector-of-α,-but-shared-read.-1"><span>This one has the shared write problem: using a vector of <code>α</code>, but shared read.</span></a></li><li><a class="tocitem" href="#Conclusion-1"><span>Conclusion</span></a></li></ul></li><li><a class="tocitem" href="../../api/">API Manual</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">API &amp; Manual</a></li><li class="is-active"><a href>The shared write problem on GPU</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>The shared write problem on GPU</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/GiggleLiu/NiLang.jl/blob/master/examples/sharedwrite.jl" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="The-shared-write-problem-on-GPU-1"><a class="docs-heading-anchor" href="#The-shared-write-problem-on-GPU-1">The shared write problem on GPU</a><a class="docs-heading-anchor-permalink" href="#The-shared-write-problem-on-GPU-1" title="Permalink"></a></h1><p>We will write a GPU version of <code>axpy!</code> function.</p><h2 id="The-main-program-1"><a class="docs-heading-anchor" href="#The-main-program-1">The main program</a><a class="docs-heading-anchor-permalink" href="#The-main-program-1" title="Permalink"></a></h2><pre><code class="language-">using KernelAbstractions
+using NiLang, NiLang.AD
+using CuArrays</code></pre><p>so far, this example requires patch: https://github.com/JuliaGPU/KernelAbstractions.jl/pull/52</p><pre><code class="language-">@i @kernel function axpy_kernel(y!, α, x)
+    # invcheckoff to turn of `reversibility checker`
+    # GPU can not handle errors!
+    @invcheckoff begin
+        i ← @index(Global)
+        y![i] += x[i] * α
+        i → @index(Global)
+    end
+end
+
+@i function cu_axpy!(y!::AbstractVector, α, x::AbstractVector)
+    @launchkernel CUDA() 256 length(y!) axpy_kernel(y!, α, x)
+end
+
+@i function loss(out, y!, α, x)
+    cu_axpy!(y!, α, x)
+    # Note: the following code is stupid scalar operations on CuArray,
+    # They are only for testing.
+    for i=1:length(y!)
+        out += identity(y![i])
+    end
+end
+
+y! = rand(100)
+x = rand(100)
+cuy! = y! |&gt; CuArray
+cux = x |&gt; CuArray
+α = 0.4</code></pre><h2 id="Check-the-correctness-of-results-1"><a class="docs-heading-anchor" href="#Check-the-correctness-of-results-1">Check the correctness of results</a><a class="docs-heading-anchor-permalink" href="#Check-the-correctness-of-results-1" title="Permalink"></a></h2><pre><code class="language-">using Test
+cu_axpy!(cuy!, α, cux)
+@test cuy! ≈ y! .+ α .* x
+(~cu_axpy!)(cuy!, α, cux)
+@test cuy! ≈ y!</code></pre><p>Let&#39;s check the gradients</p><pre><code class="language-">lsout = 0.0
+@instr Grad(loss)(Val(1), lsout, cuy!, α, cux)</code></pre><p>you will see a correct vector <code>[0.4, 0.4, 0.4 ...]</code></p><pre><code class="language-">grad.(cux)</code></pre><p>you will see <code>0.0</code>.</p><pre><code class="language-">grad(α)</code></pre><h2 id="Why-some-gradients-not-correct?-1"><a class="docs-heading-anchor" href="#Why-some-gradients-not-correct?-1">Why some gradients not correct?</a><a class="docs-heading-anchor-permalink" href="#Why-some-gradients-not-correct?-1" title="Permalink"></a></h2><p>In the above example, <code>α</code> is a scalar, whereas a scalar is not allowed to change in a CUDA kernel. What if we change <code>α</code> to a CuArray?</p><h2 id="This-one-works:-using-a-vector-of-α-1"><a class="docs-heading-anchor" href="#This-one-works:-using-a-vector-of-α-1">This one works: using a vector of <code>α</code></a><a class="docs-heading-anchor-permalink" href="#This-one-works:-using-a-vector-of-α-1" title="Permalink"></a></h2><pre><code class="language-">@i @kernel function axpy_kernel(y!, α, x)
+    @invcheckoff begin
+        i ← @index(Global)
+        y![i] += x[i] * α[i]
+        i → @index(Global)
+    end
+end
+
+cuy! = y! |&gt; CuArray
+cux = x |&gt; CuArray
+cuβ = repeat([0.4], 100) |&gt; CuArray
+lsout = 0.0
+@instr Grad(loss)(Val(1), lsout, cuy!, cuβ, cux)</code></pre><p>You will see correct answer</p><pre><code class="language-">grad.(cuβ)</code></pre><h2 id="This-one-has-the-shared-write-problem:-using-a-vector-of-α,-but-shared-read.-1"><a class="docs-heading-anchor" href="#This-one-has-the-shared-write-problem:-using-a-vector-of-α,-but-shared-read.-1">This one has the shared write problem: using a vector of <code>α</code>, but shared read.</a><a class="docs-heading-anchor-permalink" href="#This-one-has-the-shared-write-problem:-using-a-vector-of-α,-but-shared-read.-1" title="Permalink"></a></h2><pre><code class="language-">@i @kernel function axpy_kernel(y!, α, x)
+    @invcheckoff begin
+        i ← @index(Global)
+        y![i] += x[i] * α[i]
+        i → @index(Global)
+    end
+end
+
+cuy! = y! |&gt; CuArray
+cux = x |&gt; CuArray
+cuβ = repeat([0.4], 100) |&gt; CuArray
+lsout = 0.0
+cuβ = [0.4] |&gt; CuArray</code></pre><p>Run the following will give you a happy error</p><blockquote><p>ERROR: a exception was thrown during kernel execution.        Run Julia on debug level 2 for device stack traces.</p></blockquote><pre><code class="language-julia">@instr Grad(loss)(Val(1), lsout, cuy!, cuβ, cux)</code></pre><p>Because, shared write is not allowed. We need someone clever enough to solve this problem for us.</p><h2 id="Conclusion-1"><a class="docs-heading-anchor" href="#Conclusion-1">Conclusion</a><a class="docs-heading-anchor-permalink" href="#Conclusion-1" title="Permalink"></a></h2><ul><li>Shared scalar: the gradient of a scalar will not be updated.</li><li>Expanded vector: works properly, but costs more memory.</li><li>Shared 1-element vector: error on shared write.</li></ul><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../extend/">« How to extend</a><a class="docs-footer-nextpage" href="../../api/">API Manual »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Sunday 28 June 2020 17:16">Sunday 28 June 2020</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
