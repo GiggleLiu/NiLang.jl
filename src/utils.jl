@@ -30,7 +30,3 @@ prshift(x, n) = (x >> n) | (x << (sizeof(x)*8-n))
 right shift, sign extending.
 """
 arshift(x::T, n) where T = (x >> n) | (x & (T(1) << (sizeof(x)*8-1)))
-
-function NiLangCore.chfield(a::AbstractArray, ::typeof(vec), val)
-    reshape(val, size(a)...)
-end

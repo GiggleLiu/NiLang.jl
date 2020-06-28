@@ -1,13 +1,13 @@
 NiLangCore.chfield(x::Complex, ::typeof(real), r) = chfield(x, Val{:re}(), r)
 NiLangCore.chfield(x::Complex, ::typeof(imag), r) = chfield(x, Val{:im}(), r)
 
-@i @inline function NEG(y!::Complex{T}) where T
-    NEG(y!.re)
-    NEG(y!.im)
+@i @inline function Base.:-(y!::Complex{T}) where T
+    -(y!.re)
+    -(y!.im)
 end
 
 @i @inline function Base.conj(y!::Complex{T}) where T
-    NEG(y!.im)
+    -(y!.im)
 end
 
 @i @inline function ⊕(angle)(r!::T, x::Complex{T}) where T
@@ -15,8 +15,8 @@ end
 end
 
 @i @inline function ⊕(identity)(y!::Complex{T}, a::Complex{T}) where T
-    y!.re += identity(a.re)
-    y!.im += identity(a.im)
+    y!.re += a.re
+    y!.im += a.im
 end
 
 @inline function SWAP(a!::Complex, b!::Complex)
@@ -125,12 +125,7 @@ end
 
 @i @inline function ⊕(^)(y!::Complex{T}, a::Complex{T}, b::Real) where T
     @routine @invcheckoff begin
-        r ← zero(T)
-        θ ← zero(T)
-        s ← zero(T)
-        c ← zero(T)
-        absy ← zero(T)
-        bθ ← zero(T)
+        @zeros T r θ s c absy bθ
         r += abs(a)
         θ += angle(a)
         bθ += θ * b
@@ -143,8 +138,8 @@ end
 end
 
 @i @inline function ⊕(complex)(y!::Complex{T}, a::T, b::T) where T
-    y!.re += identity(a)
-    y!.im += identity(b)
+    y!.re += a
+    y!.im += b
 end
 
 for OP in [:*, :/, :+, :-, :^]

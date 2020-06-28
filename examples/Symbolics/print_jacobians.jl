@@ -6,19 +6,19 @@ NiLang.AD.isvar(sym::Basic) = true
 # a patch for symbolic IROT
 @i @inline function NiLang.IROT(a!::GVar{<:Basic}, b!::GVar{<:Basic}, θ::GVar{<:Basic})
     IROT(value(a!), value(b!), value(θ))
-    NEG(value(θ))
+    -(value(θ))
     value(θ) -= Basic(π)/2
     ROT(grad(a!), grad(b!), value(θ))
     grad(θ) += value(a!) * grad(a!)
     grad(θ) += value(b!) * grad(b!)
     value(θ) += Basic(π)/2
-    NEG(value(θ))
+    -(value(θ))
     ROT(grad(a!), grad(b!), Basic(π)/2)
 end
 
 NiLang.INC(x::Basic) = x + one(x)
 NiLang.DEC(x::Basic) = x - one(x)
-NiLang.NEG(x::Basic) = -x
+-(x::Basic) = -x
 @inline function NiLang.ROT(i::Basic, j::Basic, θ::Basic)
     a, b = rot(i, j, θ)
     a, b, θ
@@ -39,7 +39,7 @@ function printall()
             printone(op, syms)
         end
     end
-    for op in [NEG, ROT, IROT]
+    for op in [-, ROT, IROT]
         printone(op, syms)
     end
     # abs, conj

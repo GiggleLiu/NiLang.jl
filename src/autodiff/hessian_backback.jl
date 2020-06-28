@@ -5,10 +5,10 @@ export hessian_backback
     Grad(f)(args...; kwargs..., iloss=iloss)
 
     for i = 1:length(args)
-        GVar(grad(tget(args,i)))
-        GVar(value(tget(args,i)))
+        GVar(args |> tget(i) |> grad)
+        GVar(args |> tget(i) |> value)
     end
-    grad(grad(tget(args,index))) += identity(1)
+    (args |> tget(index) |> grad |> grad) += 1
     # backward#2
     (~Grad(f))(args...; kwargs..., iloss=iloss)
 end
@@ -36,11 +36,11 @@ function hessian_numeric(f, args; iloss::Int, η=1e-5, kwargs...)
     largs = [args...]
     for i = 1:narg
         if nparams(args[i]) == 1
-            @instr value(largs[i]) += η/2
+            @instr (largs[i] |> value) += η/2
             gpos = gradient(f, (largs...,); iloss=iloss, kwargs...)
-            @instr value(largs[i]) -= identity(η)
+            @instr (largs[i] |> value) -= η
             gneg = gradient(f, (largs...,); iloss=iloss, kwargs...)
-            @instr value(largs[i]) += η/2
+            @instr (largs[i] |> value) += η/2
             res[:,i] .= (gpos .- gneg)./η
         end
     end

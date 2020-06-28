@@ -1,4 +1,4 @@
-export SWAP, NEG, FLIP
+export SWAP, FLIP
 export ROT, IROT
 export ipop!, ipush!
 export mulint, divint
@@ -48,13 +48,7 @@ loaddata(::Type{T}, x::TX) where {T<:NullType, TX} = T(x)
 
 @dual ipop! ipush!
 
-"""
-    NEG(a!) -> -a!
-"""
-@inline function NEG(a!::Real)
-    -a!
-end
-@selfdual NEG
+@selfdual -
 
 @inline FLIP(b::Bool) = !b
 @selfdual FLIP
@@ -113,9 +107,9 @@ end
 end
 @dual ROT IROT
 
-for F1 in [:NEG]
+for F1 in [:(Base.:-)]
     @eval @inline function $F1(a!::NullType)
-        @instr $F1(value(a!))
+        @instr $F1(a! |> value)
         a!
     end
     @eval NiLangCore.nouts(::typeof($F1)) = 1
@@ -124,15 +118,15 @@ end
 
 for F2 in [:SWAP, :((inf::PlusEq)), :((inf::MinusEq)), :((inf::XorEq))]
     @eval @inline function $F2(a::NullType, b::Real)
-        @instr $(NiLangCore.get_argname(F2))(value(a), b)
+        @instr $(NiLangCore.get_argname(F2))(a |> value, b)
         a, b
     end
     @eval @inline function $F2(a::NullType, b::NullType)
-        @instr $(NiLangCore.get_argname(F2))(value(a), value(b))
+        @instr $(NiLangCore.get_argname(F2))(a |> value, b |> value)
         a, b
     end
     @eval @inline function $F2(a::Real, b::NullType)
-        @instr $(NiLangCore.get_argname(F2))(a, value(b))
+        @instr $(NiLangCore.get_argname(F2))(a, b |> value)
         a, b
     end
 end
@@ -150,7 +144,7 @@ end
 for F3 in [:ROT, :IROT, :((inf::PlusEq)), :((inf::MinusEq)), :((inf::XorEq))]
     PS = (:a, :b, :c)
     for PTS in type_except(Tuple{NullType, NullType, NullType}, Real)
-        params = map((P,PT)->PT <: NullType ? :(value($P)) : P, PS, PTS)
+        params = map((P,PT)->PT <: NullType ? :($P |> value) : P, PS, PTS)
         params_ts = map((P,PT)->:($P::$PT), PS, PTS)
         @eval @inline function $F3($(params_ts...))
             @instr $F3($(params...))
