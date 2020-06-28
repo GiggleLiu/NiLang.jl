@@ -19,7 +19,7 @@ NiLang.AD.GVar(x::NiceLayer) = NiceLayer(GVar(x.W1), GVar(x.b1), GVar(x.W2), GVa
         affine!(layer.y1, layer.W1, layer.b1, x)
         @inbounds for i=1:length(layer.y1)
             if (layer.y1[i] &gt; 0, ~)
-                layer.y1a[i] += identity(layer.y1[i])
+                layer.y1a[i] += layer.y1[i]
             end
         end
     end
@@ -35,7 +35,7 @@ end</code></pre><p>Here, in each layer, we use the information in <code>x</code>
         end
     end
     @invcheckoff for i=1:size(W, 1)
-        @inbounds y![i] += identity(b[i])
+        @inbounds y![i] += b[i]
     end
 end</code></pre><p>A nice network always transforms inputs reversibly. We update one half of <code>x!</code> a time, so that input and output memory space do not clash.</p><pre><code class="language-julia">const NiceNetwork{T} = Vector{NiceLayer{T}}
 
@@ -146,4 +146,4 @@ function showmodel(x_data, model; nsamples=2000)
 end</code></pre><pre><code class="language-none">showmodel (generic function with 1 method)</code></pre><p>you can find the training data in <code>examples/</code> folder</p><pre><code class="language-">x_data = Matrix(readdlm(joinpath(@__DIR__, &quot;train.dat&quot;))&#39;)
 
 import Random; Random.seed!(22)
-model = random_nice_network(Float64, size(x_data, 1), 10, 4; scale=0.1)</code></pre><p>Before training, the distribution looks like <img src="../../asset/nice_before.png" alt="before"/></p><pre><code class="language-">model = train(x_data, model; num_epochs=800)</code></pre><p>After training, the distribution looks like <img src="../../asset/nice_after.png" alt="before"/></p><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../qr/">« A simple QR decomposition</a><a class="docs-footer-nextpage" href="../realnvp/">RealNVP network »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Friday 19 June 2020 19:31">Friday 19 June 2020</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+model = random_nice_network(Float64, size(x_data, 1), 10, 4; scale=0.1)</code></pre><p>Before training, the distribution looks like <img src="../../asset/nice_before.png" alt="before"/></p><pre><code class="language-">model = train(x_data, model; num_epochs=800)</code></pre><p>After training, the distribution looks like <img src="../../asset/nice_after.png" alt="before"/></p><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../qr/">« A simple QR decomposition</a><a class="docs-footer-nextpage" href="../realnvp/">RealNVP network »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Sunday 28 June 2020 15:44">Sunday 28 June 2020</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

@@ -6,7 +6,7 @@ get the summation of an array.
 &quot;&quot;&quot;
 @i function isum(out!, x::AbstractArray)
     for i=1:length(x)
-        out! += identity(x[i])
+        out! += x[i]
     end
 end
 
@@ -26,20 +26,19 @@ squared norm.
 @i function norm2(out!, vec::Vector{T}) where T
     anc1 ← zero(T)
     for i = 1:length(vec)
-        anc1 += identity(vec[i]&#39;)
+        anc1 += vec[i]&#39;
         out! += anc1*vec[i]
-        anc1 -= identity(vec[i]&#39;)
+        anc1 -= vec[i]&#39;
     end
 end</code></pre><h2 id="The-QR-decomposition-1"><a class="docs-heading-anchor" href="#The-QR-decomposition-1">The QR decomposition</a><a class="docs-heading-anchor-permalink" href="#The-QR-decomposition-1" title="Permalink"></a></h2><p>Let us consider a naive implementation of QR decomposition from scratch. This implementation is just a proof of principle which does not consider reorthogonalization and other practical issues.</p><pre><code class="language-julia">@i function qr(Q, R, A::Matrix{T}) where T
     anc_norm ← zero(T)
     anc_dot ← zeros(T, size(A,2))
     ri ← zeros(T, size(A,1))
     for col = 1:size(A, 1)
-        ri .+= identity.(A[:,col])
+        ri .+= A[:,col]
         for precol = 1:col-1
             dot(anc_dot[precol], Q[:,precol], ri)
-            R[precol,col] +=
-                identity(anc_dot[precol])
+            R[precol,col] += anc_dot[precol]
             for row = 1:size(Q,1)
                 ri[row] -=
                     anc_dot[precol] * Q[row, precol]
@@ -53,7 +52,7 @@ end</code></pre><h2 id="The-QR-decomposition-1"><a class="docs-heading-anchor" h
         end
 
         ~begin
-            ri .+= identity.(A[:,col])
+            ri .+= A[:,col]
             for precol = 1:col-1
                 dot(anc_dot[precol], Q[:,precol], ri)
                 for row = 1:size(Q,1)
@@ -71,4 +70,4 @@ q, r = zero(A), zero(A)
     isum(out, q)
 end
 
-check_grad(test1, (0.0, q, r, A); iloss=1)</code></pre><pre><code class="language-none">true</code></pre><p>Here, the loss function <code>test1</code> is defined as the sum of the output unitary matrix <code>q</code>. The <code>check_grad</code> function is a gradient checker function defined in module <code>NiLang.AD</code>.</p><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../unitary/">« Unitary matrix operations without allocation</a><a class="docs-footer-nextpage" href="../nice/">NICE network »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Friday 19 June 2020 19:31">Friday 19 June 2020</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+check_grad(test1, (0.0, q, r, A); iloss=1)</code></pre><pre><code class="language-none">true</code></pre><p>Here, the loss function <code>test1</code> is defined as the sum of the output unitary matrix <code>q</code>. The <code>check_grad</code> function is a gradient checker function defined in module <code>NiLang.AD</code>.</p><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../unitary/">« Unitary matrix operations without allocation</a><a class="docs-footer-nextpage" href="../nice/">NICE network »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Sunday 28 June 2020 15:44">Sunday 28 June 2020</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
