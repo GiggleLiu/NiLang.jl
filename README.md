@@ -3,9 +3,11 @@
 
 NiLang.jl (逆lang), is a reversible domain-specific language (DSL) that allow a program to go back to the past.
 
-* Requires Julia version >= 1.3.
-* If test breaks, try using the master branch of `NiLangCore`.
-* **The `'` notation has been removed recently!**
+* Requires Julia version >= 1.3,
+* If test breaks, try using the master branch of `NiLangCore`,
+* The `'` notation has been removed recently to avoid potential conflict with other packages,
+* Now a dataview is specified by `x |> bijection`, e.g. the preivous `grad(x)` now should be written as `x |> grad` in the reversible context.
+* Our paper uses version v0.6, which might be different from master branch.
 
 
 NiLang features:
@@ -127,7 +129,7 @@ julia> y!, x = 0.0, 1.6
 (0.0, 1.6)
 
 # first order gradients
-julia> @instr Grad(iexp)(Val(1), y!, x)
+julia> @instr Grad(PlusEq(exp))(Val(1), y!, x)
 
 julia> grad(x)
 4.9530324244260555
@@ -138,7 +140,7 @@ julia> y!, x = 0.0, 1.6
 # second order gradient by differentiate first order gradients
 julia> using ForwardDiff: Dual
 
-julia> _, hxy, hxx = Grad(iexp)(Val(1), 
+julia> _, hxy, hxx = Grad(PlusEq(exp))(Val(1), 
         Dual(y!, zero(y!)), Dual(x, one(x)));
 
 julia> grad(hxx).partials[1]

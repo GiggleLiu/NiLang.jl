@@ -1,152 +1,147 @@
 # unary
-@i @inline function NEG(a!::GVar)
-    NEG(value(a!))
-    NEG(grad(a!))
+@i @inline function Base.:-(a!::GVar)
+    -(a!.x)
+    -(a!.g)
 end
 
 @i @inline function DEC(a!::GVar)
-    DEC(value(a!))
+    DEC(a!.x)
 end
 
 # +-
 @i @inline function ⊖(identity)(a!::GVar, b::GVar)
-    value(a!) -= identity(value(b))
-    grad(b) += identity(grad(a!))
+    a!.x -= b.x
+    b.g += a!.g
 end
 @nograd ⊖(identity)(a!::Real, b::GVar)
 @nograd ⊖(identity)(a!::GVar, b::Real)
 
 # +- (triple)
 @i @inline function ⊖(+)(out!::GVar, x::GVar, y::GVar)
-    value(out!) -= value(x) + value(y)
-    grad(x) += identity(grad(out!))
-    grad(y) += identity(grad(out!))
+    out!.x -= x.x + y.x
+    x.g += out! |> grad
+    y.g += out! |> grad
 end
 
 @i @inline function ⊖(+)(out!::GVar, x::GVar, y::Real)
-    value(out!) -= value(x) + value(y)
-    grad(x) += identity(grad(out!))
+    out!.x -= (x |> value) + (y |> value)
+    x.g += out! |> grad
 end
 
 @i @inline function ⊖(+)(out!::GVar, x::Real, y::GVar)
-    value(out!) -= value(x) + value(y)
-    grad(y) += identity(grad(out!))
+    out!.x -= (x |> value) + (y |> value)
+    y.g += out! |> grad
 end
 
 @i @inline function ⊖(-)(out!::GVar, x::GVar, y::GVar)
-    value(out!) -= value(x) - value(y)
-    grad(x) += identity(grad(out!))
-    grad(y) -= identity(grad(out!))
+    out!.x -= x.x - y.x
+    x.g += out! |> grad
+    y.g -= out! |> grad
 end
 
 @i @inline function ⊖(-)(out!::GVar, x::Real, y::GVar)
-    value(out!) -= value(x) - value(y)
-    grad(y) -= identity(grad(out!))
+    out!.x -= (x |> value) - y.x
+    y.g -= out!.g
 end
 
 @i @inline function ⊖(-)(out!::GVar, x::GVar, y::Real)
-    value(out!) -= value(x) - value(y)
-    grad(x) += identity(grad(out!))
+    out!.x -= x.x - (y |> value)
+    x.g += out! |> grad
 end
 
 # NOTE: it will error on `SWAP(a!::GVar, b)` or `SWAP(a!, b:GVar)`
 @i @inline function SWAP(a!::GVar, b!::GVar)
-    SWAP(value(a!), value(b!))
-    SWAP(grad(a!), grad(b!))
+    SWAP(a! |> value,  b! |> value)
+    SWAP(a!.g, b!.g)
 end
 
 # */
 @i @inline function ⊖(*)(out!::GVar, x::GVar, y::GVar)
-    value(out!) -= value(x) * value(y)
-    grad(x) += grad(out!) * value(y)
-    grad(y) += value(x) * grad(out!)
+    out!.x -= x.x * y.x
+    x.g += out!.g * y.x
+    y.g += x.x * out!.g
 end
 
 @i @inline function ⊖(*)(out!::GVar, x::Real, y::GVar)
-    value(out!) -= value(x) * value(y)
-    grad(y) += value(x) * grad(out!)
+    out!.x -= (x |> value) * y.x
+    y.g += (x |> value) * out!.g
 end
 
 @i @inline function ⊖(*)(out!::GVar, x::GVar, y::Real)
-    value(out!) -= value(x) * value(y)
-    grad(x) += grad(out!) * value(y)
+    out!.x -= x.x * (y |> value)
+    x.g += out!.g * (y |> value)
 end
 
 for DIV in [:/, :÷]
 @eval @i @inline function ⊖($DIV)(out!::GVar{T}, x::GVar, y::GVar) where T
-    value(out!) -= $DIV(value(x), value(y))
+    out!.x -= $DIV(x.x, y.x)
     @routine @invcheckoff begin
-        a1 ← zero(grad(out!))
-        a2 ← zero(grad(out!))
-        a1 += value(x)*grad(out!)
-        a2 += $DIV(a1, value(y))
+        a1 ← zero(out! |> grad)
+        a2 ← zero(out! |> grad)
+        a1 += x.x * out!.g
+        a2 += $DIV(a1, y.x)
     end
-    grad(x) += $DIV(grad(out!), value(y))
-    grad(y) -= $DIV(a2, value(y))
+    x.g += $DIV(out!.g, y.x)
+    y.g -= $DIV(a2, y.x)
     ~@routine
 end
 
 @eval @i @inline function ⊖($DIV)(out!::GVar{T}, x::Real, y::GVar) where T
-    value(out!) -= $DIV(x, value(y))
+    out!.x -= $DIV(x, y.x)
     @routine @invcheckoff begin
-        a1 ← zero(grad(out!))
-        a2 ← zero(grad(out!))
-        a1 += x*grad(out!)
-        a2 += $DIV(a1, value(y))
+        a1 ← zero(out!.g)
+        a2 ← zero(out!.g)
+        a1 += x * out!.g
+        a2 += $DIV(a1, y.x)
     end
-    grad(y) -= $DIV(a2, value(y))
+    y.g -= $DIV(a2, y.x)
     ~@routine
 end
 
 @eval @i @inline function ⊖($DIV)(out!::GVar, x::GVar, y::Real)
-    value(out!) -= $DIV(value(x), y)
-    grad(x) += $DIV(grad(out!), y)
+    out!.x -= $DIV(x.x, y)
+    x.g += $DIV(out!.g, y)
 end
 end
 
 @i @inline function ⊖(^)(out!::GVar{T}, x::GVar, n::GVar) where T
-    ⊖(^)(value(out!), value(x), value(n))
+    ⊖(^)(out!.x, x.x, n.x)
 
     # grad x
     @routine @invcheckoff begin
-        anc1 ← zero(value(x))
-        anc2 ← zero(value(x))
-        anc3 ← zero(value(x))
-        jac1 ← zero(value(x))
-        jac2 ← zero(value(x))
-
-        DEC(value(n))
-        anc1 += value(x)^value(n)
-        INC(value(n))
-        jac1 += anc1 * value(n)
+        @zeros T anc1 anc2 anc3 jac1 jac2
+        DEC(n.x)
+        anc1 += x.x^n.x
+        INC(n.x)
+        jac1 += anc1 * n.x
 
         # get grad of n
-        anc2 += log(value(x))
-        anc3 += value(x) ^ value(n)
+        anc2 += log(x.x)
+        anc3 += x.x ^ n.x
         jac2 += anc3*anc2
     end
-    grad(x) += grad(out!) * jac1
-    grad(n) += grad(out!) * jac2
+    x.g += out!.g * jac1
+    n.g += out!.g * jac2
     ~@routine
 end
 
 @i @inline function ⊖(^)(out!::GVar{T}, x::GVar, n::Real) where T
-    ⊖(^)(value(out!), value(x), n)
+    ⊖(^)(out!.x, x.x, n)
     @routine @invcheckoff begin
-        anc1 ← zero(value(x))
-        jac ← zero(value(x))
+        anc1 ← zero(x.x)
+        jac ← zero(x.x)
 
-        DEC(value(n))
-        anc1 += value(x)^n
-        INC(value(n))
+        DEC(n |> value)
+        anc1 += x.x ^ n
+        INC(n |> value)
         jac += anc1 * n
     end
-    grad(x) += grad(out!) * jac
+    x.g += out!.g * jac
     ~@routine
 end
 
 @i @inline function ⊖(^)(out!::GVar{T}, x::Real, n::GVar) where T
-    ⊖(^)(value(out!), x, value(n))
+    ⊖(^)(out!.x, x, n.x)
     # get jac of n
     @routine @invcheckoff begin
         anc1 ← zero(x)
@@ -154,52 +149,50 @@ end
         jac ← zero(x)
 
         anc1 += log(x)
-        anc2 += x ^ value(n)
+        anc2 += x ^ n.x
         jac += anc1*anc2
     end
-    grad(n) += grad(out!) * jac
+    n.g += out!.g * jac
     ~@routine
 end
 
 @i @inline function ⊖(atan)(out!::GVar{T}, y::GVar, x::GVar) where T
-    ⊖(atan)(value(out!), value(y), value(x))
+    ⊖(atan)(out!.x, y.x, x.x)
     @routine @invcheckoff begin
-        xy2 ← zero(T)
-        jac_x ← zero(T)
-        jac_y ← zero(T)
-        xy2 += abs2(value(x))
-        xy2 += abs2(value(y))
-        jac_y += value(x) / xy2
-        jac_x += (-value(y)) / xy2
+        @zeros T xy2 jac_x jac_y
+        xy2 += abs2(x.x)
+        xy2 += abs2(y.x)
+        jac_y += x.x / xy2
+        jac_x += (-y.x) / xy2
     end
-    grad(y) += grad(out!) * jac_y
-    grad(x) += grad(out!) * jac_x
+    y.g += out!.g * jac_y
+    x.g += out!.g * jac_x
     ~@routine
 end
 
 @i @inline function ⊖(atan)(out!::GVar{T}, x::GVar) where T
-    ⊖(atan)(value(out!), value(x))
+    ⊖(atan)(out!.x, x.x)
     @routine @invcheckoff begin
         xy2 ← one(T)
-        xy2 += abs2(value(x))
+        xy2 += abs2(x.x)
     end
-    grad(x) += grad(out!) / xy2
+    x.g += out!.g / xy2
     ~@routine
 end
 
 @i @inline function ⊖(abs)(out!::GVar, x::GVar{T}) where T
-    value(out!) -= abs(value(x))
+    out!.x -= abs(x.x)
     if (x > 0, ~)
-        grad(x) += identity(grad(out!))
+        x.g += out!.g
     else
-        grad(x) -= identity(grad(out!))
+        x.g -= out!.g
     end
 end
 
 @i @inline function ⊖(abs2)(out!::GVar, x::GVar{T}) where T
-    value(out!) -= abs2(value(x))
-    grad(x) += grad(out!) * value(x)
-    grad(x) += grad(out!) * value(x)
+    out!.x -= abs2(x.x)
+    x.g += out!.g * x.x
+    x.g += out!.g * x.x
 end
 @nograd ⊖(abs2)(a!::GVar, b::Real)
 @nograd ⊖(abs2)(a!::Real, b::GVar)
@@ -213,60 +206,59 @@ end
 
 @i @inline function ⊖(sqrt)(out!::GVar, x::GVar{T}) where T
     @routine @invcheckoff begin
-        anc1 ← zero(value(x))
-        anc2 ← zero(value(x))
-        anc1 += sqrt(value(x))
+        @zeros T anc1 anc2
+        anc1 += sqrt(x.x)
         anc2 += 2 * anc1
     end
-    value(out!) -= identity(anc1)
-    grad(x) += grad(out!) / anc2
+    out!.x -= anc1
+    x.g += out!.g / anc2
     ~@routine
 end
 
 @i @inline function ⊖(exp)(out!::GVar, x::GVar{T}) where T
     @routine @invcheckoff begin
-        anc1 ← zero(value(x))
-        anc1 += exp(value(x))
+        anc1 ← zero(T)
+        anc1 += exp(x.x)
     end
-    value(out!) -= identity(anc1)
-    grad(x) += grad(out!) * anc1
+    out!.x -= anc1
+    x.g += out!.g * anc1
     ~@routine
 end
 
 @i @inline function ⊖(log)(out!::GVar, x::GVar{T}) where T
-    value(out!) -= log(value(x))
-    grad(x) += grad(out!) / value(x)
+    out!.x -= log(x.x)
+    x.g += out!.g / x.x
 end
 
 @i @inline function ⊖(sin)(out!::GVar, x::GVar{T}) where T
-    value(out!) -= sin(value(x))
+    out!.x -= sin(x.x)
     @routine @invcheckoff begin
-        anc1 ← zero(value(x))
-        anc1 += cos(value(x))
+        anc1 ← zero(x.x)
+        anc1 += cos(x.x)
     end
-    grad(x) += grad(out!) * anc1
+    x.g += out!.g * anc1
     ~@routine
 end
 
 @i @inline function ⊖(cos)(out!::GVar, x::GVar{T}) where T
-    value(out!) -= cos(value(x))
+    out!.x -= cos(x.x)
     @routine @invcheckoff begin
-        anc1 ← zero(value(x))
-        anc1 -= sin(value(x))
+        anc1 ← zero(x.x)
+        anc1 -= sin(x.x)
     end
-    grad(x) += grad(out!) * anc1
+    x.g += out!.g * anc1
     ~@routine
 end
 
 @i @inline function ⊖(tanh)(out!::GVar, x::GVar{T}) where T
     @routine @invcheckoff begin
-        anc1 ← zero(value(x))
-        anc2 ← one(value(x))
-        anc1 += tanh(value(x))
+        anc1 ← zero(x.x)
+        anc2 ← one(x.x)
+        anc1 += tanh(x.x)
         anc2 -= anc1^2
     end
-    value(out!) -= identity(anc1)
-    grad(x) += grad(out!) * anc2
+    out!.x -= anc1
+    x.g += out!.g * anc2
     ~@routine
 end
 
@@ -274,11 +266,11 @@ end
     @routine @invcheckoff begin
         s ← zero(T)
         c ← zero(T)
-        (s, c) += sincos(value(x))
+        (s, c) += sincos(x.x)
     end
-    value.(out!) -= identity((s, c))
-    grad(x) += grad(tget(out!, 1)) * c
-    grad(x) -= grad(tget(out!, 2)) * s
+    (out! .|> value) -= (s, c)
+    x.g += (out! |> tget(1) |> grad) * c
+    x.g -= (out! |> tget(2) |> grad) * s
     ~@routine
 end
 
@@ -291,25 +283,25 @@ end
 @nograd ⊖(sincos)(out!::Tuple{<:GVar,<:GVar}, x::Real)
 
 @i @inline function IROT(a!::GVar, b!::GVar, θ::GVar)
-    IROT(value(a!), value(b!), value(θ))
-    NEG(value(θ))
-    value(θ) -= identity(π/2)
-    ROT(grad(a!), grad(b!), value(θ))
-    grad(θ) += value(a!) * grad(a!)
-    grad(θ) += value(b!) * grad(b!)
-    value(θ) += identity(π/2)
-    NEG(value(θ))
-    ROT(grad(a!), grad(b!), π/2)
+    IROT(a!.x, b!.x, θ.x)
+    -(θ |> value)
+    θ.x -= π/2
+    ROT(a!.g, b!.g, θ.x)
+    θ.g += a!.x * a!.g
+    θ.g += b!.x * b!.g
+    θ.x += π/2
+    -(θ |> value)
+    ROT(a!.g, b!.g, π/2)
 end
 
 @i @inline function IROT(a!::GVar, b!::GVar, θ::Real)
-    IROT(value(a!), value(b!), θ)
-    NEG(θ)
-    θ -= identity(π/2)
-    ROT(grad(a!), grad(b!), θ)
-    θ += identity(π/2)
-    NEG(θ)
-    ROT(grad(a!), grad(b!), π/2)
+    IROT(a!.x, b!.x, θ)
+    -(θ)
+    θ -= π/2
+    ROT(a!.g, b!.g, θ)
+    θ += π/2
+    -(θ)
+    ROT(a!.g, b!.g, π/2)
 end
 
 @nograd IROT(a!::Real, b!::Real, θ::GVar)
@@ -318,13 +310,13 @@ export primitive_grad
 function primitive_grad end
 
 @i function (mf::MinusEq)(out!::GVar, args...; kwargs...)
-    value(out!) -= mf.f(value.(args)...; kwargs...)
-    grad.(args) .+= (@skip! grad(out!)) .* primitive_grad(mf.f, value.(args)...; kwargs...)
+    out!.x -= mf.f((args .|> value)...; kwargs...)
+    (args .|> grad) .+= (@skip! out!.g) .* primitive_grad(mf.f, (args .|> value)...; kwargs...)
 end
 
 @i function (mf::MinusEq)(out!::GVar, x::GVar; kwargs...)
-    value(out!) -= mf.f(value(x); kwargs...)
-    grad(x) += (@skip! grad(out!)) * primitive_grad(mf.f, value(x); kwargs...)
+    out!.x -= mf.f(x .|> value; kwargs...)
+    x.g += (@skip! out!.g) * primitive_grad(mf.f, x.x; kwargs...)
 end
 
 function loaddata(::Type{TG}, x::T) where {T,TG<:GVar{T}}

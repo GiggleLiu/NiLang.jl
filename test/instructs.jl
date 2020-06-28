@@ -29,11 +29,11 @@ end
     @test x == 2 && y == 1
 end
 
-@testset "NEG" begin
+@testset "-" begin
     x = 0.3
-    @instr NEG(x)
+    @instr -(x)
     @test x == -0.3
-    @test check_inv(NEG, (x,))
+    @test check_inv(-, (x,))
 end
 
 @testset "FLIP" begin

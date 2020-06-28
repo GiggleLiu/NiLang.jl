@@ -7,7 +7,7 @@
 | x ← val                   | allocate a new variable `x`, with an initial value `val` (a constant). |
 | x → val                   | deallocate variable `x` with content `val`.                  |
 | x += f(y)                 | a reversible instruction.                                    |
-| x .+= f(y)                | instruction call with broadcasting.                          |
+| x .+= f.(y)                | instruction call with broadcasting.                          |
 | f(y)                      | a reversible function.                                       |
 | f.(y)                     | function call with broadcasting.                             |
 | if (pre, post) ... end    | if statement.                                                |
@@ -19,7 +19,7 @@
 | @routine ...              | record a routine in the **routine stack**.                   |
 | ~@routine                 | place the inverse of the routine on **routine stack** top.   |
 
-The condition in if and while statements are a bit hard to digest, please refer our paper [arXiv:2003.04617](https://arxiv.org/abs/2003.04617).
+The condition expression in **if** and **while** statements are a bit hard to digest, please refer our paper [arXiv:2003.04617](https://arxiv.org/abs/2003.04617).
 
 ## A reversible program
 

@@ -91,7 +91,6 @@ function deanc(x::T, val::T) where {T<:AbstractArray}
 end
 
 # constructors and deconstructors
-Base.:-(x::GVar) = GVar(-x.x, -x.g)
 Base.iszero(x::GVar) = iszero(x.x)
 
 ## variable mapping

@@ -2,8 +2,8 @@ using Test, NiLang, NiLang.AD
 
 @testset "complex" begin
     a = 1.0+ 2im
-    @instr real(a) += identity(2)
-    @instr imag(a) += identity(2)
+    @instr (a |> real) += 2
+    @instr (a |> imag) += 2
     @test a == 3.0 + 4im
 
     a = 1.0+ 2im
@@ -14,8 +14,8 @@ using Test, NiLang, NiLang.AD
             c ← zero(a)
             sq ← zero(T)
             c += a * b
-            sq += real(c)^2
-            sq += imag(c)^2
+            sq += (c |> real) ^ 2
+            sq += (c |> imag) ^ 2
         end
         loss += sq ^ 0.5
         ~@routine
@@ -35,11 +35,11 @@ end
 
 @i function fr(f, loss, args...; il)
     f(args...)
-    loss += identity(tget(args,il).re)
+    loss += (args |> tget(il)).re
 end
 @i function fi(f, loss, args...; il)
     f(args...)
-    loss += identity(tget(args,il).im)
+    loss += (args |> tget(il)).im
 end
 function ccheck_grad(f, args; verbose=true, iloss=1)
     check_grad(fr, (f, 0.0, args...); verbose=verbose, iloss=2, il=1) &&
@@ -77,7 +77,6 @@ end
             @test check_grad(subop, args; verbose=true, iloss=1)
         end
     end
-    @test check_inv(NEG, (x,); verbose=true)
-    @test NEG(x) == -x
-    @test ccheck_grad(NEG, (x,); verbose=true, iloss=1)
+    @test check_inv(-, (x,); verbose=true)
+    @test ccheck_grad(-, (x,); verbose=true, iloss=1)
 end

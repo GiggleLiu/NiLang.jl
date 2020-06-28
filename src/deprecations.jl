@@ -4,3 +4,4 @@
 @deprecate nhessian hessian_numeric
 @deprecate MULINT mulint
 @deprecate DIVINT divint
+@deprecate NEG Base.:-

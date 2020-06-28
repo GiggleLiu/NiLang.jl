@@ -9,7 +9,7 @@ get the summation of an array.
 """
 @i function isum(out!, x::AbstractArray)
     for i=1:length(x)
-        out! += identity(x[i])
+        out! += x[i]
     end
 end
 
@@ -29,9 +29,9 @@ squared norm.
 @i function norm2(out!, vec::Vector{T}) where T
     anc1 ← zero(T)
     for i = 1:length(vec)
-        anc1 += identity(vec[i]')
+        anc1 += vec[i]'
         out! += anc1*vec[i]
-        anc1 -= identity(vec[i]')
+        anc1 -= vec[i]'
     end
 end
 
@@ -44,11 +44,10 @@ end
     anc_dot ← zeros(T, size(A,2))
     ri ← zeros(T, size(A,1))
     for col = 1:size(A, 1)
-        ri .+= identity.(A[:,col])
+        ri .+= A[:,col]
         for precol = 1:col-1
             dot(anc_dot[precol], Q[:,precol], ri)
-            R[precol,col] +=
-                identity(anc_dot[precol])
+            R[precol,col] += anc_dot[precol]
             for row = 1:size(Q,1)
                 ri[row] -=
                     anc_dot[precol] * Q[row, precol]
@@ -62,7 +61,7 @@ end
         end
 
         ~begin
-            ri .+= identity.(A[:,col])
+            ri .+= A[:,col]
             for precol = 1:col-1
                 dot(anc_dot[precol], Q[:,precol], ri)
                 for row = 1:size(Q,1)

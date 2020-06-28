@@ -13,10 +13,9 @@ NiLangCore.value(x::AutoBcast) = x.x
 NiLangCore.chfield(x::AutoBcast, ::typeof(value), xval) = chfield(x, Val(:x), xval)
 Base.zero(x::AutoBcast) = AutoBcast(zero(x.x))
 Base.zero(::Type{AutoBcast{T,N}}) where {T,N} = AutoBcast{T,N}(zeros(T, N))
-Base.:-(x::AutoBcast) = AutoBcast(-x.x)
 Base.length(ab::AutoBcast{T,N}) where {T, N} = N
 
-for F1 in [:NEG, :INC, :FLIP, :DEC]
+for F1 in [:(Base.:-), :INC, :FLIP, :DEC]
     @eval function $F1(a!::AutoBcast)
         @instr @invcheckoff @inbounds for i=1:length(a!)
             $F1(a!.x[i])

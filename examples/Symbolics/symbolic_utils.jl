@@ -7,10 +7,7 @@ const SymReal = Sym{Real}
 const TermReal = Term{Real}
 const SReals = Union{Term{Real}, Sym{Real}}
 
-import NiLang: NEG, INC, DEC, ROT, IROT, FLIP
-@inline function NEG(a!::SReals)
-    -a!
-end
+import NiLang: INC, DEC, ROT, IROT, FLIP
 @inline FLIP(b::Sym{Bool}) = !b
 
 @inline function INC(a!::SReals)

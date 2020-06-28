@@ -4,7 +4,7 @@ using ..NiLang
 using NiLangCore
 using MatchCore, TupleTools
 
-import ..NiLang: ⊕, ⊖, NEG, ROT, IROT, SWAP,
+import ..NiLang: ROT, IROT, SWAP,
     chfield, value, NoGrad, loaddata, INC, DEC
 
 export GVar, grad, Loss, NoGrad, @nograd

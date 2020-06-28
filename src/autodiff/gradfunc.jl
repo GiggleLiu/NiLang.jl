@@ -29,14 +29,14 @@ Base.display(bf::NGrad) = print(bf)
 @i function (g::Grad)(il::Val{iloss}, args...; kwargs...) where iloss
     protectf(g).f(args...; kwargs...)
     GVar.(args)
-    INC(grad(tget(args,iloss)))
+    INC(args |> tget(iloss) |> grad)
     (~protectf(g).f)(args...; kwargs...)
 end
 
 @i function (g::Grad)(il::Val{1}, x, ys...; kwargs...)
     protectf(g).f(x, ys...; kwargs...)
     GVar(x)
-    INC(grad(x))
+    INC(x |> grad)
     GVar.(ys)
     (~protectf(g).f)(x, ys...; kwargs...)
 end
@@ -44,7 +44,7 @@ end
 @i function (g::Grad)(args...; iloss::Int, kwargs...)
     protectf(g).f(args...; kwargs...)
     GVar.(args)
-    INC(grad(tget(args,iloss)))
+    INC(args |> tget(iloss) |> grad)
     (~protectf(g).f)(args...; kwargs...)
 end
 
