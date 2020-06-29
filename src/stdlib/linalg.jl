@@ -1,5 +1,14 @@
 export i_inv
 
+"""
+    i_inv(out!, A)
+
+Get the inverse of `A`.
+
+```note!!!
+this function is implemented as a primitive.
+```
+"""
 @i function i_inv(out!::AbstractMatrix{T}, A::AbstractMatrix{T}) where T
     @invcheckoff invA ← inv(A)
     out! .+= invA

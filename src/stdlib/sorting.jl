@@ -4,6 +4,7 @@ export i_ascending!
 	i_ascending!(xs!, inds!, arr)
 
 Rearrange `arr` into an ascending order `xs!`, indices are stored in `inds`.
+This function can be used to get the maximum value.
 """
 @i function i_ascending!(xs!::AbstractVector{T}, inds!, arr::AbstractArray{T}) where T
 	@invcheckoff if (length(arr) > 0, ~)

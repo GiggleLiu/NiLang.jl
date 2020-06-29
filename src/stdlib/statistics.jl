@@ -1,6 +1,10 @@
 export i_mean_sum, i_var_mean_sum, i_normal_logpdf
 
-"""the mean value"""
+"""
+    i_mean_sum(out!, sum!, x)
+
+get the `mean` and `sum` of `x`.
+"""
 @i function i_mean_sum(out!, sum!, x)
     for i=1:length(x)
         sum! += identity(x[i])
@@ -23,6 +27,11 @@ The `variance`, `variance * (n-1)`, `mean` and `sum` of `sqv`, where `n` is the 
     var! += varsum! / (length(v)-1)
 end
 
+"""
+    i_normal_logpdf(out, x, μ, σ)
+
+get the pdf of `Normal(μ, σ)` at point `x`.
+"""
 @i function i_normal_logpdf(out, x::T, μ, σ) where T
     @zeros T anc1 anc2 anc3
 

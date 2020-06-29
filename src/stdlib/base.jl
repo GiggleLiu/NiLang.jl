@@ -31,6 +31,11 @@ end
     SWAP(out!, anc!)
 end
 
+"""
+    i_factorial(out!, n)
+
+Compute the factorial `out! = factorial(n)`.
+"""
 @i function i_factorial(out!::Int, n::Int)
     INC(out!)
     @invcheckoff for i=1:n
