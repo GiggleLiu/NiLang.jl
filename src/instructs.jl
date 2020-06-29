@@ -76,8 +76,6 @@ for F1 in [:(Base.:-)]
         @instr $F1(a! |> value)
         a!
     end
-    @eval NiLangCore.nouts(::typeof($F1)) = 1
-    @eval NiLangCore.nargs(::typeof($F1)) = 1
 end
 
 for F2 in [:SWAP, :((inf::PlusEq)), :((inf::MinusEq)), :((inf::XorEq))]
@@ -95,11 +93,6 @@ for F2 in [:SWAP, :((inf::PlusEq)), :((inf::MinusEq)), :((inf::XorEq))]
     end
 end
 
-for F2 in [:SWAP]
-    @eval NiLangCore.nouts(::typeof($F2)) = $(F2 == :SWAP ? 2 : 1)
-    @eval NiLangCore.nargs(::typeof($F2)) = 2
-end
-
 function type_except(::Type{TT}, ::Type{T2}) where {TT, T2}
     N = length(TT.parameters)
     setdiff(Base.Iterators.product(zip(TT.parameters, repeat([T2], N))...), [ntuple(x->T2, N)])
@@ -114,21 +107,6 @@ for F3 in [:ROT, :IROT, :((inf::PlusEq)), :((inf::MinusEq)), :((inf::XorEq))]
             @instr $F3($(params...))
             ($(PS...),)
         end
-    end
-end
-
-for F3 in [:ROT, :IROT]
-    @eval NiLangCore.nouts(::typeof($F3)) = 2
-    @eval NiLangCore.nargs(::typeof($F3)) = 3
-end
-
-for (TP, OP) in [(:PlusEq, :+), (:MinusEq, :-), (:XorEq, :⊻)]
-    @eval NiLangCore.nouts(::$TP) = 1
-    for SOP in [:*, :/, :^]
-        @eval NiLangCore.nargs(::$TP{typeof($SOP)}) = 3
-    end
-    for SOP in [:sin, :cos, :log, :exp, :identity, :abs]
-        @eval NiLangCore.nargs(::$TP{typeof($SOP)}) = 2
     end
 end
 

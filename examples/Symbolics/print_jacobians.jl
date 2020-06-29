@@ -32,15 +32,15 @@ Base.sincos(x::Basic) = (sin(x), cos(x))
 function printall()
     syms = [Basic(:a), Basic(:b), Basic(:c)]
 
-    for subop in [identity, *, /, ^, exp, log, sin, cos]
+    for (subop, nargs) in [(identity, 2), (*, 3), (/, 3), (^, 3), (exp, 2), (log, 2), (sin, 2), (cos, 2)]
         for opm in [⊕, ⊖]
             op = opm(subop)
             @show op
-            printone(op, syms)
+            printone(op, syms, nargs)
         end
     end
-    for op in [-, ROT, IROT]
-        printone(op, syms)
+    for (op, nargs) in [(-, 1), (ROT, 3), (IROT, 3)]
+        printone(op, syms, nargs)
     end
     # abs, conj
 end
@@ -58,8 +58,7 @@ end
 end
 
 """print the jacobian of one operator"""
-function printone(op, syms)
-    n = nargs(op)
+function printone(op, syms, n)
     if n==1
         jac = jacobian_repeat(jf1, op, syms[1:1]; iin=2, iout=2)
     elseif n==2
