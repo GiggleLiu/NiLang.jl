@@ -132,3 +132,16 @@ macro nograd(ex)
         _ => error("expect `f(args...)`, got $ex")
     end
 end
+
+# load data from stack
+function loaddata(::Type{TG}, x::T) where {T,TG<:GVar{T}}
+    TG(x)
+end
+
+function loaddata(::Type{T}, x::T) where T <: GVar
+    x
+end
+
+function loaddata(::Type{AGT}, x::AT) where {T, GT, AT<:AbstractArray{T}, AGT<:AbstractArray{GVar{T,T}}}
+    map(x->GVar(x, zero(x)), x)
+end

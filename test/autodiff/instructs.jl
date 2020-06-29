@@ -25,8 +25,6 @@ using Test
     @test check_grad(-, (1.0,); verbose=true, iloss=1)
     @test check_grad(INC, (1.0,); verbose=true, iloss=1)
     @test check_grad(DEC, (1.0,); verbose=true, iloss=1)
-    @test check_grad(mulint, (1.5, 2); verbose=true, iloss=1)
-    @test check_grad(divint, (1.5, 2); verbose=true, iloss=1)
     @test check_grad(ROT, (1.0, 2.0, 2.0); verbose=true, iloss=1)
     @test check_grad(ROT, (1.0, 2.0, 2.0); verbose=true, iloss=2)
     @test check_grad(IROT, (1.0, 2.0, 2.0); verbose=true, iloss=1)
@@ -48,7 +46,7 @@ end
             anc += identity(x[i])
         end
         out! += anc / length(x)
-        ipush!(anc)
+        PUSH!(anc)
     end
 
     @test check_grad(mean, (0.0, [1,2,3.0, 4.0]); iloss=1)
@@ -69,18 +67,18 @@ end
 
 @testset "push, load data" begin
     stack = []
-    val = ipush!(stack, [1,2,3])[2]
+    val = PUSH!(stack, [1,2,3])[2]
     @test val == Int[]
-    val = ipush!(stack, 3.0)[2]
+    val = PUSH!(stack, 3.0)[2]
     @test val == 0.0
-    ipush!(stack, 3.0)
-    @test_throws InvertibilityError ipop!(stack, GVar(3.0))
-    ipush!(stack, 3.0)
-    @test ipop!(stack, GVar(0.0))[2] == GVar(3.0)
+    PUSH!(stack, 3.0)
+    @test_throws InvertibilityError POP!(stack, GVar(3.0))
+    PUSH!(stack, 3.0)
+    @test POP!(stack, GVar(0.0))[2] == GVar(3.0)
     x = [1.0, 2.0, 3.0]
-    ipush!(stack, x)
-    @test ipop!(stack, empty(x))[2] == GVar.([1,2,3.0])
+    PUSH!(stack, x)
+    @test POP!(stack, empty(x))[2] == GVar.([1,2,3.0])
     x = [1.0, 2.0, 3.0]
-    ipush!(stack, x)
-    @test ipop!(stack, empty(x))[2] == [1,2,3.0]
+    PUSH!(stack, x)
+    @test POP!(stack, empty(x))[2] == [1,2,3.0]
 end

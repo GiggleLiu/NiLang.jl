@@ -13,10 +13,18 @@ end
     include("instructs.jl")
 end
 
+@testset "stack.jl" begin
+    include("stack.jl")
+end
+
 @testset "autobcast.jl" begin
     include("autobcast.jl")
 end
 
 @testset "autodiff" begin
     include("autodiff/autodiff.jl")
+end
+
+@testset "stdlib" begin
+    include("stdlib/stdlib.jl")
 end

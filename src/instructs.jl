@@ -1,10 +1,6 @@
 export SWAP, FLIP
 export ROT, IROT
-export ipop!, ipush!
-export mulint, divint
 export INC, DEC
-
-const GLOBAL_STACK = []
 
 """
     NoGrad{T} <: IWrapper{T}
@@ -15,38 +11,6 @@ A `NoGrad(x)` is equivalent to `GVar^{-1}(x)`, which cancels the `GVar` wrapper.
 @pure_wrapper NoGrad
 
 const NullType{T} = Union{NoGrad{T}, Partial{T}}
-
-############# global stack operations ##########
-@inline function ipush!(x)
-    push!(GLOBAL_STACK, x)
-    cleared(x)
-end
-
-# TODO: fix this patch!
-@inline function ipop!(x::T) where T
-    @invcheck x cleared(x)
-    loaddata(T, pop!(GLOBAL_STACK))
-end
-
-############# local stack operations ##########
-@inline function ipush!(stack, x)
-    push!(stack, x)
-    stack, cleared(x)
-end
-
-@inline function ipop!(stack, x::T) where T
-    @invcheck x cleared(x)
-    stack, loaddata(T, pop!(stack))
-end
-
-cleared(x) = zero(x)
-cleared(x::AbstractArray{T,N}) where {T,N} = similar(x, zeros(Int, N)...)
-cleared(x::AbstractVector{T}) where {T} = empty(x)
-
-loaddata(::Type{T}, x::T) where T = x
-loaddata(::Type{T}, x::TX) where {T<:NullType, TX} = T(x)
-
-@dual ipop! ipush!
 
 @selfdual -
 
@@ -112,8 +76,6 @@ for F1 in [:(Base.:-)]
         @instr $F1(a! |> value)
         a!
     end
-    @eval NiLangCore.nouts(::typeof($F1)) = 1
-    @eval NiLangCore.nargs(::typeof($F1)) = 1
 end
 
 for F2 in [:SWAP, :((inf::PlusEq)), :((inf::MinusEq)), :((inf::XorEq))]
@@ -129,11 +91,6 @@ for F2 in [:SWAP, :((inf::PlusEq)), :((inf::MinusEq)), :((inf::XorEq))]
         @instr $(NiLangCore.get_argname(F2))(a, b |> value)
         a, b
     end
-end
-
-for F2 in [:SWAP]
-    @eval NiLangCore.nouts(::typeof($F2)) = $(F2 == :SWAP ? 2 : 1)
-    @eval NiLangCore.nargs(::typeof($F2)) = 2
 end
 
 function type_except(::Type{TT}, ::Type{T2}) where {TT, T2}
@@ -153,21 +110,6 @@ for F3 in [:ROT, :IROT, :((inf::PlusEq)), :((inf::MinusEq)), :((inf::XorEq))]
     end
 end
 
-for F3 in [:ROT, :IROT]
-    @eval NiLangCore.nouts(::typeof($F3)) = 2
-    @eval NiLangCore.nargs(::typeof($F3)) = 3
-end
-
-for (TP, OP) in [(:PlusEq, :+), (:MinusEq, :-), (:XorEq, :⊻)]
-    @eval NiLangCore.nouts(::$TP) = 1
-    for SOP in [:*, :/, :^]
-        @eval NiLangCore.nargs(::$TP{typeof($SOP)}) = 3
-    end
-    for SOP in [:sin, :cos, :log, :exp, :identity, :abs]
-        @eval NiLangCore.nargs(::$TP{typeof($SOP)}) = 2
-    end
-end
-
 # patch for fixed point numbers
 function (f::PlusEq{typeof(/)})(out!::T, x::Integer, y::Integer) where T<:Fixed
     out!+T(x)/y, x, y
@@ -184,24 +126,3 @@ end
 Base.:^(x::Integer, y::Fixed43) = Fixed43(x^(Float64(y)))
 Base.:^(x::Fixed43, y::Fixed43) = Fixed43(x^(Float64(y)))
 Base.:^(x::T, y::Fixed43) where T<:AbstractFloat = x^(T(y))
-
-"""
-    mulint(a!, b::Integer) -> a!*b, b
-"""
-@i @inline function mulint(a!, b::Integer)
-    @invcheckoff anc ← zero(a!)
-    anc += a! * b
-    a! -= anc/b
-    SWAP(a!, anc)
-    @invcheckoff anc → zero(a!)
-end
-
-@i @inline function mulint(a!::Integer, b::Integer)
-    @invcheckoff anc ← zero(a!)
-    anc += a! * b
-    a! -= anc ÷ b
-    SWAP(a!, anc)
-    @invcheckoff anc → zero(a!)
-end
-
-const divint = ~mulint
