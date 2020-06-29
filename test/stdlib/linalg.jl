@@ -1,4 +1,4 @@
-using Test, LightBayesian
+using Test
 using NiLang, NiLang.AD
 using LinearAlgebra
 using Random
@@ -18,7 +18,3 @@ using Random
     end
     @test check_grad(loss, (0.0, randn(3, 3), randn(3, 3)); iloss=1)
 end
-
-
-
-

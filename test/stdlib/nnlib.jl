@@ -21,14 +21,13 @@ end
     xmax = 0.0
     x_ = x
     p_ = p
-    @instr NiFunctions.softmax_cross_entropy(x_, p_, imax, xmax, Z, out)
+    @instr i_softmax_crossentropy(x_, p_, imax, xmax, Z, out)
     @show Z
     @test isapprox(imax, argmax(x0), atol=1e-8)
     @test isapprox(out, res[], atol=1e-8)
-    @instr (~softmax_cross_entropy)(x_, p_, imax, xmax, Z, out)
+    @instr (~i_softmax_crossentropy)(x_, p_, imax, xmax, Z, out)
     args = x_, p_, imax, xmax, Z, out
-    @test check_inv(softmax_cross_entropy, args)
+    @test check_inv(i_softmax_crossentropy, args)
     args = x_, p_, imax, xmax, Z, out
-    @test check_grad(softmax_cross_entropy, args; iloss=6, verbose=true)
+    @test check_grad(i_softmax_crossentropy, args; iloss=6, verbose=true)
 end
-

@@ -1,4 +1,4 @@
-export i_sum, i_mul!
+export i_sum, i_mul!, i_dot, i_axpy!, i_umm!, i_norm2
 
 @i function i_sum(out!, x::AbstractArray)
 	@invcheckoff for i=1:length(x)
@@ -38,7 +38,7 @@ end
 @i function i_dot(out!, x, y)
     @safe @assert length(x) == length(y)
     @invcheckoff @inbounds for i=1:length(x)
-        out! += x[i] * y[i]
+        out! += x[i]' * y[i]
     end
 end
 
@@ -55,7 +55,7 @@ end
     end
 end
 
-@i function umm!(x!::AbstractArray, θ)
+@i function i_umm!(x!::AbstractArray, θ)
     M ← size(x!, 1)
     N ← size(x!, 2)
     k ← 0
@@ -71,5 +71,3 @@ end
 
     k → length(θ)
 end
-
-

@@ -1,4 +1,4 @@
-export softmax_cross_entropy
+export i_softmax_crossentropy, i_relu
 
 function (_::PlusEq{typeof(argmax)})(out!, x::AbstractArray)
     out! += argmax(x)
@@ -12,11 +12,11 @@ end
 
 
 """
-    softmax_cross_entropy(x, p, imax, xmax, Z, out)
+    i_softmax_crossentropy(x, p, imax, xmax, Z, out)
 
 Softmax-Cross entropy function.
 """
-@i function softmax_cross_entropy(x, p, imax, xmax, Z, out::T) where T
+@i function i_softmax_crossentropy(x, p, imax, xmax, Z, out::T) where T
     logZ ← zero(T)
     yi ← zero(T)
     # subtract maximum
@@ -39,16 +39,12 @@ Softmax-Cross entropy function.
 end
 
 """
-    relu(out!, x)
+    i_relu(out!, x)
 
 ReLU in machine learning.
 """
-@i function relu(out!, x)
+@i function i_relu(out!, x)
     @invcheckoff if (x > 0, ~)
         out! += identity(x)
     end
 end
-
-# TODO: error on `scalar .+ vector`
-
-

@@ -2,41 +2,41 @@ using Test
 using LinearAlgebra
 using NiLang, NiLang.AD
 
-@testset "NiFunctions.norm2, dot" begin
+@testset "i_norm2, dot" begin
     out = 0.0im
     vec = [1.0im, 2.0, 3.0]
     vec2 = [1.0, 2.0im, 5.0]
-    @instr NiFunctions.norm2(out, vec)
+    @instr i_norm2(out, vec)
     @test out ≈ norm(vec)^2
-    @test check_inv(NiFunctions.norm2, (out, vec))
+    @test check_inv(i_norm2, (out, vec))
 
     out = 0.0im
     vec = [1.0im, 2.0, 3.0]
     vec2 = [1.0, 2.0im, 5.0]
-    @instr NiFunctions.dot(out, vec, vec2)
+    @instr i_dot(out, vec, vec2)
     @test out ≈ dot(vec, vec2)
-    @test check_inv(NiFunctions.dot, (out, vec, vec2))
+    @test check_inv(i_dot, (out, vec, vec2))
 
     out = 0.0
     vec = [1.0, 2.0, 3.0]
     vec2 = [1.0, 2.0, 5.0]
-    @test check_grad(NiFunctions.norm2, (out, vec); verbose=true, iloss=1)
+    @test check_grad(i_norm2, (out, vec); verbose=true, iloss=1)
 
     out = 0.0
-    @instr NiFunctions.dot(out, vec, vec2)
+    @instr i_dot(out, vec, vec2)
     @test out ≈ dot(vec, vec2)
-    @test check_inv(NiFunctions.dot, (out, vec, vec2))
+    @test check_inv(i_dot, (out, vec, vec2))
 
-    @test check_grad(NiFunctions.dot, (0.0, vec, vec2); verbose=true, iloss=1)
+    @test check_grad(i_dot, (0.0, vec, vec2); verbose=true, iloss=1)
 
     m = randn(4,4)
     n = randn(4,4)
     out = 0.0
-    @instr NiFunctions.dot(out, m[:,2], n[:,4])
+    @instr i_dot(out, m[:,2], n[:,4])
     @test out ≈ dot(m[:,2], n[:,4])
-    @test check_inv(NiFunctions.dot, (out, m[:,2], n[:,4]))
+    @test check_inv(i_dot, (out, m[:,2], n[:,4]))
 
-    @test check_grad(NiFunctions.dot, (0.0, vec, vec2); verbose=true, iloss=1)
+    @test check_grad(i_dot, (0.0, vec, vec2); verbose=true, iloss=1)
 end
 
 function naive_umm!(x, params)
@@ -83,15 +83,14 @@ end
     x0 = copy(x)
     params0 = copy(params)
     Nx = length(x)
-    @instr NiFunctions.umm!(x, params, Nx, Nx)
+    @instr i_umm!(x, params)
     x1 = copy(x0)
     params1 = copy(params0)
     naive_umm!(x1, params1)
     @test params ≈ params1
     @test x ≈ x1
-    @instr (~NiFunctions.umm!)(x, params, Nx, Nx)
+    @instr (~i_umm!)(x, params)
     @test params ≈ params0
     @test x ≈ x0
-    @test check_inv(NiFunctions.umm!, (x, params, Nx, Nx))
+    @test check_inv(i_umm!, (x, params))
 end
-

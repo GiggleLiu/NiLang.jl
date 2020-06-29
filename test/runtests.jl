@@ -20,3 +20,7 @@ end
 @testset "autodiff" begin
     include("autodiff/autodiff.jl")
 end
+
+@testset "stdlib" begin
+    include("stdlib/stdlib.jl")
+end

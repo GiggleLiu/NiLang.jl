@@ -1,4 +1,11 @@
-@i function ascending!(xs!::AbstractVector{T}, inds!, arr::AbstractArray{T}) where T
+export i_ascending!
+
+"""
+	i_ascending!(xs!, inds!, arr)
+
+Rearrange `arr` into an ascending order `xs!`, indices are stored in `inds`.
+"""
+@i function i_ascending!(xs!::AbstractVector{T}, inds!, arr::AbstractArray{T}) where T
 	@invcheckoff if (length(arr) > 0, ~)
 		y ← zero(T)
 		y += arr[1]
@@ -18,5 +25,3 @@
 		end
 	end
 end
-
-

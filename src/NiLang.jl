@@ -16,6 +16,8 @@ include("autobcast.jl")
 
 include("autodiff/autodiff.jl")
 
+include("stdlib/stdlib.jl")
+
 include("deprecations.jl")
 
 export AD
