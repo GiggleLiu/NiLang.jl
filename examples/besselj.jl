@@ -12,18 +12,6 @@
 
 using NiLang, NiLang.AD
 
-@i @inline function imul(out!, x, anc!)
-    anc! += out! * x
-    out! -= anc! / x
-    SWAP(out!, anc!)
-end
-
-@i @inline function imul(out!::Int, x::Int, anc!::Int)
-    anc! += out! * x
-    out! -= anc! ÷ x
-    SWAP(out!, anc!)
-end
-
 # Here, the definition of SWAP can be found in \App{app:instr}, ``anc! \approx 0`` is a *dirty ancilla*.
 # Line 2 computes the result and accumulates it to the dirty ancilla, we get an approximately correct output in **anc!**.
 # Line 3 "uncomputes" **out!** approximately by using the information stored in **anc!**, leaving a dirty zero state in register **out!**.
@@ -39,7 +27,7 @@ end
         halfz += z / 2
         halfz_power_nu += halfz ^ ν
         halfz_power_2 += halfz ^ 2
-        ifactorial(fact_nu, ν)
+        i_factorial(fact_nu, ν)
         anc1 += halfz_power_nu/fact_nu
         out_anc += anc1
         while (abs(unwrap(anc1)) > atol && abs(unwrap(anc4)) < atol, k!=0)
@@ -49,7 +37,7 @@ end
                 anc2 -= k * anc5
                 anc3 += halfz_power_2 / anc2
             end
-            imul(anc1, anc3, anc4)
+            i_dirtymul(anc1, anc3, anc4)
             out_anc += anc1
             ~@routine
         end
@@ -58,15 +46,7 @@ end
     ~@routine
 end
 
-# where the **ifactorial** is defined as
-
-@i function ifactorial(out!, n)
-    INC(out!)
-    for i=1:n
-        imul(out!, i, 0)
-    end
-end
-
+# where the **i_factorial** is defined as
 
 # Here, only a constant number of ancillas are used in this implementation, while the algorithm complexity does not increase comparing to its irreversible counterpart.
 # ancilla **anc4** plays the role of *dirty ancilla* in multiplication, it is uncomputed rigoriously in the uncomputing stage.

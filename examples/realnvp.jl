@@ -105,20 +105,7 @@ end
 
 
 # ## Loss function
-# Good! We still need to define some utilities like `affine!` transformation.
-
-@i function affine!(y!::AbstractVector{T}, W::AbstractMatrix{T}, b::AbstractVector{T}, x::AbstractVector{T}) where T
-    @safe @assert size(W) == (length(y!), length(x)) && length(b) == length(y!)
-    @invcheckoff for j=1:size(W, 2)
-        for i=1:size(W, 1)
-            @inbounds y![i] += W[i,j]*x[j]
-        end
-    end
-    @invcheckoff for i=1:size(W, 1)
-        @inbounds y![i] += identity(b[i])
-    end
-end
-
+#
 # In each layer, we use the information in `x` to update `y!`.
 # During computing, we use to vector type ancillas `y1` and `y1a`,
 # both of them can be uncomputed at the end of the function.
@@ -129,20 +116,20 @@ end
         ## scale network
         scale ← zero(y!)
         ytemp2 ← zero(y!)
-        affine!(layer.sy1, layer.sW1, layer.sb1, x)
+        i_affine!(layer.sy1, layer.sW1, layer.sb1, x)
         @inbounds for i=1:length(layer.sy1)
             if (layer.sy1[i] > 0, ~)
-                layer.sy1a[i] += identity(layer.sy1[i])
+                layer.sy1a[i] += layer.sy1[i]
             end
         end
-        affine!(scale, layer.sW2, layer.sb2, layer.sy1a)
+        i_affine!(scale, layer.sW2, layer.sb2, layer.sy1a)
 
         ## transform network
-        affine!(layer.y1, layer.W1, layer.b1, x)
+        i_affine!(layer.y1, layer.W1, layer.b1, x)
         ## relu
         @inbounds for i=1:length(layer.y1)
             if (layer.y1[i] > 0, ~)
-                layer.y1a[i] += identity(layer.y1[i])
+                layer.y1a[i] += layer.y1[i]
             end
         end
     end
@@ -154,11 +141,11 @@ end
             if (islast, ~)
                 tanhscale += tanh(scale[i])
             else
-                tanhscale += identity(scale[i])
+                tanhscale += scale[i]
             end
             expscale += exp(tanhscale)
         end
-        logjacobian! += identity(tanhscale)
+        logjacobian! += tanhscale
         ## inplace multiply!!!
         temp ← zero(T)
         temp += y![i] * expscale
@@ -169,7 +156,7 @@ end
     end
 
     ## affine the transform layer
-    affine!(y!, layer.W2, layer.b2, layer.y1a)
+    i_affine!(y!, layer.W2, layer.b2, layer.y1a)
     ~@routine
     ## clean up accumulated rounding error, since this memory is reused.
     @safe layer.y1 .= zero(T)
@@ -236,7 +223,7 @@ function showmodel(x_data, model; nsamples=2000)
     scatter(x_data[1,1:nsamples], x_data[2,1:nsamples]; xlims=(-5,5), ylims=(-5,5))
     zs = randn(2, nsamples)
     for i=1:nsamples
-        realnvp!(view(zs, :, i), model)
+        realnvp!(view(zs, :, i), model, 0.0)
     end
     scatter!(zs[1,:], zs[2,:])
 end

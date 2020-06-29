@@ -29,7 +29,7 @@ end
     ## Note: the following code is stupid scalar operations on CuArray,
     ## They are only for testing.
     for i=1:length(y!)
-        out += identity(y![i])
+        out += y![i]
     end
 end
 

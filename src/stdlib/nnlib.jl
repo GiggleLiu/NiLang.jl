@@ -45,6 +45,6 @@ ReLU in machine learning.
 """
 @i function i_relu(out!, x)
     @invcheckoff if (x > 0, ~)
-        out! += identity(x)
+        out! += x
     end
 end
