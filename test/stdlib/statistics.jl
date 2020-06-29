@@ -20,4 +20,4 @@ end
     l2 = logpdf(distri, x)
     @test l1[1] ≈ l2
     @test check_inv(i_normal_logpdf, (out, x, μ, σ))
-  end
+end
