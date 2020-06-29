@@ -3,3 +3,5 @@
 @deprecate ngradient gradient_numeric
 @deprecate nhessian hessian_numeric
 @deprecate NEG Base.:-
+@deprecate ipush! PUSH!
+@deprecate ipop! POP!

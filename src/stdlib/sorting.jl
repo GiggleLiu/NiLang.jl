@@ -9,17 +9,17 @@ Rearrange `arr` into an ascending order `xs!`, indices are stored in `inds`.
 	@invcheckoff if (length(arr) > 0, ~)
 		y ← zero(T)
 		y += arr[1]
-		ipush!(xs!, y)
+		PUSH!(xs!, y)
 		anc ← 1
-		ipush!(inds!, anc)
+		PUSH!(inds!, anc)
 		anc → 0
 		@inbounds for i = 2:length(arr)
 			if (arr[i] > xs![end], i==inds![end])
 				ind ← i
 				x ← zero(T)
 				x += arr[i]
-				ipush!(xs!, x)
-				ipush!(inds!, ind)
+				PUSH!(xs!, x)
+				PUSH!(inds!, ind)
 				ind → 0
 			end
 		end
