@@ -16,28 +16,18 @@ NiLang.AD.GVar(x::NiceLayer) = NiceLayer(GVar(x.W1), GVar(x.b1), GVar(x.W2), GVa
 @i function nice_layer!(x::AbstractVector{T}, layer::NiceLayer{T},
                 y!::AbstractVector{T}) where T
     @routine @invcheckoff begin
-        affine!(layer.y1, layer.W1, layer.b1, x)
+        i_affine!(layer.y1, layer.W1, layer.b1, x)
         @inbounds for i=1:length(layer.y1)
             if (layer.y1[i] &gt; 0, ~)
                 layer.y1a[i] += layer.y1[i]
             end
         end
     end
-    affine!(y!, layer.W2, layer.b2, layer.y1a)
+    i_affine!(y!, layer.W2, layer.b2, layer.y1a)
     ~@routine
     # clean up accumulated rounding error, since this memory is reused.
     @safe layer.y1 .= zero(T)
-end</code></pre><p>Here, in each layer, we use the information in <code>x</code> to update <code>y!</code>. During computing, we use the <code>y1</code> and <code>y1a</code> fields of the network as ancilla space, both of them can be uncomputed at the end of the function. However, we need to erase small numbers to make sure the rounding error does not accumulate.</p><p>We still need to define some utilities like <code>affine!</code> transformation.</p><pre><code class="language-julia">@i function affine!(y!, W, b, x)
-    @safe @assert size(W) == (length(y!), length(x)) &amp;&amp; length(b) == length(y!)
-    @invcheckoff for j=1:size(W, 2)
-        for i=1:size(W, 1)
-            @inbounds y![i] += W[i,j]*x[j]
-        end
-    end
-    @invcheckoff for i=1:size(W, 1)
-        @inbounds y![i] += b[i]
-    end
-end</code></pre><p>A nice network always transforms inputs reversibly. We update one half of <code>x!</code> a time, so that input and output memory space do not clash.</p><pre><code class="language-julia">const NiceNetwork{T} = Vector{NiceLayer{T}}
+end</code></pre><p>Here, in each layer, we use the information in <code>x</code> to update <code>y!</code>. During computing, we use the <code>y1</code> and <code>y1a</code> fields of the network as ancilla space, both of them can be uncomputed at the end of the function. However, we need to erase small numbers to make sure the rounding error does not accumulate.</p><p>A nice network always transforms inputs reversibly. We update one half of <code>x!</code> a time, so that input and output memory space do not clash.</p><pre><code class="language-julia">const NiceNetwork{T} = Vector{NiceLayer{T}}
 
 &quot;&quot;&quot;Apply a the whole NICE network.&quot;&quot;&quot;
 @i function nice_network!(x!::AbstractVector{T}, network::NiceNetwork{T}) where T
@@ -146,4 +136,4 @@ function showmodel(x_data, model; nsamples=2000)
 end</code></pre><pre><code class="language-none">showmodel (generic function with 1 method)</code></pre><p>you can find the training data in <code>examples/</code> folder</p><pre><code class="language-">x_data = Matrix(readdlm(joinpath(@__DIR__, &quot;train.dat&quot;))&#39;)
 
 import Random; Random.seed!(22)
-model = random_nice_network(Float64, size(x_data, 1), 10, 4; scale=0.1)</code></pre><p>Before training, the distribution looks like <img src="../../asset/nice_before.png" alt="before"/></p><pre><code class="language-">model = train(x_data, model; num_epochs=800)</code></pre><p>After training, the distribution looks like <img src="../../asset/nice_after.png" alt="before"/></p><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../qr/">« A simple QR decomposition</a><a class="docs-footer-nextpage" href="../realnvp/">RealNVP network »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Monday 29 June 2020 06:30">Monday 29 June 2020</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+model = random_nice_network(Float64, size(x_data, 1), 10, 4; scale=0.1)</code></pre><p>Before training, the distribution looks like <img src="../../asset/nice_before.png" alt="before"/></p><pre><code class="language-">model = train(x_data, model; num_epochs=800)</code></pre><p>After training, the distribution looks like <img src="../../asset/nice_after.png" alt="before"/></p><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../qr/">« A simple QR decomposition</a><a class="docs-footer-nextpage" href="../realnvp/">RealNVP network »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Wednesday 1 July 2020 09:02">Wednesday 1 July 2020</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

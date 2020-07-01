@@ -86,36 +86,26 @@ function random_realnvp(::Type{T}, nparams::Int, nhidden::Int, nhidden_s::Int, n
             randn(T, nhidden_s, nin)*scale, randn(T, nhidden_s)*scale,
             randn(T, nin, nhidden_s)*scale, randn(T, nin)*scale, sy1, zero(sy1),
             ) for _ = 1:nlayer]
-end</code></pre><pre><code class="language-none">random_realnvp (generic function with 2 methods)</code></pre><h2 id="Loss-function-1"><a class="docs-heading-anchor" href="#Loss-function-1">Loss function</a><a class="docs-heading-anchor-permalink" href="#Loss-function-1" title="Permalink"></a></h2><p>Good! We still need to define some utilities like <code>affine!</code> transformation.</p><pre><code class="language-julia">@i function affine!(y!::AbstractVector{T}, W::AbstractMatrix{T}, b::AbstractVector{T}, x::AbstractVector{T}) where T
-    @safe @assert size(W) == (length(y!), length(x)) &amp;&amp; length(b) == length(y!)
-    @invcheckoff for j=1:size(W, 2)
-        for i=1:size(W, 1)
-            @inbounds y![i] += W[i,j]*x[j]
-        end
-    end
-    @invcheckoff for i=1:size(W, 1)
-        @inbounds y![i] += identity(b[i])
-    end
-end</code></pre><p>In each layer, we use the information in <code>x</code> to update <code>y!</code>. During computing, we use to vector type ancillas <code>y1</code> and <code>y1a</code>, both of them can be uncomputed at the end of the function.</p><pre><code class="language-julia">@i function onelayer!(x::AbstractVector{T}, layer::RealNVPLayer{T},
+end</code></pre><pre><code class="language-none">random_realnvp (generic function with 2 methods)</code></pre><h2 id="Loss-function-1"><a class="docs-heading-anchor" href="#Loss-function-1">Loss function</a><a class="docs-heading-anchor-permalink" href="#Loss-function-1" title="Permalink"></a></h2><p>In each layer, we use the information in <code>x</code> to update <code>y!</code>. During computing, we use to vector type ancillas <code>y1</code> and <code>y1a</code>, both of them can be uncomputed at the end of the function.</p><pre><code class="language-julia">@i function onelayer!(x::AbstractVector{T}, layer::RealNVPLayer{T},
                 y!::AbstractVector{T}, logjacobian!::T; islast) where T
     @routine @invcheckoff begin
         # scale network
         scale ← zero(y!)
         ytemp2 ← zero(y!)
-        affine!(layer.sy1, layer.sW1, layer.sb1, x)
+        i_affine!(layer.sy1, layer.sW1, layer.sb1, x)
         @inbounds for i=1:length(layer.sy1)
             if (layer.sy1[i] &gt; 0, ~)
-                layer.sy1a[i] += identity(layer.sy1[i])
+                layer.sy1a[i] += layer.sy1[i]
             end
         end
-        affine!(scale, layer.sW2, layer.sb2, layer.sy1a)
+        i_affine!(scale, layer.sW2, layer.sb2, layer.sy1a)
 
         # transform network
-        affine!(layer.y1, layer.W1, layer.b1, x)
+        i_affine!(layer.y1, layer.W1, layer.b1, x)
         # relu
         @inbounds for i=1:length(layer.y1)
             if (layer.y1[i] &gt; 0, ~)
-                layer.y1a[i] += identity(layer.y1[i])
+                layer.y1a[i] += layer.y1[i]
             end
         end
     end
@@ -127,11 +117,11 @@ end</code></pre><p>In each layer, we use the information in <code>x</code> to up
             if (islast, ~)
                 tanhscale += tanh(scale[i])
             else
-                tanhscale += identity(scale[i])
+                tanhscale += scale[i]
             end
             expscale += exp(tanhscale)
         end
-        logjacobian! += identity(tanhscale)
+        logjacobian! += tanhscale
         # inplace multiply!!!
         temp ← zero(T)
         temp += y![i] * expscale
@@ -142,7 +132,7 @@ end</code></pre><p>In each layer, we use the information in <code>x</code> to up
     end
 
     # affine the transform layer
-    affine!(y!, layer.W2, layer.b2, layer.y1a)
+    i_affine!(y!, layer.W2, layer.b2, layer.y1a)
     ~@routine
     # clean up accumulated rounding error, since this memory is reused.
     @safe layer.y1 .= zero(T)
@@ -193,10 +183,10 @@ function showmodel(x_data, model; nsamples=2000)
     scatter(x_data[1,1:nsamples], x_data[2,1:nsamples]; xlims=(-5,5), ylims=(-5,5))
     zs = randn(2, nsamples)
     for i=1:nsamples
-        realnvp!(view(zs, :, i), model)
+        realnvp!(view(zs, :, i), model, 0.0)
     end
     scatter!(zs[1,:], zs[2,:])
 end</code></pre><pre><code class="language-none">showmodel (generic function with 1 method)</code></pre><p>you can find the training data in <code>examples/</code> folder</p><pre><code class="language-">x_data = Matrix(readdlm(joinpath(@__DIR__, &quot;train.dat&quot;))&#39;)
 
 import Random; Random.seed!(22)
-model = random_realnvp(Float64, size(x_data, 1), 10, 10, 4; scale=0.1)</code></pre><p>Before training, the distribution looks like <img src="../../asset/nice_before.png" alt="before"/></p><pre><code class="language-">model = train(x_data, model; num_epochs=800)</code></pre><p>After training, the distribution looks like <img src="../../asset/realnvp_after.png" alt="before"/></p><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../nice/">« NICE network</a><a class="docs-footer-nextpage" href="../boxmuller/">Box-Muller method to Generate normal distribution »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Monday 29 June 2020 06:30">Monday 29 June 2020</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+model = random_realnvp(Float64, size(x_data, 1), 10, 10, 4; scale=0.1)</code></pre><p>Before training, the distribution looks like <img src="../../asset/nice_before.png" alt="before"/></p><pre><code class="language-">model = train(x_data, model; num_epochs=800)</code></pre><p>After training, the distribution looks like <img src="../../asset/realnvp_after.png" alt="before"/></p><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../nice/">« NICE network</a><a class="docs-footer-nextpage" href="../boxmuller/">Box-Muller method to Generate normal distribution »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Wednesday 1 July 2020 09:02">Wednesday 1 July 2020</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
