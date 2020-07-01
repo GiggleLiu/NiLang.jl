@@ -31,3 +31,15 @@ end
     args = x_, p_, imax, xmax, Z, out
     @test check_grad(i_softmax_crossentropy, args; iloss=6, verbose=true)
 end
+
+@testset "logsumexp" begin
+	function logsumexp2(x)
+	  	mx = maximum(x)
+	  	log.(sum(exp.(x .- mx))) .+ mx
+	end
+
+	x = randn(100)
+	@test i_ascending!(Float64[], Int[], x)[1][end] == maximum(x)
+	@test i_logsumexp(0.0, 0.0, Float64[], Int[], x)[1] ≈ logsumexp2(x)
+	@test check_inv(i_logsumexp, (0.0, 0.0, Float64[], Int[], x))
+end
