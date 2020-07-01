@@ -44,7 +44,8 @@ julia> res_out, y_out, x_out = f(0.0, 0.0, [1, 2, 3.0])
 julia> (~f)(res_out, y_out, x_out)  # automatically generated inverse program.
 (0.0, 0.0, [1.0, 2.0, 3.0])
         
-julia> ∂res, ∂y, ∂x = NiLang.AD.gradient(Val(1), f, (0.0, 0.0, [1, 2, 3.0]))  # automatic differentiation, `Val(1)` means the first argument of `f` is the loss.
+julia> ∂res, ∂y, ∂x = NiLang.AD.gradient(Val(1), f, (0.0, 0.0, [1, 2, 3.0])) 
+    # automatic differentiation, `Val(1)` means the first argument of `f` is the loss.
 (1.0, 0.1336306209562122, [0.2672612419124244, 0.5345224838248488, 0.8017837257372732])
 ```
 
