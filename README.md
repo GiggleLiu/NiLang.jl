@@ -31,14 +31,6 @@ pkg> add NiLang
 ```julia
 julia> using NiLang
 
-julia> function f(res, y, x)
-           for i=1:length(x)
-               y += x[i] ^ 2
-           end
-           res += sqrt(y)
-       end
-f (generic function with 1 method)
-
 julia> @i function f(res, y, x)
            for i=1:length(x)
                y += x[i] ^ 2
