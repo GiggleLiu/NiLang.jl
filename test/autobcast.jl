@@ -17,7 +17,7 @@ using Test
 
     a = AutoBcast([1.0, 2.0, 3.0])
     b = AutoBcast([1.0, 2.0, 4.0])
-    @instr a += identity(b)
+    @instr a += b
     @test a.x == [2,4,7.0]
     @test b.x == [1,2,4.0]
     @instr SWAP(a, b)
@@ -26,7 +26,7 @@ using Test
 
     a = AutoBcast([1.0, 2.0, 3.0])
     b = 2.0
-    @instr a += identity(b)
+    @instr a += b
     @test a.x == [3,4,5.0]
     @test b == 2.0
 

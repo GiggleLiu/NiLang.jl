@@ -6,10 +6,7 @@ using NiLang
 # [this blog](https://mathworld.wolfram.com/Box-MullerTransformation.html)
 @i function boxmuller(x::T, y::T) where T
     @routine @invcheckoff begin
-        θ ← zero(T)
-        logx ← zero(T)
-        _2logx ← zero(T)
-
+        @zeros T θ logx _2logx
         θ += 2π * y
         logx += log(x)
         _2logx += -2 * logx
@@ -27,9 +24,7 @@ using NiLang
 
     ## arithmetic uncomputing: recomputing the original values of `x` and `y` to deallocate z1 and z2
     @routine @invcheckoff begin
-        at ← zero(T)
-        sq ← zero(T)
-        _halfsq ← zero(T)
+        @zeros T at sq _halfsq
         at += atan(y, x)
         if (y < 0, ~)
             at += T(2π)
@@ -90,9 +85,7 @@ z1, z2 = boxmuller(0.5, 0.5)
 # but costs more space for storing output.
 @i function boxmuller2(x1::T, x2::T, z1::T, z2::T) where T
     @routine @invcheckoff begin
-        θ ← zero(T)
-        logx ← zero(T)
-        _2logx ← zero(T)
+        @zeros T θ logx _2logx
 
         θ += 2π * x2
         logx += log(x1)

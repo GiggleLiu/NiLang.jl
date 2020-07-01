@@ -1,4 +1,4 @@
-export i_softmax_crossentropy, i_relu
+export i_softmax_crossentropy, i_relu, i_logsumexp
 
 function (_::PlusEq{typeof(argmax)})(out!, x::AbstractArray)
     out! += argmax(x)
@@ -45,6 +45,35 @@ ReLU in machine learning.
 """
 @i function i_relu(out!, x)
     @invcheckoff if (x > 0, ~)
-        out! += identity(x)
+        out! += x
     end
 end
+
+"""
+    i_logsumexp(logout!, out!, xs!, inds!, x)
+
+Compute `logout! = log(sum(exp(x)))`.
+
+# Arguments
+
+    * `out!`, output,
+    * `logout!`, logged output,
+    * `xs!`, an empty vector to cache the ascending values (same type as `x`),
+    * `inds!`, an empty vector to cache the ascending indices (integer type),
+    * `x`, input vector.
+"""
+@i function i_logsumexp(logout!, out!, xs!, inds!, x::AbstractArray{T}) where T
+	mx ← zero(T)
+  	i_ascending!(xs!, inds!, x)
+	mx += xs![end]
+	@invcheckoff @inbounds for i=1:length(x)
+		x[i] -= mx
+		out! += exp(x[i])
+		x[i] += mx
+	end
+  	logout! += log(out!)
+	logout! += mx
+	mx -= xs![end]
+end
+
+

@@ -28,7 +28,7 @@ end
 
 @testset "i" begin
     @i function test1(a, b, out)
-        a += identity(b)
+        a += b
         out += a * b
     end
 
@@ -36,7 +36,7 @@ end
         out ← 0.0
         test1(a, b, out)
         (~test1)(a, b, out)
-        a += identity(b)
+        a += b
     end
 
     # compute (a+b)*b -> out
@@ -51,12 +51,12 @@ end
 @testset "broadcast" begin
     # compute (a+b)*b -> out
     @i function test1(a, b)
-        a .+= identity.(b)
+        a .+= b
     end
     @i function test2(a, b, out, loss)
-        a .+= identity.(b)
+        a .+= b
         out .+= (a .* b)
-        loss += identity(out[1])
+        loss += out[1]
     end
 
     x = [3, 1.0]
@@ -70,10 +70,10 @@ end
 @testset "broadcast 2" begin
     # compute (a+b)*b -> out
     @i function test1(a, b)
-        a += identity(b)
+        a += b
     end
     @i function test2(a, b, out)
-        a += identity(b)
+        a += b
         out += (a * b)
     end
 
@@ -95,7 +95,7 @@ end
 @testset "function call function" begin
     # compute (a+b)*b -> out
     @i function test1(a, b)
-        a += identity(b)
+        a += b
     end
 
     @i function test2(a, b, out)

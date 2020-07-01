@@ -2,30 +2,12 @@ using NiLang, NiLang.AD
 using CuArrays, CUDAnative, GPUArrays
 using BenchmarkTools
 
-@i function ifactorial(out!, n)
-    INC(out!)
-    @invcheckoff for i=1:n
-        mulint(out!, i)
-    end
-end
-
-@i @inline function imul(out!, x, anc!)
-    anc! += out! * x
-    out! -= anc! / x
-    SWAP(out!, anc!)
-end
-
-
-@i @inline function ⊖(CUDAnative.pow)(out!::GVar{T}, x::GVar, n::GVar) where T
+@i @inline function ⊖(CUDAnative.pow)(out!::GVar{T}, x::GVar{T}, n::GVar) where T
     ⊖(CUDAnative.pow)(value(out!), value(x), value(n))
 
     # grad x
     @routine @invcheckoff begin
-        anc1 ← zero(value(x))
-        anc2 ← zero(value(x))
-        anc3 ← zero(value(x))
-        jac1 ← zero(value(x))
-        jac2 ← zero(value(x))
+        @zeros T anc1 anc2 anc3 jac1 jac2
 
         DEC(value(n))
         anc1 += CUDAnative.pow(value(x), value(n))
@@ -76,7 +58,7 @@ end
 
 # You need to replace all "^" operations in `ibessel` with `CUDAnative.pow`.
 # Please remember to turn invertiblity check off, because error handling is not supported in a cuda thread.
-# Function `imul` and `ifactorial` are not changed.
+# Function `i_dirtymul` and `i_factorial` are not changed.
 
 @i function ibesselj(out!, ν, z; atol=1e-8)
     @routine @invcheckoff begin
@@ -95,24 +77,24 @@ end
         halfz += z / 2
         halfz_power_nu += CUDAnative.pow(halfz, ν)
         halfz_power_2 += CUDAnative.pow(halfz, 2)
-        ifactorial(fact_nu, ν)
+        i_factorial(fact_nu, ν)
 
         anc1 += halfz_power_nu/fact_nu
-        out_anc += identity(anc1)
+        out_anc += anc1
         while (abs(unwrap(anc1)) > atol && abs(unwrap(anc4)) < atol, k!=0)
             INC(k)
             @routine begin
-                anc5 += identity(k)
-                anc5 += identity(ν)
+                anc5 += k
+                anc5 += ν
                 anc2 -= k * anc5
                 anc3 += halfz_power_2 / anc2
             end
-            imul(anc1, anc3, anc4)
-            out_anc += identity(anc1)
+            i_dirtymul(anc1, anc3, anc4)
+            out_anc += anc1
             ~@routine
         end
     end
-    out! += identity(out_anc)
+    out! += out_anc
     ~@routine
 end
 

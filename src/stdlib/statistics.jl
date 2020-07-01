@@ -7,7 +7,7 @@ get the `mean` and `sum` of `x`.
 """
 @i function i_mean_sum(out!, sum!, x)
     for i=1:length(x)
-        sum! += identity(x[i])
+        sum! += x[i]
     end
     out! += sum!/length(x)
 end
@@ -20,9 +20,9 @@ The `variance`, `variance * (n-1)`, `mean` and `sum` of `sqv`, where `n` is the 
 @i function i_var_mean_sum(var!, varsum!, mean!, sum!, v::AbstractVector{T}) where T
     i_mean_sum(mean!, sum!, v)
     for i=1:length(v)
-        v[i] -= identity(mean!)
+        v[i] -= mean!
         varsum! += v[i] ^ 2
-        v[i] += identity(mean!)
+        v[i] += mean!
     end
     var! += varsum! / (length(v)-1)
 end

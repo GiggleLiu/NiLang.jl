@@ -16,13 +16,10 @@ end
     end
 end
 
-@i @inline function ROT_INSTRUCT(gate::Val{:Rz}, a, b, θ)
+@i @inline function ROT_INSTRUCT(gate::Val{:Rz}, a::T, b, θ) where T
     # make sure `invcheck` is turned off!
     @routine @invcheckoff begin
-        anc1 ← zero(a)
-        anc2 ← zero(a)
-        anc3 ← zero(a)
-        anc4 ← zero(a)
+        @zeros T anc1 anc2 anc3 anc4
         anc1 += θ*(0.5im)
         anc2 += CUDAnative.exp(anc1)
     end

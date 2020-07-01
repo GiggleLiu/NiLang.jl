@@ -100,9 +100,7 @@ end
 
 @i @inline function ⊕(exp)(y!::Complex{T}, x::Complex{T}) where T
     @routine @invcheckoff begin
-        s ← zero(T)
-        c ← zero(T)
-        expn ← zero(T)
+        @zeros T s c expn
         z ← zero(y!)
         (s, c) += sincos(x.im)
         SWAP(z.re, c)

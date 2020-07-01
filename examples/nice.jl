@@ -28,14 +28,14 @@ NiLang.AD.GVar(x::NiceLayer) = NiceLayer(GVar(x.W1), GVar(x.b1), GVar(x.W2), GVa
 @i function nice_layer!(x::AbstractVector{T}, layer::NiceLayer{T},
                 y!::AbstractVector{T}) where T
     @routine @invcheckoff begin
-        affine!(layer.y1, layer.W1, layer.b1, x)
+        i_affine!(layer.y1, layer.W1, layer.b1, x)
         @inbounds for i=1:length(layer.y1)
             if (layer.y1[i] > 0, ~)
                 layer.y1a[i] += layer.y1[i]
             end
         end
     end
-    affine!(y!, layer.W2, layer.b2, layer.y1a)
+    i_affine!(y!, layer.W2, layer.b2, layer.y1a)
     ~@routine
     ## clean up accumulated rounding error, since this memory is reused.
     @safe layer.y1 .= zero(T)
@@ -45,20 +45,6 @@ end
 # During computing, we use the `y1` and `y1a` fields of the network as ancilla space,
 # both of them can be uncomputed at the end of the function.
 # However, we need to erase small numbers to make sure the rounding error does not accumulate.
-
-# We still need to define some utilities like `affine!` transformation.
-
-@i function affine!(y!, W, b, x)
-    @safe @assert size(W) == (length(y!), length(x)) && length(b) == length(y!)
-    @invcheckoff for j=1:size(W, 2)
-        for i=1:size(W, 1)
-            @inbounds y![i] += W[i,j]*x[j]
-        end
-    end
-    @invcheckoff for i=1:size(W, 1)
-        @inbounds y![i] += b[i]
-    end
-end
 
 # A nice network always transforms inputs reversibly.
 # We update one half of `x!` a time, so that input and output memory space do not clash.

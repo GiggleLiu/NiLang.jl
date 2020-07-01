@@ -40,7 +40,7 @@ end
 
 @i function loss(out!, state::CuVector)
     instruct!(state, Val(:SWAP), (3,4))
-    out! += identity(state[4])
+    out! += state[4]
 end
 
 loss(0.0, CuArray(randn(128)))

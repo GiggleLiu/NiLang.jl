@@ -23,7 +23,7 @@ using NiLang, NiLang.AD
     k ← 0
     for j=1:length(x!)
         for i=length(x!)-1:-1:j
-            k += identity(1)
+            k += 1
             ROT(x![i], x![i+1], θ[k])
         end
     end
@@ -36,7 +36,7 @@ end
 
 @i function isum(out!, x::AbstractArray)
     for i=1:length(x)
-        out! += identity(x[i])
+        out! += x[i]
     end
 end
 

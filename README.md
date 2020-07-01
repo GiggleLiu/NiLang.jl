@@ -1,13 +1,11 @@
-
 <img src="docs/src/asset/logo3.png" width=500px/>
 
 NiLang.jl (逆lang), is a reversible domain-specific language (DSL) that allow a program to go back to the past.
 
 * Requires Julia version >= 1.3,
 * If test breaks, try using the master branch of `NiLangCore`,
-* The `'` notation has been removed recently to avoid potential conflict with other packages,
-* Now a dataview is specified by `x |> bijection`, e.g. the preivous `grad(x)` now should be written as `x |> grad` in the reversible context.
-* Our paper uses version v0.6, which might be different from master branch.
+* Now a function dataview is specified by `x |> bijection`, e.g. the preivous `grad(x)` now should be written as `x |> grad` in the reversible context.
+* Our paper uses version v0.6, which might be different from the master branch.
 
 
 NiLang features:
@@ -24,132 +22,45 @@ NiLang features:
 > The strangeness of reversible computing is mainly due to
 > our lack of experience with it.—Henry Baker, 1992
 
-Please check [why reversible computing is the future of computing](https://giggleliu.github.io/NiLang.jl/dev/why/).
-
 ## To Start
 ```
-pkg> add NiLangCore
 pkg> add NiLang
 ```
 
-## Examples
-1. Compute sparse matrix multiplication
-
+## An example: Compute the norm of a vector
 ```julia
-using NiLang
-using SparseArrays: SparseMatrixCSC, AbstractSparseMatrix, nonzeros, rowvals, getcolptr
+julia> using NiLang
 
-@i function mul!(C::StridedVecOrMat, A::AbstractSparseMatrix, B::StridedVector{T}, α::Number, β::Number) where T
-    @safe size(A, 2) == size(B, 1) || throw(DimensionMismatch())
-    @safe size(A, 1) == size(C, 1) || throw(DimensionMismatch())
-    @safe size(B, 2) == size(C, 2) || throw(DimensionMismatch())
-    nzv ← nonzeros(A)
-    rv ← rowvals(A)
-    if (β != 1, ~)
-        @safe error("only β = 1 is supported, got β = $(β).")
-    end
-    # Here, we close the reversibility check inside the loop to increase performance
-    @invcheckoff for k = 1:size(C, 2)
-        @inbounds for col = 1:size(A, 2)
-            αxj ← zero(T)
-            αxj += B[col,k] * α
-            for j = getcolptr(A)[col]:(getcolptr(A)[col + 1] - 1)
-                C[rv[j], k] += nzv[j]*αxj
-            end
-            αxj -= B[col,k] * α
-        end
-    end
-end
+julia> function f(res, y, x)
+           for i=1:length(x)
+               y += x[i] ^ 2
+           end
+           res += sqrt(y)
+       end
+f (generic function with 1 method)
+
+julia> @i function f(res, y, x)
+           for i=1:length(x)
+               y += x[i] ^ 2
+           end
+           res += sqrt(y)
+       end
+
+julia> res_out, y_out, x_out = f(0.0, 0.0, [1, 2, 3.0])
+(3.7416573867739413, 14.0, [1.0, 2.0, 3.0])
+
+julia> (~f)(res_out, y_out, x_out)  # automatically generated inverse program.
+(0.0, 0.0, [1.0, 2.0, 3.0])
+        
+julia> ∂res, ∂y, ∂x = NiLang.AD.gradient(Val(1), f, (0.0, 0.0, [1, 2, 3.0]))  # automatic differentiation, `Val(1)` means the first argument of `f` is the loss.
+(1.0, 0.1336306209562122, [0.2672612419124244, 0.5345224838248488, 0.8017837257372732])
 ```
 
-To back propagate the gradient
-```
-julia> using SparseArrays: sprand
+The performance of reversible programming automatic differentiation is much better than most traditional frameworks. Here is why, and how it works,
 
-julia> import SparseArrays
+![how it works](docs/src/asset/adprog.png)
 
-julia> using BenchmarkTools
-
-julia> n = 1000;
-
-julia> sp1 = sprand(ComplexF64, n, n,0.1);
-
-julia> v = randn(ComplexF64, n);
-
-julia> out = zero(v);
-
-julia> @benchmark SparseArrays.mul!($(copy(out)), $sp1, $v, 0.5+0im, 1)
-BenchmarkTools.Trial: 
-  memory estimate:  0 bytes
-  allocs estimate:  0
-  --------------
-  minimum time:     226.005 μs (0.00% GC)
-  median time:      235.590 μs (0.00% GC)
-  mean time:        244.868 μs (0.00% GC)
-  maximum time:     2.750 ms (0.00% GC)
-  --------------
-  samples:          10000
-  evals/sample:     1
-
-julia> @benchmark mul!($(copy(out)), $(sp1), $v, 0.5+0im, 1)
-BenchmarkTools.Trial: 
-  memory estimate:  64 bytes
-  allocs estimate:  1
-  --------------
-  minimum time:     194.011 μs (0.00% GC)
-  median time:      207.218 μs (0.00% GC)
-  mean time:        257.364 μs (0.00% GC)
-  maximum time:     2.324 ms (0.00% GC)
-  --------------
-  samples:          10000
-  evals/sample:     1
-
-julia> using NiLang.AD
-
-julia> @benchmark (~mul!)($(GVar(copy(out))), $(GVar(sp1)), $(GVar(v)), $(GVar(0.5)), 1)
-BenchmarkTools.Trial: 
-  memory estimate:  64 bytes
-  allocs estimate:  1
-  --------------
-  minimum time:     719.223 μs (0.00% GC)
-  median time:      767.744 μs (0.00% GC)
-  mean time:        790.198 μs (0.00% GC)
-  maximum time:     7.231 ms (0.00% GC)
-  --------------
-  samples:          6291
-  evals/sample:     1
-```
-
-To understand the grammar, see the [README](https://github.com/GiggleLiu/NiLangCore.jl) of NiLangCore.
-
-2. The autodiff engine
-
-```julia
-julia> y!, x = 0.0, 1.6
-(0.0, 1.6)
-
-# first order gradients
-julia> @instr Grad(PlusEq(exp))(Val(1), y!, x)
-
-julia> grad(x)
-4.9530324244260555
-
-julia> y!, x = 0.0, 1.6
-(0.0, 1.6)
-
-# second order gradient by differentiate first order gradients
-julia> using ForwardDiff: Dual
-
-julia> _, hxy, hxx = Grad(PlusEq(exp))(Val(1), 
-        Dual(y!, zero(y!)), Dual(x, one(x)));
-
-julia> grad(hxx).partials[1]
-4.953032423978584
-```
-
-See [more examples](examples/)
-
-## Cite our [paper](https://arxiv.org/abs/2003.04617)!
+## Check our [paper](https://arxiv.org/abs/2003.04617)
 
 ```bibtex
 @misc{Liu2020,
