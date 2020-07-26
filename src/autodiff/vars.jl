@@ -82,7 +82,7 @@ grad(gv::AbstractArray{T}) where T = grad.(gv)
 grad(gv::Function) = 0
 chfield(x::T, ::typeof(grad), g::T) where T = (@invcheck iszero(g) || g≈0; x)
 chfield(x::GVar, ::typeof(grad), g::GVar) where T = GVar(x.x, g)
-chfield(x::Complex, ::typeof(grad), g::Complex) where T = Complex(GVar(x.re, g.re), GVar(x.im, g.im))
+chfield(x::Complex{<:GVar}, ::typeof(grad), g::Complex) where T = Complex(GVar(value(x.re), g.re), GVar(value(x.im), g.im))
 
 # NOTE: superwarning: check value only to make ancilla gradient descardable.
 NiLangCore.deanc(x::GVar, val::GVar) = NiLangCore.deanc(value(x), value(val))

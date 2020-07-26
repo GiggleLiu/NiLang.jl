@@ -25,6 +25,10 @@ using Test, NiLang, NiLang.AD
     loss = 0.0
     @instr f(loss, a, b)
     @test loss ≈ abs(a*b)
+
+    gx = GVar(1.0 + 1.0im)
+    gx2 = chfield(gx, grad, 1.0+0.0im)
+    @test gx2 == Complex(GVar(1.0, 1.0), GVar(1.0, 0.0))
 end
 
 @testset "complex GVar" begin
