@@ -13,6 +13,10 @@ end
     include("instructs.jl")
 end
 
+@testset "ulog.jl" begin
+    include("ulog.jl")
+end
+
 @testset "stack.jl" begin
     include("stack.jl")
 end

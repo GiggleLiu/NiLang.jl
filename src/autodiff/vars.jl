@@ -145,3 +145,31 @@ end
 function loaddata(::Type{AGT}, x::AT) where {T, GT, AT<:AbstractArray{T}, AGT<:AbstractArray{GVar{T,T}}}
     map(x->GVar(x, zero(x)), x)
 end
+
+#=
+Base.convert(::Type{GVar{Tx, Tg}}, x::GVar) where {Tx, Tg} = GVar(convert(Tx, x.x), convert(Tg, x.g))
+function Base.convert(::Type{GVar{Tx, Tg}}, x::ULogarithmic{<:GVar}) where {Tx, Tg}
+    expx = exp(x.log.x)
+    @show expx, Tx, Tg, x.log.g/expx
+    @show GVar(convert(Tx, expx), convert(Tg, x.log.g/expx))
+    GVar(convert(Tx, expx), convert(Tg, x.log.g/expx))
+end
+=#
+
+# ULogarithmic
+_content(x::ULogarithmic) = x.log
+for T in [:ULogarithmic]
+    @eval NiLang.AD.GVar(x::$T) = $T(GVar(_content(x), zero(_content(x))))
+    @eval (_::Type{Inv{$T}})(x::$T) = _content(x)
+    @eval NiLang.AD.grad(x::$T{<:GVar}) = $T(grad(_content(x)))
+    @eval (_::Type{Inv{GVar}})(x::$T{<:GVar}) = $T((~GVar)(_content(x)))
+
+    @eval Base.one(x::$T{GVar{T,GT}}) where {T, GT} = one($T{GVar{T,GT}})
+    @eval Base.one(::Type{$T{GVar{T,GT}}}) where {T,GT} = $T(GVar(zero(T), zero(GT)))
+    @eval Base.zero(x::$T{GVar{T,GT}}) where {T,GT} =zero($T{GVar{T,GT}})
+    @eval Base.zero(::Type{$T{GVar{T,T}}}) where T = $T(GVar(zero(T), zero(T)))
+end
+
+function NiLang.loaddata(::Type{Array{<:ULogarithmic{GVar{T,T}}}}, data::Array{<:ULogarithmic{T}}) where {T}
+    GVar.(data)
+end

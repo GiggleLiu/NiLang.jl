@@ -14,6 +14,7 @@ include("gradfunc.jl")
 include("checks.jl")
 
 include("instructs.jl")
+include("ulog.jl")
 include("jacobian.jl")
 include("hessian_backback.jl")
 include("complex.jl")

@@ -318,3 +318,8 @@ end
     out!.x -= mf.f(x .|> value; kwargs...)
     x.g += (@skip! out!.g) * primitive_grad(mf.f, x.x; kwargs...)
 end
+
+@i function :(-=)(convert)(out!::GVar{Tx, Tg}, y::GVar) where {Tx, Tg}
+    out!.x -= convert(y.x)
+    y.g += convert(out!.g)
+end
