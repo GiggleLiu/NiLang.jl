@@ -120,9 +120,19 @@ function (f::MinusEq{typeof(/)})(out!::T, x::Integer, y::Integer) where T<:Fixed
 end
 
 for F in [:exp, :log, :sin, :cos]
-    @eval Base.$F(x::Fixed43) = Fixed43($F(Float64(Fixed43(x))))
+    @eval Base.$F(x::Fixed43) = Fixed43($F(Float64(x)))
+    @eval (f::PlusEq{typeof($F)})(out!::Fixed43, x::Real) = out! + Fixed43($F(x)), x
+    @eval (f::MinusEq{typeof($F)})(out!::Fixed43, x::Real) = out! - Fixed43($F(x)), x
 end
 
 Base.:^(x::Integer, y::Fixed43) = Fixed43(x^(Float64(y)))
 Base.:^(x::Fixed43, y::Fixed43) = Fixed43(x^(Float64(y)))
 Base.:^(x::T, y::Fixed43) where T<:AbstractFloat = x^(T(y))
+
+function (::PlusEq{typeof(convert)})(out!::T, y) where T<:Real
+    out! + convert(T, y), y
+end
+
+function (::MinusEq{typeof(convert)})(out!::T, y) where T<:Real
+    out! - convert(T, y), y
+end

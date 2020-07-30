@@ -25,6 +25,7 @@ Pages = [
     "examples/fib.md",
     "examples/besselj.md",
     "examples/sparse.md",
+    "examples/lognumber.md",
     "examples/unitary.md",
     "examples/qr.md",
     "examples/nice.md",

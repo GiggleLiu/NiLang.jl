@@ -13,9 +13,9 @@ get the `mean` and `sum` of `x`.
 end
 
 """
-    var_and_mean_sq(var!, varsum!, mean!, sqv)
+    i_var_mean_sum(var!, varsum!, mean!, sum!, sqv)
 
-The `variance`, `variance * (n-1)`, `mean` and `sum` of `sqv`, where `n` is the size of `sqv`.
+Compute the variance, the accumulated variance, mean and sum.
 """
 @i function i_var_mean_sum(var!, varsum!, mean!, sum!, v::AbstractVector{T}) where T
     i_mean_sum(mean!, sum!, v)

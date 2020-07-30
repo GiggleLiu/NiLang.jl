@@ -19,6 +19,7 @@ using Test
         @test check_grad(opm(sin), (1.0, 2.0); verbose=true, iloss=1)
         @test check_grad(opm(tanh), (1.0, 2.0); verbose=true, iloss=1)
         @test check_grad(opm(cos), (1.0, 2.0); verbose=true, iloss=1)
+        @test check_grad(opm(convert), (Fixed43(0.5), 2.0); verbose=true, iloss=1)
         @test check_grad(opm(/), (1.0, 2.0, 2.0); verbose=true, iloss=1)
         @test_broken check_grad(opm(÷), (1.0, 2.0, 2.0); verbose=true, iloss=1)
     end

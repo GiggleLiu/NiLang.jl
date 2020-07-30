@@ -6,6 +6,7 @@ using MatchCore, TupleTools
 
 import ..NiLang: ROT, IROT, SWAP,
     chfield, value, NoGrad, loaddata, INC, DEC
+using NiLangCore: default_constructor
 
 export GVar, grad, Loss, NoGrad, @nograd
 
@@ -14,6 +15,7 @@ include("gradfunc.jl")
 include("checks.jl")
 
 include("instructs.jl")
+include("ulog.jl")
 include("jacobian.jl")
 include("hessian_backback.jl")
 include("complex.jl")

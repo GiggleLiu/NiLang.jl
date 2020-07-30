@@ -4,7 +4,7 @@ using SparseArrays
 using Literate
 tutorialpath = joinpath(@__DIR__, "src/examples")
 sourcepath = joinpath(@__DIR__, "../examples")
-for jlfile in ["besselj.jl", "sparse.jl", "sharedwrite.jl", "qr.jl", "port_zygote.jl", "fib.jl", "unitary.jl", "nice.jl", "realnvp.jl", "boxmuller.jl"]
+for jlfile in ["besselj.jl", "sparse.jl", "sharedwrite.jl", "qr.jl", "port_zygote.jl", "fib.jl", "unitary.jl", "nice.jl", "realnvp.jl", "boxmuller.jl", "lognumber.jl"]
     Literate.markdown(joinpath(sourcepath, jlfile), tutorialpath)
 end
 
@@ -22,6 +22,7 @@ makedocs(;
             "examples/fib.md",
             "examples/besselj.md",
             "examples/sparse.md",
+            "examples/lognumber.md",
             "examples/unitary.md",
             "examples/qr.md",
             "examples/nice.md",
