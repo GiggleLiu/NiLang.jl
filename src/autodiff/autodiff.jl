@@ -6,6 +6,7 @@ using MatchCore, TupleTools
 
 import ..NiLang: ROT, IROT, SWAP,
     chfield, value, NoGrad, loaddata, INC, DEC
+using NiLangCore: default_constructor
 
 export GVar, grad, Loss, NoGrad, @nograd
 

@@ -159,15 +159,15 @@ end
 # ULogarithmic
 _content(x::ULogarithmic) = x.log
 for T in [:ULogarithmic]
-    @eval NiLang.AD.GVar(x::$T) = $T(GVar(_content(x), zero(_content(x))))
+    @eval NiLang.AD.GVar(x::$T) = default_constructor($T, GVar(_content(x), zero(_content(x))))
     @eval (_::Type{Inv{$T}})(x::$T) = _content(x)
-    @eval NiLang.AD.grad(x::$T{<:GVar}) = $T(grad(_content(x)))
-    @eval (_::Type{Inv{GVar}})(x::$T{<:GVar}) = $T((~GVar)(_content(x)))
+    #@eval NiLang.AD.grad(x::$T{<:GVar}) = default_constructor($T, grad(_content(x)))
+    @eval (_::Type{Inv{GVar}})(x::$T{<:GVar}) = default_constructor($T, (~GVar)(_content(x)))
 
     @eval Base.one(x::$T{GVar{T,GT}}) where {T, GT} = one($T{GVar{T,GT}})
-    @eval Base.one(::Type{$T{GVar{T,GT}}}) where {T,GT} = $T(GVar(zero(T), zero(GT)))
+    @eval Base.one(::Type{$T{GVar{T,GT}}}) where {T,GT} = default_constructor($T, GVar(zero(T), zero(GT)))
     @eval Base.zero(x::$T{GVar{T,GT}}) where {T,GT} =zero($T{GVar{T,GT}})
-    @eval Base.zero(::Type{$T{GVar{T,T}}}) where T = $T(GVar(zero(T), zero(T)))
+    @eval Base.zero(::Type{$T{GVar{T,T}}}) where T = default_constructor($T, GVar(zero(T), zero(T)))
 end
 
 function NiLang.loaddata(::Type{Array{<:ULogarithmic{GVar{T,T}}}}, data::Array{<:ULogarithmic{T}}) where {T}

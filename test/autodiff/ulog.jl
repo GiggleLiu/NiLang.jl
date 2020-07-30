@@ -2,18 +2,21 @@ using NiLang, NiLang.AD
 using Test, Random
 using ForwardDiff
 using FixedPointNumbers
+using NiLangCore: default_constructor
 
 @testset "ULogarithmic" begin
 	@test check_grad(PlusEq(gaussian_log), (1.0, 2.0); iloss=1)
 	function muleq(f, x, y, z)
-		x = ULogarithmic(x)
-		y = ULogarithmic(y)
-		z = ULogarithmic(z)
+		x = default_constructor(ULogarithmic, x)
+		y = default_constructor(ULogarithmic, y)
+		z = default_constructor(ULogarithmic, z)
 		x *= f(y, z)
 		x.log
 	end
 	g1 = ForwardDiff.gradient(arr->muleq(+, arr...), [7.0, 5.0, 3.0])
-	x, y,z = ULogarithmic(7.0), ULogarithmic(5.0), ULogarithmic(3.0)
+	x, y, z = default_constructor(ULogarithmic, 7.0),
+		default_constructor(ULogarithmic, 5.0),
+		default_constructor(ULogarithmic, 3.0)
 	@instr (MulEq(+))(x, y, z)
 	@instr GVar(x)
 	@instr GVar(y)
@@ -25,7 +28,9 @@ using FixedPointNumbers
 	@test grad(z.log) ≈ g1[3]
 
 	g2 = ForwardDiff.gradient(arr->muleq(-, arr...), [7.0, 5.0, 3.0])
-	x, y,z = ULogarithmic(2.0), ULogarithmic(5.0), ULogarithmic(3.0)
+	x, y, z = default_constructor(ULogarithmic, 2.0),
+		default_constructor(ULogarithmic, 5.0),
+		default_constructor(ULogarithmic, 3.0)
 	@instr (MulEq(-))(x, y, z)
 	@instr GVar(x)
 	@instr GVar(y)
