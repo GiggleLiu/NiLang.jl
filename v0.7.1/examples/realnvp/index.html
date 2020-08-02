@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>RealNVP network · NiLang.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">NiLang.jl</span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../why/">What and Why</a></li><li><span class="tocitem">Tutorial</span><ul><li><a class="tocitem" href="../../tutorial/">My first NiLang program</a></li><li><a class="tocitem" href="../port_zygote/">How to port NiLang to Zygote</a></li></ul></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../fib/">Computing Fibonacci Numbers</a></li><li><a class="tocitem" href="../besselj/">Bessel function</a></li><li><a class="tocitem" href="../sparse/">Sparse matrices</a></li><li><a class="tocitem" href="../lognumber/">Logarithmic number system</a></li><li><a class="tocitem" href="../unitary/">Unitary matrix operations without allocation</a></li><li><a class="tocitem" href="../qr/">A simple QR decomposition</a></li><li><a class="tocitem" href="../nice/">NICE network</a></li><li class="is-active"><a class="tocitem" href>RealNVP network</a><ul class="internal"><li><a class="tocitem" href="#Model-definition-1"><span>Model definition</span></a></li><li><a class="tocitem" href="#Loss-function-1"><span>Loss function</span></a></li><li><a class="tocitem" href="#Training-1"><span>Training</span></a></li></ul></li><li><a class="tocitem" href="../boxmuller/">Box-Muller method to Generate normal distribution</a></li></ul></li><li><span class="tocitem">API &amp; Manual</span><ul><li><a class="tocitem" href="../../instructions/">Instruction Reference</a></li><li><a class="tocitem" href="../../extend/">How to extend</a></li><li><a class="tocitem" href="../sharedwrite/">The shared write problem on GPU</a></li><li><a class="tocitem" href="../../api/">API Manual</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>RealNVP network</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>RealNVP network</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/GiggleLiu/NiLang.jl/blob/master/examples/realnvp.jl" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="RealNVP-network-1"><a class="docs-heading-anchor" href="#RealNVP-network-1">RealNVP network</a><a class="docs-heading-anchor-permalink" href="#RealNVP-network-1" title="Permalink"></a></h1><p>For the definition of this network and concepts of normalizing flow, please refer this realnvp blog: https://lilianweng.github.io/lil-log/2018/10/13/flow-based-deep-generative-models.html, and the pytorch notebook: https://github.com/GiggleLiu/marburg/blob/master/solutions/realnvp.ipynb</p><pre><code class="language-julia">using NiLang, NiLang.AD
+using LinearAlgebra
+using DelimitedFiles
+using Plots</code></pre><p><code>include</code> the optimizer, you can find it under the <code>Adam.jl</code> file in the <code>examples/</code> folder.</p><pre><code class="language-">include(&quot;Adam.jl&quot;)</code></pre><h2 id="Model-definition-1"><a class="docs-heading-anchor" href="#Model-definition-1">Model definition</a><a class="docs-heading-anchor-permalink" href="#Model-definition-1" title="Permalink"></a></h2><p>First, define the single layer transformation and its behavior under <code>GVar</code> - the gradient wrapper.</p><pre><code class="language-julia">struct RealNVPLayer{T}
+    # transform network
+    W1::Matrix{T}
+    b1::Vector{T}
+    W2::Matrix{T}
+    b2::Vector{T}
+    y1::Vector{T}
+    y1a::Vector{T}
+
+    # scaling network
+    sW1::Matrix{T}
+    sb1::Vector{T}
+    sW2::Matrix{T}
+    sb2::Vector{T}
+    sy1::Vector{T}
+    sy1a::Vector{T}
+end
+
+&quot;&quot;&quot;collect parameters in the `layer` into a vector `out`.&quot;&quot;&quot;
+function collect_params!(out, layer::RealNVPLayer)
+    k=0
+    for field in [:W1, :b1, :W2, :b2, :sW1, :sb1, :sW2, :sb2]
+        v = getfield(layer, field)
+        nv = length(v)
+        out[k+1:k+nv] .= vec(v)
+        k += nv
+    end
+    return out
+end
+
+&quot;&quot;&quot;dispatch vectorized parameters `out` into the `layer`.&quot;&quot;&quot;
+function dispatch_params!(layer::RealNVPLayer, out)
+    k=0
+    for field in [:W1, :b1, :W2, :b2, :sW1, :sb1, :sW2, :sb2]
+        v = getfield(layer, field)
+        nv = length(v)
+        vec(v) .= out[k+1:k+nv]
+        k += nv
+    end
+    return out
+end
+
+function nparameters(n::RealNVPLayer)
+    sum(x-&gt;length(getfield(n, x)), [:W1, :b1, :W2, :b2, :sW1, :sb1, :sW2, :sb2])
+end</code></pre><pre><code class="language-none">nparameters (generic function with 1 method)</code></pre><p>Then, we define <code>network</code> and how to access the parameters.</p><pre><code class="language-julia">const RealNVP{T} = Vector{RealNVPLayer{T}}
+
+nparameters(n::RealNVP) = sum(nparameters, n)
+
+function collect_params(n::RealNVP{T}) where T
+    out = zeros(T, nparameters(n))
+    k = 0
+    for layer in n
+        np = nparameters(layer)
+        collect_params!(view(out, k+1:k+np), layer)
+        k += np
+    end
+    return out
+end
+
+function dispatch_params!(network::RealNVP, out)
+    k = 0
+    for layer in network
+        np = nparameters(layer)
+        dispatch_params!(layer, view(out, k+1:k+np))
+        k += np
+    end
+    return network
+end
+
+function random_realnvp(nparams::Int, nhidden::Int, nhidden_s::Int, nlayer::Int; scale=0.1)
+    random_realnvp(Float64, nparams, nhidden, nhidden_s::Int, nlayer; scale=scale)
+end
+
+function random_realnvp(::Type{T}, nparams::Int, nhidden::Int, nhidden_s::Int, nlayer::Int; scale=0.1) where T
+    nin = nparams÷2
+    scale = T(scale)
+    y1 = zeros(T, nhidden)
+    sy1 = zeros(T, nhidden_s)
+    RealNVPLayer{T}[RealNVPLayer(
+            randn(T, nhidden, nin)*scale, randn(T, nhidden)*scale,
+            randn(T, nin, nhidden)*scale, randn(T, nin)*scale, y1, zero(y1),
+            randn(T, nhidden_s, nin)*scale, randn(T, nhidden_s)*scale,
+            randn(T, nin, nhidden_s)*scale, randn(T, nin)*scale, sy1, zero(sy1),
+            ) for _ = 1:nlayer]
+end</code></pre><pre><code class="language-none">random_realnvp (generic function with 2 methods)</code></pre><h2 id="Loss-function-1"><a class="docs-heading-anchor" href="#Loss-function-1">Loss function</a><a class="docs-heading-anchor-permalink" href="#Loss-function-1" title="Permalink"></a></h2><p>In each layer, we use the information in <code>x</code> to update <code>y!</code>. During computing, we use to vector type ancillas <code>y1</code> and <code>y1a</code>, both of them can be uncomputed at the end of the function.</p><pre><code class="language-julia">@i function onelayer!(x::AbstractVector{T}, layer::RealNVPLayer{T},
+                y!::AbstractVector{T}, logjacobian!::T; islast) where T
+    @routine @invcheckoff begin
+        # scale network
+        scale ← zero(y!)
+        ytemp2 ← zero(y!)
+        i_affine!(layer.sy1, layer.sW1, layer.sb1, x)
+        @inbounds for i=1:length(layer.sy1)
+            if (layer.sy1[i] &gt; 0, ~)
+                layer.sy1a[i] += layer.sy1[i]
+            end
+        end
+        i_affine!(scale, layer.sW2, layer.sb2, layer.sy1a)
+
+        # transform network
+        i_affine!(layer.y1, layer.W1, layer.b1, x)
+        # relu
+        @inbounds for i=1:length(layer.y1)
+            if (layer.y1[i] &gt; 0, ~)
+                layer.y1a[i] += layer.y1[i]
+            end
+        end
+    end
+    # inplace multiply exp of scale! -- dangerous
+    @inbounds @invcheckoff for i=1:length(scale)
+        @routine begin
+            expscale ← zero(T)
+            tanhscale ← zero(T)
+            if (islast, ~)
+                tanhscale += tanh(scale[i])
+            else
+                tanhscale += scale[i]
+            end
+            expscale += exp(tanhscale)
+        end
+        logjacobian! += tanhscale
+        # inplace multiply!!!
+        temp ← zero(T)
+        temp += y![i] * expscale
+        SWAP(temp, y![i])
+        temp -= y![i] / expscale
+        temp → zero(T)
+        ~@routine
+    end
+
+    # affine the transform layer
+    i_affine!(y!, layer.W2, layer.b2, layer.y1a)
+    ~@routine
+    # clean up accumulated rounding error, since this memory is reused.
+    @safe layer.y1 .= zero(T)
+    @safe layer.sy1 .= zero(T)
+end</code></pre><p>A realnvp network always transforms inputs reversibly. We update one half of <code>x!</code> a time, so that input and output memory space do not clash.</p><pre><code class="language-julia">@i function realnvp!(x!::AbstractVector{T}, network::RealNVP{T}, logjacobian!) where T
+    @invcheckoff for i=1:length(network)
+        np ← length(x!)
+        if (i%2==0, ~)
+            @inbounds onelayer!(view(x!,np÷2+1:np), network[i], view(x!,1:np÷2), logjacobian!; islast=i==length(network))
+        else
+            @inbounds onelayer!(view(x!,1:np÷2), network[i], view(x!,np÷2+1:np), logjacobian!; islast=i==length(network))
+        end
+    end
+end</code></pre><p>How to obtain the log-probability of a data.</p><pre><code class="language-julia">@i function logp!(out!::T, x!::AbstractVector{T}, network::RealNVP{T}) where T
+    (~realnvp!)(x!, network, out!)
+    @invcheckoff for i = 1:length(x!)
+        @routine begin
+            xsq ← zero(T)
+            @inbounds xsq += x![i]^2
+        end
+        out! -= 0.5 * xsq
+        ~@routine
+    end
+end</code></pre><p>The negative-log-likelihood loss function</p><pre><code class="language-julia">@i function nll_loss!(out!::T, cum!::T, xs!::Matrix{T}, network::RealNVP{T}) where T
+    @invcheckoff for i=1:size(xs!, 2)
+        @inbounds logp!(cum!, view(xs!,:,i), network)
+    end
+    out! -= cum!/size(xs!, 2)
+end</code></pre><h2 id="Training-1"><a class="docs-heading-anchor" href="#Training-1">Training</a><a class="docs-heading-anchor-permalink" href="#Training-1" title="Permalink"></a></h2><pre><code class="language-julia">function train(x_data, model; num_epochs = 800)
+    num_vars = size(x_data, 1)
+    params = collect_params(model)
+    optimizer = Adam(; lr=0.01)
+    for epoch = 1:num_epochs
+        loss, a, b, c = nll_loss!(0.0, 0.0, copy(x_data), model)
+        if epoch % 50 == 1
+            println(&quot;epoch = $epoch, loss = $loss&quot;)
+            display(showmodel(x_data, model))
+        end
+        _, _, _, gmodel = (~nll_loss!)(GVar(loss, 1.0), GVar(a), GVar(b), GVar(c))
+        g = grad.(collect_params(gmodel))
+        update!(params, grad.(collect_params(gmodel)), optimizer)
+        dispatch_params!(model, params)
+    end
+    return model
+end
+
+function showmodel(x_data, model; nsamples=2000)
+    scatter(x_data[1,1:nsamples], x_data[2,1:nsamples]; xlims=(-5,5), ylims=(-5,5))
+    zs = randn(2, nsamples)
+    for i=1:nsamples
+        realnvp!(view(zs, :, i), model, 0.0)
+    end
+    scatter!(zs[1,:], zs[2,:])
+end</code></pre><pre><code class="language-none">showmodel (generic function with 1 method)</code></pre><p>you can find the training data in <code>examples/</code> folder</p><pre><code class="language-">x_data = Matrix(readdlm(joinpath(@__DIR__, &quot;train.dat&quot;))&#39;)
+
+import Random; Random.seed!(22)
+model = random_realnvp(Float64, size(x_data, 1), 10, 10, 4; scale=0.1)</code></pre><p>Before training, the distribution looks like <img src="../../asset/nice_before.png" alt="before"/></p><pre><code class="language-">model = train(x_data, model; num_epochs=800)</code></pre><p>After training, the distribution looks like <img src="../../asset/realnvp_after.png" alt="before"/></p><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../nice/">« NICE network</a><a class="docs-footer-nextpage" href="../boxmuller/">Box-Muller method to Generate normal distribution »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Sunday 2 August 2020 11:20">Sunday 2 August 2020</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
