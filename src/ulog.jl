@@ -31,6 +31,10 @@ for (OP1, OP2, OP3) in [(:*, :+, :(+=)), (:/, :-, :(-=))]
 	end
 end
 
+@i @inline function (:*=(^))(out!::T, x::T, y::Real) where T<:ULogarithmic
+    out!.log += x.log * y
+end
+
 gaussian_log(x) = log1p(exp(x))
 gaussian_nlog(x) = log1p(-exp(x))
 
