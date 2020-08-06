@@ -10,6 +10,10 @@ end
     x.log += y.log
 end
 
+@i @inline function (:*=(identity))(x::ULogarithmic, y::Real)
+    x.log += log(y)
+end
+
 for (OP1, OP2, OP3) in [(:*, :+, :(+=)), (:/, :-, :(-=))]
 	@eval @i @inline function (:*=($OP1))(out!::ULogarithmic, x::ULogarithmic, y::ULogarithmic)
 	    out!.log += $OP2(x.log, y.log)

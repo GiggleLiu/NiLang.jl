@@ -29,4 +29,10 @@ using NiLangCore: default_constructor
 		default_constructor(ULogarithmic, 3.0)
 	@instr x *= y^3.4
 	@test x.log ≈ log(exp(5.0)^3.4 * exp(7.0))
+
+	x, y, z = default_constructor(ULogarithmic, 7.0),
+		default_constructor(ULogarithmic, 5.0),
+		default_constructor(ULogarithmic, 3.0)
+	@instr x *= 3
+	@test x.log ≈ log(exp(7.0) * 3)
 end
