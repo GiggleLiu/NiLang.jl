@@ -160,7 +160,6 @@ end
 _content(x::ULogarithmic) = x.log
 for T in [:ULogarithmic]
     @eval NiLang.AD.GVar(x::$T) = default_constructor($T, GVar(_content(x), zero(_content(x))))
-    @eval (_::Type{Inv{$T}})(x::$T) = _content(x)
     #@eval NiLang.AD.grad(x::$T{<:GVar}) = default_constructor($T, grad(_content(x)))
     @eval (_::Type{Inv{GVar}})(x::$T{<:GVar}) = default_constructor($T, (~GVar)(_content(x)))
 
