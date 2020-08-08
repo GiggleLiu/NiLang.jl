@@ -6,4 +6,10 @@ using Test, NiLang
         b ← zero(Float64)
         c ← zero(Float64)
     end)
+
+    @test (@macroexpand @ones Float64 a b c) == :(begin
+        a ← one(Float64)
+        b ← one(Float64)
+        c ← one(Float64)
+    end)
 end

@@ -6,29 +6,37 @@ function NiLangCore.default_constructor(ln::Type{<:ULogarithmic}, x)
 	exp(ULogarithmic, x)
 end
 
-@i @inline function (:*=(identity))(x::T, y::T) where T<:ULogarithmic
+@i @inline function (:*=(identity))(x::ULogarithmic, y::ULogarithmic)
     x.log += y.log
 end
 
+@i @inline function (:*=(identity))(x::ULogarithmic, y::Real)
+    x.log += log(y)
+end
+
 for (OP1, OP2, OP3) in [(:*, :+, :(+=)), (:/, :-, :(-=))]
-	@eval @i @inline function (:*=($OP1))(out!::T, x::T, y::T) where T<:ULogarithmic
+	@eval @i @inline function (:*=($OP1))(out!::ULogarithmic, x::ULogarithmic, y::ULogarithmic)
 	    out!.log += $OP2(x.log, y.log)
 	end
 
-	@eval @i @inline function (:*=($OP1))(out!::T, x::Real, y::Real) where T<:ULogarithmic
+	@eval @i @inline function (:*=($OP1))(out!::ULogarithmic, x::Real, y::Real)
 	    out!.log += log(x)
 		$(Expr(OP3, :(out!.log), :(log(y))))
 	end
 
-	@eval @i @inline function (:*=($OP1))(out!::T, x::T, y::Real) where T<:ULogarithmic
+	@eval @i @inline function (:*=($OP1))(out!::ULogarithmic, x::ULogarithmic, y::Real)
 	    out!.log += x.log
 		$(Expr(OP3, :(out!.log), :(log(y))))
 	end
 
-	@eval @i @inline function (:*=($OP1))(out!::T, x::Real, y::T) where T<:ULogarithmic
+	@eval @i @inline function (:*=($OP1))(out!::ULogarithmic, x::Real, y::ULogarithmic)
 	    out!.log += log(x)
 		$(Expr(OP3, :(out!.log), :(y.log)))
 	end
+end
+
+@i @inline function (:*=(^))(out!::ULogarithmic, x::ULogarithmic, y::Real)
+    out!.log += x.log * y
 end
 
 gaussian_log(x) = log1p(exp(x))

@@ -1,3 +1,5 @@
+using FixedPointNumbers, Test
+
 """
 ## Reference
 [1] C. S. Turner,  "A Fast Binary Logarithm Algorithm", IEEE Signal
@@ -8,29 +10,30 @@ function log2fix(x::Fixed{T, P}) where {T, P}
     x.i == 0 && return typemin(T) # represents negative infinity
 
     y = zero(T)
-    xi = unsigned(x.i)
-    while xi < UInt(1) << PREC
-        xi <<= UInt(1)
-        y -= 1 << PREC
+    xi = x.i
+    while xi < 1 << PREC
+        xi <<= 1
+        y -= T(1) << PREC
     end
 
-    while xi >= UInt(2) << PREC
-        xi >>= UInt(1)
-        y += 1 << PREC
+    while xi >= 2 << PREC
+        xi >>= 1
+        y += T(1) << PREC
     end
 
-    z = Int128(xi)
-    b = 1 << (PREC - UInt(1))
+    z = xi
+    b = T(1) << (PREC - UInt(1))
     for i = 1:P
-        z = (z * z) >> PREC
-        if z >= 2 << PREC
-            z >>= UInt(1)
+        temp = Base.widemul(z, z) >> PREC
+        z = T(temp)
+        if z >= T(2) << PREC
+            z >>= 1
             y += b
         end
-        b >>= UInt(1)
+        b >>= 1
     end
 
     return Fixed{T,PREC}(y, nothing)
 end
 
-@test log2fix(Fixed43(2^1.24)) ≈ 1.24
+@test log2fix(Fixed{Int, 43}(2^1.24)) ≈ 1.24
