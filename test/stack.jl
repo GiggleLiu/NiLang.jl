@@ -60,6 +60,12 @@ end
     @instr UNSAFE_COPYPOP!(x)
     @test x == 0.5
 
+    st = []
+    x = [0.3]
+    @instr COPYPUSH!(st, x)
+    @test st[1] !== [0.3]
+    @test st[1] ≈ [0.3]
+
     x =0.3
     st = Float64[]
     @instr COPYPUSH!(st, x)
