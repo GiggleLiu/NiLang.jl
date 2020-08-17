@@ -44,7 +44,7 @@ loaddata(::Type{T}, x::T) where T = x
 
 ############# copied push/pop stack operations ##########
 @inline function COPYPUSH!(stack, x)
-    push!(stack, x)
+    push!(stack, copy(x))
     stack, x
 end
 
