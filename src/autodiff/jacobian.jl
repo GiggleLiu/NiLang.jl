@@ -10,12 +10,11 @@ function jacobian_repeat(f, args...; iin::Int, iout::Int=iin, kwargs...)
     _check_input(args, iin, iout)
     N = length(args[iout])
     res = zeros(eltype(args[iin]), length(args[iin]), N)
+    xargs = NiLangCore.wrap_tuple(f(args...; kwargs...))
     for i = 1:N
-        xargs = _copy.(args)
-        xargs = NiLangCore.wrap_tuple(f(xargs...; kwargs...))
-        xargs = GVar.(xargs)
-        @inbounds xargs[iout][i] = GVar(value(xargs[iout][i]), one(eltype(args[iout])))
-        @inbounds res[:,i] .= vec(grad.(NiLangCore.wrap_tuple((~f)(xargs...; kwargs...))[iin]))
+        gxargs = GVar.(xargs)
+        @inbounds gxargs[iout][i] = GVar(value(gxargs[iout][i]), one(eltype(xargs[iout])))
+        @inbounds res[:,i] .= vec(grad.(NiLangCore.wrap_tuple((~f)(gxargs...; kwargs...))[iin]))
     end
     return res
 end
