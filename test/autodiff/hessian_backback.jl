@@ -11,7 +11,7 @@ using NiLang.AD: hessian_numeric
         a += b^d
         c += b/d
         ROT(a, c, d)
-        b += d * d
+        b += d ^ 2
         a += c * d
     end
     h1 = hessian_backback(test, (0.0, 2.0, 1.0, 3.0); iloss=1)

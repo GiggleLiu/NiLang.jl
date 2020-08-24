@@ -39,7 +39,7 @@ get the pdf of `Normal(μ, σ)` at point `x`.
         anc1 += x
         anc1 -= μ
         anc2 += anc1 / σ  # (x- μ)/σ
-        anc3 += anc2 * anc2 # (x-μ)^2/σ^2
+        anc3 += anc2^2 # (x-μ)^2/σ^2
     end
 
     out -= anc3 * 0.5 # -(x-μ)^2/2σ^2
