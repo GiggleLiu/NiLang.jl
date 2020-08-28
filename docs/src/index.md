@@ -44,6 +44,7 @@ Pages = [
     "extend.md",
     "examples/sharedwrite.md",
     "api.md",
+    "faq.md",
 ]
 Depth = 2
 ```

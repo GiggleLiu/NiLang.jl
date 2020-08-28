@@ -6,52 +6,50 @@
 # ```
 
 # where ``\Gamma(n) = (n-1)!`` is the Gamma function. One can compute the accumulated item iteratively as ``s_n = -\frac{z^2}{4} s_{n-1}``.
-# Intuitively, this problem mimics the famous pebble game, since one can not release state ``s_{n-1}`` directly after computing ``s_n``.
-# One would need an increasing size of tape to cache the intermediate state.
-# To circumvent this problem. We introduce the following reversible approximate multiplier
 
 using NiLang, NiLang.AD
+using ForwardDiff: Dual
 
-# Here, the definition of SWAP can be found in \App{app:instr}, ``anc! \approx 0`` is a *dirty ancilla*.
-# Line 2 computes the result and accumulates it to the dirty ancilla, we get an approximately correct output in **anc!**.
-# Line 3 "uncomputes" **out!** approximately by using the information stored in **anc!**, leaving a dirty zero state in register **out!**.
-# Line 4 swaps the contents in **out!** and **anc!**.
-# Finally, we have an approximately correct output and a dirtier ancilla.
-# With this multiplier, we implementation ``J_\nu`` as follows.
-
-@i function ibesselj(out!::T, ν, z::T; atol=1e-8) where T
-    @routine @invcheckoff begin
-        k ← 0
-        fact_nu ← zero(ν)
-        @zeros T halfz halfz_power_nu halfz_power_2 out_anc anc1 anc2 anc3 anc4 anc5
-        halfz += z / 2
-        halfz_power_nu += halfz ^ ν
-        halfz_power_2 += halfz ^ 2
-        i_factorial(fact_nu, ν)
-        anc1 += halfz_power_nu/fact_nu
-        out_anc += anc1
-        while (abs(unwrap(anc1)) > atol && abs(unwrap(anc4)) < atol, k!=0)
-            INC(k)
-            @routine begin
-                anc5 += k + ν
-                anc2 -= k * anc5
-                anc3 += halfz_power_2 / anc2
-            end
-            i_dirtymul(anc1, anc3, anc4)
-            out_anc += anc1
-            ~@routine
-        end
-    end
-    out! += out_anc
-    ~@routine
+# Since we need to use logarithmic numbers to handle the sequential mutiplication.
+# Let's first add patch about the conversion between `ULogarithmic` and `Dual` number.
+function Base.convert(::Type{Dual{T,V,N}}, x::ULogarithmic) where {T,V,N}
+	Dual{T,V,N}(exp(x.log))
 end
 
-# where the **i_factorial** is defined as
-
-# Here, only a constant number of ancillas are used in this implementation, while the algorithm complexity does not increase comparing to its irreversible counterpart.
-# ancilla **anc4** plays the role of *dirty ancilla* in multiplication, it is uncomputed rigoriously in the uncomputing stage.
-# The reason why the "approximate uncomputing" trick works here lies in the fact that from the mathematic perspective the state in ``n``th step ``\{s_n, z\}`` contains the same amount of information as the state in the ``n-1``th step ``\{s_{n-1}, z\}`` except some special points, it is highly possible to find an equation to uncompute the previous state from the current state.
-# This trick can be used extensively in many other application. It mitigated the artifitial irreversibility brought by the number system that we have adopt at the cost of precision.
+@i function ibesselj(y!::T, ν, z::T; atol=1e-8) where T
+	if z == 0
+		if v == 0
+			out! += 1
+		end
+	else
+		@routine @invcheckoff begin
+			k ← 0
+			@ones ULogarithmic{T} lz halfz halfz_power_2 s
+			@zeros T out_anc
+			lz *= convert(z)
+			halfz *= lz / 2
+			halfz_power_2 *= halfz ^ 2
+			# s *= (z/2)^ν/ factorial(ν)
+			s *= halfz ^ ν
+			for i=1:ν
+				s /= i
+			end
+			out_anc += convert(s)
+			while (s.log > -25, k!=0) # upto precision e^-25
+				k += 1
+				# s *= 1 / k / (k+ν) * (z/2)^2
+				s *= halfz_power_2 / (k*(k+ν))
+				if k%2 == 0
+					out_anc += convert(s)
+				else
+					out_anc -= convert(s)
+				end
+			end
+		end
+		y! += out_anc
+		~@routine
+	end
+end
 
 # To obtain gradients, one call **Grad(ibesselj)**
 
@@ -62,7 +60,6 @@ Grad(ibesselj)(Val(1), y, 2, x)
 # The first parameter `Val(1)` indicates the first argument is the loss.
 
 # To obtain second order gradients, one can Feed dual numbers to this gradient function.
-using ForwardDiff: Dual
 _, hxy, _, hxx = Grad(ibesselj)(Val(1), Dual(y, zero(y)), 2, Dual(x, one(x)))
 println("The hessian dy^2/dx^2 is $(grad(hxx).partials[1])")
 
