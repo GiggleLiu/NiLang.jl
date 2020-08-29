@@ -46,5 +46,5 @@ Pages = [
     "api.md",
     "faq.md",
 ]
-Depth = 2
+Depth = 1
 ```

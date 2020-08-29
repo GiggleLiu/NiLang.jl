@@ -29,7 +29,7 @@ end
 			lz *= convert(z)
 			halfz *= lz / 2
 			halfz_power_2 *= halfz ^ 2
-			# s *= (z/2)^ν/ factorial(ν)
+			## s *= (z/2)^ν/ factorial(ν)
 			s *= halfz ^ ν
 			for i=1:ν
 				s /= i
@@ -37,7 +37,7 @@ end
 			out_anc += convert(s)
 			while (s.log > -25, k!=0) # upto precision e^-25
 				k += 1
-				# s *= 1 / k / (k+ν) * (z/2)^2
+				## s *= 1 / k / (k+ν) * (z/2)^2
 				s *= halfz_power_2 / (k*(k+ν))
 				if k%2 == 0
 					out_anc += convert(s)
