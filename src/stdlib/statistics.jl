@@ -56,7 +56,7 @@ get Pearson correlation and covariance of two vectors `a` and `b`
 
 """
 
-@i function i_cor_cov(rho!::T,cov!::T,a::AbstractVector{T},b::AbstractVector{T}) where T
+@i function i_cor_cov(rho!::T, cov!::T, a::AbstractVector{T}, b::AbstractVector{T}) where T
     @safe @assert length(a) == length(b)
     @routine  @invcheckoff begin
         @zeros T var1 varsum1 mean1 sum1 std1
@@ -65,22 +65,20 @@ get Pearson correlation and covariance of two vectors `a` and `b`
         @zeros T var2 varsum2 mean2 sum2 std2
         i_var_mean_sum(var2, varsum2, mean2, sum2, b)
         std2 += sqrt(var2)
-        @zeros T anc3 anc4 anc5 anc6 anc7
+        @zeros T anc5 anc6 anc7
         @inbounds for i=1:length(b)
-            a[i] -= mean1
-            anc3 += a[i]
-            b[i] -= mean2
-            anc4 += b[i]
-            anc5 += anc3*anc4
-            anc3 -= a[i]
-            anc4 -= b[i]
-            a[i] += mean1
-            b[i] += mean2     
+            @routine begin
+                @zeros T anc3 anc4
+                anc3 += a[i] - mean1
+                anc4 += b[i] - mean2
+            end
+            anc5 += anc3 * anc4
+            ~@routine
         end
-        anc6+=std1*std2
-        anc7+=anc6*(length(b)-1)
+        anc6 += std1 * std2
+        anc7 += anc6 * (length(b)-1)
     end
-        cov! += anc5/(length(b)-1)
-        rho! += anc5/anc7 
+    cov! += anc5 / (length(b)-1)
+    rho! += anc5 / anc7 
     ~@routine
 end
