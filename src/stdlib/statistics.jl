@@ -1,4 +1,4 @@
-export i_mean_sum, i_var_mean_sum, i_normal_logpdf,i_cor_cov
+export i_mean_sum, i_var_mean_sum, i_normal_logpdf, i_cor_cov
 
 """
     i_mean_sum(out!, sum!, x)
@@ -52,12 +52,13 @@ end
 """
      i_cor_cov(rho!,cov!,a,b)
 
-     get Pearson correlation and covariance of two vectors a and b 
+get Pearson correlation and covariance of two vectors `a` and `b` 
 
 """
 
 @i function i_cor_cov(rho!::T,cov!::T,a::AbstractVector{T},b::AbstractVector{T}) where T
-    @routine  begin
+    @safe @assert length(a) == length(b)
+    @routine  @invcheckoff begin
         @zeros T var1 varsum1 mean1 sum1 std1
         i_var_mean_sum(var1, varsum1, mean1, sum1, a)
         std1 += sqrt(var1)
@@ -65,7 +66,7 @@ end
         i_var_mean_sum(var2, varsum2, mean2, sum2, b)
         std2 += sqrt(var2)
         @zeros T anc3 anc4 anc5 anc6 anc7
-        for i=1:length(b)
+        @inbounds for i=1:length(b)
             a[i] -= mean1
             anc3 += a[i]
             b[i] -= mean2
