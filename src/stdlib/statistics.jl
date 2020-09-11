@@ -1,4 +1,4 @@
-export i_mean_sum, i_var_mean_sum, i_normal_logpdf
+export i_mean_sum, i_var_mean_sum, i_normal_logpdf, i_cor_cov
 
 """
     i_mean_sum(out!, sum!, x)
@@ -46,5 +46,41 @@ get the pdf of `Normal(μ, σ)` at point `x`.
     out -= log(σ) # -(x-μ)^2/2σ^2 - log(σ)
     out -= log(2π)/2 # -(x-μ)^2/2σ^2 - log(σ) - log(2π)/2
 
+    ~@routine
+end
+
+"""
+     i_cor_cov(rho!,cov!,a,b)
+
+get Pearson correlation and covariance of two vectors `a` and `b` 
+
+"""
+
+@i function i_cor_cov(rho!::T,cov!::T,a::AbstractVector{T},b::AbstractVector{T}) where T
+    @safe @assert length(a) == length(b)
+    @routine  @invcheckoff begin
+        @zeros T var1 varsum1 mean1 sum1 std1
+        i_var_mean_sum(var1, varsum1, mean1, sum1, a)
+        std1 += sqrt(var1)
+        @zeros T var2 varsum2 mean2 sum2 std2
+        i_var_mean_sum(var2, varsum2, mean2, sum2, b)
+        std2 += sqrt(var2)
+        @zeros T anc3 anc4 anc5 anc6 anc7
+        @inbounds for i=1:length(b)
+            a[i] -= mean1
+            anc3 += a[i]
+            b[i] -= mean2
+            anc4 += b[i]
+            anc5 += anc3*anc4
+            anc3 -= a[i]
+            anc4 -= b[i]
+            a[i] += mean1
+            b[i] += mean2     
+        end
+        anc6+=std1*std2
+        anc7+=anc6*(length(b)-1)
+    end
+        cov! += anc5/(length(b)-1)
+        rho! += anc5/anc7 
     ~@routine
 end
