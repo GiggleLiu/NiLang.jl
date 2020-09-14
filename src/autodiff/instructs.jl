@@ -323,3 +323,9 @@ end
     out!.x -= convert(y.x)
     y.g += convert(out!.g)
 end
+
+@i function HADAMARD(x::GVar, y::GVar)
+    HADAMARD(x.x, y.x)
+    HADAMARD(x.g, y.g)
+end
+

@@ -1,6 +1,7 @@
 export SWAP, FLIP
 export ROT, IROT
 export INC, DEC
+export HADAMARD
 
 """
     NoGrad{T} <: IWrapper{T}
@@ -136,3 +137,14 @@ end
 function (::MinusEq{typeof(convert)})(out!::T, y) where T<:Real
     out! - convert(T, y), y
 end
+
+"""
+    HADAMARD(x::Real, y::Real)
+
+Hadamard transformation that returns `(x + y)/√2, (x - y)/√2`
+"""
+function HADAMARD(x::Real, y::Real)
+    sqrt(0.5) * (x + y), sqrt(0.5) * (x - y)
+end
+
+@selfdual HADAMARD

@@ -58,3 +58,10 @@ end
     @instr (x,) |> INC |> DEC |> DEC
     @test x === Int32(1)
 end
+
+@testset "HADAMARD" begin
+    x = 0.5
+    y = 0.8
+    @test check_inv(HADAMARD, (x, y))
+end
+
