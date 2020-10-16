@@ -30,6 +30,8 @@ using Test
     @test check_grad(ROT, (1.0, 2.0, 2.0); verbose=true, iloss=2)
     @test check_grad(IROT, (1.0, 2.0, 2.0); verbose=true, iloss=1)
     @test check_grad(IROT, (1.0, 2.0, 2.0); verbose=true, iloss=2)
+    @test check_grad(HADAMARD, (3.0, 2.0); verbose=true, iloss=1)
+    @test check_grad(HADAMARD, (3.0, 2.0); verbose=true, iloss=2)
 end
 
 @testset "sincos" begin
