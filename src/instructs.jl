@@ -1,6 +1,6 @@
 export SWAP, FLIP
 export ROT, IROT
-export INC, DEC
+export INC, DEC, NEG, INV, AddConst, SubConst
 export HADAMARD
 
 """
@@ -13,7 +13,14 @@ A `NoGrad(x)` is equivalent to `GVar^{-1}(x)`, which cancels the `GVar` wrapper.
 
 const NullType{T} = Union{NoGrad{T}, Partial{T}}
 
+# TODO: deprecate
 @selfdual -
+
+NEG(a!) = -(a!)
+@selfdual NEG
+
+INV(a!) = inv(a!)
+@selfdual INV
 
 @inline FLIP(b::Bool) = !b
 @selfdual FLIP
@@ -148,3 +155,24 @@ function HADAMARD(x::Real, y::Real)
 end
 
 @selfdual HADAMARD
+
+# more data views
+for (DT, OP, NOP) in [(:AddConst, :+, :-), (:SubConst, :-, :+)]
+    @eval struct $DT{T}
+        x::T
+    end
+
+    @eval function (f::$DT)(y::Real)
+        $OP(y, f.x)
+    end
+
+    @eval NiLangCore.chfield(x::T, ac::$DT, xval::T) where T<:Real = $NOP(xval, ac.x)
+end
+
+Base.:~(ac::AddConst) = SubConst(ac.x)
+Base.:~(ac::SubConst) = AddConst(ac.x)
+@dualtype AddConst SubConst
+
+for F in [:INV, :NEG, :FLIP, :INC, :DEC]
+    @eval NiLangCore.chfield(x::T, ::typeof($F), xval::T) where T<:Real = (~$F)(xval)
+end

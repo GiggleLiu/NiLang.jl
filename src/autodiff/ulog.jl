@@ -4,10 +4,8 @@
 		exp_x ← zero(x)
 		jac ← zero(x)
 		exp_x += exp(-x)
-		exp_x += 1
-		jac += 1/exp_x
 	end
-	x.g += y!.g * jac
+	x.g += y!.g * (exp_x |> AddConst(1) |> INV)
 	~@routine
 end
 
@@ -15,12 +13,9 @@ end
 	y!.x -= gaussian_nlog(x.x)
 	@routine @invcheckoff begin
 		exp_x ← zero(x)
-		jac ← zero(x)
 		exp_x += exp(-x)
-		exp_x -= 1
-		jac -= 1/exp_x
 	end
-	x.g += y!.g * jac
+	x.g -= y!.g * (exp_x |> SubConst(1) |> INV)
 	~@routine
 end
 
