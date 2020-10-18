@@ -6,6 +6,11 @@ NiLangCore.chfield(x::Complex, ::typeof(imag), r) = chfield(x, Val{:im}(), r)
     -(y!.im)
 end
 
+@i @inline function NEG(y!::Complex{T}) where T
+    NEG(y!.re)
+    NEG(y!.im)
+end
+
 @i @inline function Base.conj(y!::Complex{T}) where T
     -(y!.im)
 end
@@ -150,4 +155,9 @@ for OP in [:identity, :cos, :sin, :log, :exp]
     @eval @i @inline function ⊕($OP)(y!::Complex{T}, a::Real) where T
         y!.re += $OP(a)
     end
+end
+
+@i @inline function HADAMARD(x::Complex{T}, y::Complex{T}) where T
+    HADAMARD(x.re, y.re)
+    HADAMARD(x.im, y.im)
 end

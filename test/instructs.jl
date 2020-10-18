@@ -100,3 +100,27 @@ end
     end
     @test check_inv(f, (0.2, 0.5, 0.8))
 end
+
+@testset "fixed point arithmetics" begin
+    for op in [exp, log, sin, sinh, asin, cos, cosh, acos, tan, tanh, atan]
+        x, y = Fixed43(2.0), Fixed43(0.5)
+        @instr x += op(y)
+        @test x ≈ 2.0 + op(0.5)
+    end
+    for op in [SWAP, HADAMARD]
+        x, y = Fixed43(2.0), Fixed43(0.5)
+        @instr op(x, y)
+        @test x ≈ op(2.0, 0.5)[1]
+        @test y ≈ op(2.0, 0.5)[2]
+    end
+    for op in [NEG, INC, DEC]
+        x = Fixed43(2.0)
+        @instr op(x)
+        @test x ≈ op(2.0)
+    end
+    for op in [^, /]
+        x, y, z = Fixed43(2.0), Fixed43(0.5), Fixed43(0.8)
+        @instr PlusEq(op)(x, y, z)
+        @test x ≈ 2.0 + op(0.5, 0.8)
+    end
+end
