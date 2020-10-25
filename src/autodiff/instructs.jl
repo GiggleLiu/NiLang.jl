@@ -1,7 +1,18 @@
 # unary
+# TODO: deprecate
 @i @inline function Base.:-(a!::GVar)
     -(a!.x)
     -(a!.g)
+end
+
+@i @inline function NEG(a!::GVar)
+    NEG(a!.x)
+    NEG(a!.g)
+end
+
+function INV(x!::GVar{T}) where T
+    x2 = x!.x ^ 2
+    GVar(INV(x!.x), -x!.g * x2)
 end
 
 @i @inline function DEC(a!::GVar)
@@ -231,22 +242,76 @@ end
 end
 
 @i @inline function ⊖(sin)(out!::GVar, x::GVar{T}) where T
-    out!.x -= sin(x.x)
+    @routine @invcheckoff begin
+        @zeros T s c
+        (s, c) += sincos(x.x)
+    end
+    out!.x -= s
+    x.g += out!.g * c
+    ~@routine
+end
+
+@i @inline function ⊖(sinh)(out!::GVar, x::GVar{T}) where T
+    out!.x -= sinh(x.x)
     @routine @invcheckoff begin
         anc1 ← zero(x.x)
-        anc1 += cos(x.x)
+        anc1 += cosh(x.x)
     end
     x.g += out!.g * anc1
     ~@routine
 end
 
-@i @inline function ⊖(cos)(out!::GVar, x::GVar{T}) where T
-    out!.x -= cos(x.x)
+@i @inline function (:-=)(asin)(out!::GVar, x::GVar{T}) where T
+    out!.x -= asin(x.x)
+    @routine @invcheckoff begin
+        @zeros T sqrt_1_x2 x2
+        x2 += x.x ^ 2
+        sqrt_1_x2 += sqrt(x2 |> NEG |> AddConst(1))
+    end
+    x.g += out!.g / sqrt_1_x2
+    ~@routine
+end
+
+@i @inline function (:-=)(cos)(out!::GVar, x::GVar{T}) where T
+    @routine @invcheckoff begin
+        @zeros T s c
+        (s, c) += sincos(x.x)
+    end
+    out!.x -= c
+    x.g -= out!.g * s
+    ~@routine
+end
+
+@i @inline function ⊖(cosh)(out!::GVar, x::GVar{T}) where T
+    out!.x -= cosh(x.x)
     @routine @invcheckoff begin
         anc1 ← zero(x.x)
-        anc1 -= sin(x.x)
+        anc1 += sinh(x.x)
     end
     x.g += out!.g * anc1
+    ~@routine
+end
+
+@i @inline function ⊖(acos)(out!::GVar, x::GVar{T}) where T
+    out!.x -= acos(x.x)
+    @routine @invcheckoff begin
+        @zeros T sqrt_1_x2 x2
+        x2 += x.x ^ 2
+        sqrt_1_x2 += sqrt(x2 |> NEG |> AddConst(1))
+    end
+    x.g -= out!.g / sqrt_1_x2
+    ~@routine
+end
+
+@i @inline function ⊖(tan)(out!::GVar, x::GVar{T}) where T
+    @routine @invcheckoff begin
+        anc1 ← zero(x.x)
+        anc2 ← one(x.x)
+        anc1 += tan(x.x)
+        anc2 += anc1^2
+    end
+    out!.x -= anc1
+    x.g += out!.g * anc2
     ~@routine
 end
 
@@ -284,23 +349,23 @@ end
 
 @i @inline function IROT(a!::GVar, b!::GVar, θ::GVar)
     IROT(a!.x, b!.x, θ.x)
-    -(θ |> value)
+    NEG(θ |> value)
     θ.x -= π/2
     ROT(a!.g, b!.g, θ.x)
     θ.g += a!.x * a!.g
     θ.g += b!.x * b!.g
     θ.x += π/2
-    -(θ |> value)
+    NEG(θ |> value)
     ROT(a!.g, b!.g, π/2)
 end
 
 @i @inline function IROT(a!::GVar, b!::GVar, θ::Real)
     IROT(a!.x, b!.x, θ)
-    -(θ)
+    NEG(θ)
     θ -= π/2
     ROT(a!.g, b!.g, θ)
     θ += π/2
-    -(θ)
+    NEG(θ)
     ROT(a!.g, b!.g, π/2)
 end
 
@@ -322,4 +387,25 @@ end
 @i function :(-=)(convert)(out!::GVar{Tx, Tg}, y::GVar) where {Tx, Tg}
     out!.x -= convert(y.x)
     y.g += convert(out!.g)
+end
+
+@i function HADAMARD(x::GVar, y::GVar)
+    HADAMARD(x.x, y.x)
+    HADAMARD(x.g, y.g)
+end
+
+@i function (f::AddConst)(y::GVar)
+    y.x += f.x
+end
+
+# more data views
+for (DT, OP, NOP) in [(:AddConst, :+, :-, :add), (:SubConst, :-, :+)]
+    @eval chfield(x::GVar, ac::$DT, xval::GVar) = GVar($NOP(xval.x, ac.x), xval.g)
+end
+
+#chfield(x::T, ::typeof(INV), xval::T) where T<:GVar = GVar(INV(xval.x), -xval.g*(xval.x^2))
+#chfield(x::T, ::typeof(NEG), xval::T) where T<:GVar = GVar(-xval.x, -xval.g)
+
+for F in [:INV, :NEG, :FLIP, :INC, :DEC]
+    @eval NiLangCore.chfield(x::T, ::typeof($F), xval::T) where T<:GVar = (~$F)(xval)
 end

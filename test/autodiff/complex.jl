@@ -1,40 +1,13 @@
 using Test, NiLang, NiLang.AD
 
-@testset "complex" begin
-    a = 1.0+ 2im
-    @instr (a |> real) += 2
-    @instr (a |> imag) += 2
-    @test a == 3.0 + 4im
-
-    a = 1.0+ 2im
-    @instr a += complex(2.0, 2.0)
-    @test a == 3.0 + 4.0im
-    @i function f(loss, a::Complex{T}, b) where T
-        @routine begin
-            c ← zero(a)
-            sq ← zero(T)
-            c += a * b
-            sq += (c |> real) ^ 2
-            sq += (c |> imag) ^ 2
-        end
-        loss += sq ^ 0.5
-        ~@routine
-    end
-    a = 1.0 + 2.0im
-    b = 2.0 + 1.0im
-    loss = 0.0
-    @instr f(loss, a, b)
-    @test loss ≈ abs(a*b)
-
-    gx = GVar(1.0 + 1.0im)
-    gx2 = chfield(gx, grad, 1.0+0.0im)
-    @test gx2 == Complex(GVar(1.0, 1.0), GVar(1.0, 0.0))
-end
-
 @testset "complex GVar" begin
     a = 1.0+ 2im
     @test GVar(a) == Complex(GVar(1.0), GVar(2.0))
     @test GVar(a, a) == Complex(GVar(1.0, 1.0), GVar(2.0, 2.0))
+
+    gx = GVar(1.0 + 1.0im)
+    gx2 = chfield(gx, grad, 1.0+0.0im)
+    @test gx2 == Complex(GVar(1.0, 1.0), GVar(1.0, 0.0))
 end
 
 @i function fr(f, loss, args...; il)
@@ -81,6 +54,8 @@ end
             @test check_grad(subop, args; verbose=true, iloss=1)
         end
     end
-    @test check_inv(-, (x,); verbose=true)
-    @test ccheck_grad(-, (x,); verbose=true, iloss=1)
+    for op in [-, NEG]
+        @test check_inv(op, (x,); verbose=true)
+        @test ccheck_grad(op, (x,); verbose=true, iloss=1)
+    end
 end

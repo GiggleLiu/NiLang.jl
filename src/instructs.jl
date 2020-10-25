@@ -1,6 +1,7 @@
 export SWAP, FLIP
 export ROT, IROT
-export INC, DEC
+export INC, DEC, NEG, INV, AddConst, SubConst
+export HADAMARD
 
 """
     NoGrad{T} <: IWrapper{T}
@@ -12,7 +13,14 @@ A `NoGrad(x)` is equivalent to `GVar^{-1}(x)`, which cancels the `GVar` wrapper.
 
 const NullType{T} = Union{NoGrad{T}, Partial{T}}
 
+# TODO: deprecate
 @selfdual -
+
+NEG(a!) = -(a!)
+@selfdual NEG
+
+INV(a!) = inv(a!)
+@selfdual INV
 
 @inline FLIP(b::Bool) = !b
 @selfdual FLIP
@@ -71,14 +79,38 @@ end
 end
 @dual ROT IROT
 
-for F1 in [:(Base.:-)]
+"""
+    HADAMARD(x::Real, y::Real)
+
+Hadamard transformation that returns `(x + y)/√2, (x - y)/√2`
+"""
+function HADAMARD(x::Real, y::Real)
+    sqrt(0.5) * (x + y), sqrt(0.5) * (x - y)
+end
+
+@selfdual HADAMARD
+
+# more data views
+for (DT, OP, NOP) in [(:AddConst, :+, :-), (:SubConst, :-, :+)]
+    @eval struct $DT{T}
+        x::T
+    end
+
+    @eval function (f::$DT)(y::Real)
+        $OP(y, f.x)
+    end
+
+    @eval NiLangCore.chfield(x::T, ac::$DT, xval::T) where T<:Real = $NOP(xval, ac.x)
+end
+
+for F1 in [:(Base.:-), :NEG, :(ac::AddConst), :(sc::SubConst)]
     @eval @inline function $F1(a!::NullType)
         @instr $F1(a! |> value)
         a!
     end
 end
 
-for F2 in [:SWAP, :((inf::PlusEq)), :((inf::MinusEq)), :((inf::XorEq))]
+for F2 in [:SWAP, :HADAMARD, :((inf::PlusEq)), :((inf::MinusEq)), :((inf::XorEq))]
     @eval @inline function $F2(a::NullType, b::Real)
         @instr $(NiLangCore.get_argname(F2))(a |> value, b)
         a, b
@@ -119,7 +151,7 @@ function (f::MinusEq{typeof(/)})(out!::T, x::Integer, y::Integer) where T<:Fixed
     out!-T(x)/y, x, y
 end
 
-for F in [:exp, :log, :sin, :cos]
+for F in [:exp, :log, :sin, :sinh, :asin, :cos, :cosh, :acos, :tan, :tanh, :atan]
     @eval Base.$F(x::Fixed43) = Fixed43($F(Float64(x)))
     @eval (f::PlusEq{typeof($F)})(out!::Fixed43, x::Real) = out! + Fixed43($F(x)), x
     @eval (f::MinusEq{typeof($F)})(out!::Fixed43, x::Real) = out! - Fixed43($F(x)), x
@@ -135,4 +167,12 @@ end
 
 function (::MinusEq{typeof(convert)})(out!::T, y) where T<:Real
     out! - convert(T, y), y
+end
+
+Base.:~(ac::AddConst) = SubConst(ac.x)
+Base.:~(ac::SubConst) = AddConst(ac.x)
+@dualtype AddConst SubConst
+
+for F in [:INV, :NEG, :FLIP, :INC, :DEC]
+    @eval NiLangCore.chfield(x::T, ::typeof($F), xval::T) where T<:Real = (~$F)(xval)
 end

@@ -42,3 +42,9 @@ end
         @test j1 ≈ j2
     end
 end
+
+@testset "nograd" begin
+    @test AddConst(3.0)(NoGrad(2.0)) == NoGrad(5.0)
+    @test SWAP(NoGrad(2.0), NoGrad(3.0)) == (NoGrad(3.0), NoGrad(2.0))
+    @test PlusEq(*)(NoGrad(2.0), NoGrad(3.0), NoGrad(4.0)) == (NoGrad(14.0), NoGrad(3.0), NoGrad(4.0))
+end
