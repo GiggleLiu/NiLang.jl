@@ -22,7 +22,6 @@ struct NiceLayer{T}
     y1::Vector{T}
     y1a::Vector{T}
 end
-NiLang.AD.GVar(x::NiceLayer) = NiceLayer(GVar(x.W1), GVar(x.b1), GVar(x.W2), GVar(x.b2), GVar(x.y1), GVar(x.y1a))
 
 """Apply a single NICE transformation."""
 @i function nice_layer!(x::AbstractVector{T}, layer::NiceLayer{T},
