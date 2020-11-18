@@ -13,6 +13,8 @@ using Test
     @test iszero(GVar(0.0, 2.0))
     @test zero(GVar(2, AutoBcast([1, 0, 0]))) == GVar(0, AutoBcast([0, 0, 0]))
     @test GVar(true) == true
+    @test grad("x") == 0
+    @test grad(grad) == 0
 end
 
 
@@ -67,4 +69,5 @@ end
     x = ABC(1, 2, 3.0)
     @test GVar(x) == ABC(1, 2, GVar(3.0))
     @test (~GVar)(ABC(1, 2, GVar(3.0))) == x
+    @test grad(ABC(1, 2, GVar(3.0, 2.0))) == ABC(0, 0, 2.0)
 end

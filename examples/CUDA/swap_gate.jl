@@ -21,10 +21,10 @@ end
 SWAP gate in quantum computing.
 """
 @i function instruct!(state::CuVector, gate::Val{:SWAP}, locs::Tuple{Int,Int})
-    mask1 ← 1 << (tget(locs, 1)-1)
-    mask2 ← 1 << (tget(locs, 2)-1)
+    mask1 ← 1 << (locs[1]-1)
+    mask2 ← 1 << (locs[2]-1)
     XY ← GPUArrays.thread_blocks_heuristic(length(state))
-    @cuda threads=tget(XY,1) blocks=tget(XY,2) swap_kernel(state, mask1, mask2)
+    @cuda threads=XY[1] blocks=XY[2] swap_kernel(state, mask1, mask2)
 end
 
 using Test
