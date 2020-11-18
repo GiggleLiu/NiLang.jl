@@ -76,10 +76,16 @@ Get the gradient field of `var`.
 # TODO: fix the problem causing this patch, the field type can not change?!
 chfield(x::GVar, ::typeof(value), xval::GVar) = GVar(xval, x.g)
 
-grad(gv::T) where T = zero(T)
-grad(gv::Complex) where T = Complex(grad(gv.re), grad(gv.im))
+@generated function grad(x::T) where T
+    isprimitivetype(T) && throw("not supported type to obtain gradients: $T.")
+    quote
+        $(getfield(T.name.module, nameof(T)))($([:(grad(getfield(x, $(QuoteNode(NAME))))) for NAME in fieldnames(T)]...))
+    end
+end
+grad(gv::T) where T<:Real = zero(T)
 grad(gv::AbstractArray{T}) where T = grad.(gv)
 grad(gv::Function) = 0
+grad(gv::String) = 0
 chfield(x::T, ::typeof(grad), g::T) where T = (@invcheck iszero(g) || g≈0; x)
 chfield(x::GVar, ::typeof(grad), g::GVar) where T = GVar(x.x, g)
 chfield(x::Complex{<:GVar}, ::typeof(grad), g::Complex) where T = Complex(GVar(value(x.re), g.re), GVar(value(x.im), g.im))
