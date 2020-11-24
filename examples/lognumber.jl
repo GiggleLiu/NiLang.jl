@@ -43,12 +43,12 @@ i_power(Fixed43(0.0), Fixed43(0.4), 3)
         end
         lx *= convert(x)
         y! += convert(s)
-        while (s.log > -20, k != 0)
+        @from k==0 while s.log > -20
             k += 1
             s *= lx / k
             y! += convert(s)
         end
-        ~(while (s.log > -20, k != 0)
+        ~(@from k==0 while s.log > -20
             k += 1
             s *= x / k
         end)

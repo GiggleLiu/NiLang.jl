@@ -81,7 +81,7 @@ end
 
         anc1 += halfz_power_nu/fact_nu
         out_anc += anc1
-        while (abs(unwrap(anc1)) > atol && abs(unwrap(anc4)) < atol, k!=0)
+        @from k==0 while abs(unwrap(anc1)) > atol && abs(unwrap(anc4)) < atol
             INC(k)
             @routine begin
                 anc5 += k

@@ -25,7 +25,7 @@ end
     @safe @assert n! == 0
     out ← 0
     rfib(out, n!)
-    while (out < z, n! != 0)
+    @from n! == 0 while out < z
         ~rfib(out, n!)
         n! += 1
         rfib(out, n!)

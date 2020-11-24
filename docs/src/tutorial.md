@@ -11,7 +11,7 @@
 | f(y)                      | a reversible function.                                       |
 | f.(y)                     | function call with broadcasting.                             |
 | if (pre, post) ... end    | if statement.                                                |
-| while (pre, post) ... end | while statement.                                             |
+| @from post while pre ... end | while statement.                                             |
 | for x=1:3 ... end         | for statement.                                               |
 | begin ... end             | block statement.                                             |
 | @safe ...                 | insert an irreversible statement.                            |

@@ -35,7 +35,7 @@ end
 				s /= i
 			end
 			out_anc += convert(s)
-			while (s.log > -25, k!=0) # upto precision e^-25
+			@from k==0 while s.log > -25 # upto precision e^-25
 				k += 1
 				## s *= 1 / k / (k+ν) * (z/2)^2
 				s *= halfz_power_2 / (k*(k+ν))
