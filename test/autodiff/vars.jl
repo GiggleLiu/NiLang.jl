@@ -71,3 +71,11 @@ end
     @test (~GVar)(ABC(1, 2, GVar(3.0))) == x
     @test grad(ABC(1, 2, GVar(3.0, 2.0))) == ABC(0, 0, 2.0)
 end
+
+@testset "dict" begin
+    @i function f()
+        d ← Dict(1=>GVar(1.0, 2.0))
+        d → Dict(1=>GVar(1.0))
+    end
+    @test f() == ()
+end

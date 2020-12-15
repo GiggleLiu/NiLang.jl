@@ -178,3 +178,16 @@ end
 function NiLang.loaddata(::Type{Array{<:ULogarithmic{GVar{T,T}}}}, data::Array{<:ULogarithmic{T}}) where {T}
     GVar.(data)
 end
+
+# the patch for dicts
+function GVar(d::Dict)
+    Dict([(k=>GVar(v)) for (k, v) in d])
+end
+
+function (_::Type{Inv{GVar}})(d::Dict)
+    Dict([(k=>(~GVar)(v)) for (k, v) in d])
+end
+
+function grad(d::Dict)
+    Dict([(k=>grad(v)) for (k, v) in d])
+end
