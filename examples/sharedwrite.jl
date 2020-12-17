@@ -4,9 +4,9 @@
 
 # ## The main program
 
-using KernelAbstractions
 using NiLang, NiLang.AD
 using CuArrays
+using KernelAbstractions
 
 # so far, this example requires patch: https://github.com/JuliaGPU/KernelAbstractions.jl/pull/52
 
