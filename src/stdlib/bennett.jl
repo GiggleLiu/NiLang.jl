@@ -7,14 +7,14 @@ export bennett
     else
         @routine begin
             @zeros Int nstep n
-            n += ceil((@skip! Int), len / k)
-            nstep += ceil((@skip! Int), len / n)
+            n += ceil((@skip! Int), (@const len / k))
+            nstep += ceil((@skip! Int), (@const len / n))
         end
         for j=1:nstep
-            bennett(step, state, k, base+n*(j-1), min(n,len-n*(j-1)), args...; kwargs...)
+            bennett(step, state, k, (@const base+n*(j-1)), (@const min(n,len-n*(j-1))), args...; kwargs...)
         end
         for j=nstep-1:-1:1
-            ~bennett(step, state, k, base+n*(j-1), n, args...; kwargs...)
+            ~bennett(step, state, k, (@const base+n*(j-1)), n, args...; kwargs...)
         end
         ~@routine
     end

@@ -57,7 +57,7 @@ end
         for i=1:length(x)
             anc += x[i]
         end
-        out! += anc / length(x)
+        out! += anc / (@const length(x))
         PUSH!(anc)
     end
 
@@ -70,7 +70,7 @@ end
             ⊕(identity)(anc, x[i])
             SWAP(anc, x[i])
         end
-        out! += anc / length(x)
+        out! += anc / (@const length(x))
     end
 
     @test check_grad(mean, (0.0, 0.0, [1,2,3.0, 4.0]); iloss=1, verbose=true)

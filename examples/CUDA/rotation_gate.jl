@@ -1,13 +1,13 @@
-using CuArrays, CUDAnative, GPUArrays
+using CUDA, GPUArrays
 using NiLang, NiLang.AD
 
 const RotGates = Union{Val{:Rz}, Val{:Rx}, Val{:Ry}}
 
 @i @inline function instruct!(state::CuVector, gate::RotGates, loc::Int, theta::Real)
-    XY ← GPUArrays.thread_blocks_heuristic(length(state))
     mask ← 1<<(loc-1)
-    @cuda threads=tget(XY,1) blocks=tget(XY,2) rot_kernel(gate, state, mask, theta)
+    @cuda threads=256 blocks=ceil(Int, length(state)/256) rot_kernel(gate, state, mask, theta)
 end
+#     @launchkernel CUDADevice() 256 length(out!) bessel_kernel(out!, v, z)
 
 @i @inline function rot_kernel(gate::Val{:Rz}, state, mask, θ)
     @invcheckoff b ← (blockIdx().x-1) * blockDim().x + threadIdx().x
@@ -21,7 +21,7 @@ end
     @routine @invcheckoff begin
         @zeros T anc1 anc2 anc3 anc4
         anc1 += θ*(0.5im)
-        anc2 += CUDAnative.exp(anc1)
+        anc2 += CUDA.exp(anc1)
     end
     anc3 += a * anc2'
     anc4 += b * anc2

@@ -54,9 +54,9 @@ const NiceNetwork{T} = Vector{NiceLayer{T}}
     @invcheckoff for i=1:length(network)
         np ← length(x!)
         if (i%2==0, ~)
-            @inbounds nice_layer!(view(x!,np÷2+1:np), network[i], view(x!,1:np÷2))
+            @inbounds nice_layer!(x! |> subarray(np÷2+1:np), network[i], x! |> subarray(1:np÷2))
         else
-            @inbounds nice_layer!(view(x!,1:np÷2), network[i], view(x!,np÷2+1:np))
+            @inbounds nice_layer!(x! |> subarray(1:np÷2), network[i], x! |> subarray(np÷2+1:np))
         end
     end
 end
@@ -139,9 +139,9 @@ end
 
 @i function nice_nll!(out!::T, cum!::T, xs!::Matrix{T}, network::NiceNetwork{T}) where T
     @invcheckoff for i=1:size(xs!, 2)
-        @inbounds logp!(cum!, view(xs!,:,i), network)
+        @inbounds logp!(cum!, xs! |> subarray(:,i), network)
     end
-    out! -= cum!/size(xs!, 2)
+    out! -= cum!/(@const size(xs!, 2))
 end
 
 # ## Training

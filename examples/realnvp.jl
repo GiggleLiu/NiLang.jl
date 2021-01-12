@@ -169,9 +169,9 @@ end
     @invcheckoff for i=1:length(network)
         np ← length(x!)
         if (i%2==0, ~)
-            @inbounds onelayer!(view(x!,np÷2+1:np), network[i], view(x!,1:np÷2), logjacobian!; islast=i==length(network))
+            @inbounds onelayer!(x! |> subarray(np÷2+1:np), network[i], x! |> subarray(1:np÷2), logjacobian!; islast=i==length(network))
         else
-            @inbounds onelayer!(view(x!,1:np÷2), network[i], view(x!,np÷2+1:np), logjacobian!; islast=i==length(network))
+            @inbounds onelayer!(x! |> subarray(1:np÷2), network[i], x! |> subarray(np÷2+1:np), logjacobian!; islast=i==length(network))
         end
     end
 end
@@ -194,9 +194,9 @@ end
 
 @i function nll_loss!(out!::T, cum!::T, xs!::Matrix{T}, network::RealNVP{T}) where T
     @invcheckoff for i=1:size(xs!, 2)
-        @inbounds logp!(cum!, view(xs!,:,i), network)
+        @inbounds logp!(cum!, xs! |> subarray(:,i), network)
     end
-    out! -= cum!/size(xs!, 2)
+    out! -= cum!/(@const size(xs!, 2))
 end
 
 # ## Training
