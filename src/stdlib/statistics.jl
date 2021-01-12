@@ -9,7 +9,7 @@ get the `mean` and `sum` of `x`.
     for i=1:length(x)
         sum! += x[i]
     end
-    out! += sum!/length(x)
+    out! += sum!/(@const length(x))
 end
 
 """
@@ -24,7 +24,7 @@ Compute the variance, the accumulated variance, mean and sum.
         varsum! += v[i] ^ 2
         v[i] += mean!
     end
-    var! += varsum! / (length(v)-1)
+    var! += varsum! / (@const length(v)-1)
 end
 
 """
@@ -76,9 +76,9 @@ get Pearson correlation and covariance of two vectors `a` and `b`
             ~@routine
         end
         anc6 += std1 * std2
-        anc7 += anc6 * (length(b)-1)
+        anc7 += anc6 * (@const length(b)-1)
     end
-    cov! += anc5 / (length(b)-1)
+    cov! += anc5 / (@const length(b)-1)
     rho! += anc5 / anc7 
     ~@routine
 end

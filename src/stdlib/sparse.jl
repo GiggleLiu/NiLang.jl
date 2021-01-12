@@ -42,7 +42,7 @@ end
                 r += A.nzval[ia]' * B.nzval[ib]
             end
             ## b move -> true, a move -> false
-            branch_keeper[i] ⊻= ia == ia2-1 || (ib != ib2-1 && ra > rb)
+            branch_keeper[i] ⊻= @const ia == ia2-1 || (ib != ib2-1 && ra > rb)
             ra → A.rowval[ia]
             rb → B.rowval[ib]
             if (branch_keeper[i], ~)
@@ -53,7 +53,7 @@ end
         end
         ~@inbounds for i=1:ia2-ia1+ib2-ib1-1
             ## b move -> true, a move -> false
-            branch_keeper[i] ⊻= ia == ia2-1 || (ib != ib2-1 && A.rowval[ia] > B.rowval[ib])
+            branch_keeper[i] ⊻= @const ia == ia2-1 || (ib != ib2-1 && A.rowval[ia] > B.rowval[ib])
             if (branch_keeper[i], ~)
                 INC(ib)
             else

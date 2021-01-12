@@ -5,8 +5,9 @@
 # ## The main program
 
 using NiLang, NiLang.AD
-using CuArrays
+using CUDA
 using KernelAbstractions
+CUDA.allowscalar(true)
 
 # so far, this example requires patch: https://github.com/JuliaGPU/KernelAbstractions.jl/pull/52
 
@@ -21,7 +22,7 @@ using KernelAbstractions
 end
 
 @i function cu_axpy!(y!::AbstractVector, α, x::AbstractVector)
-    @launchkernel CUDA() 256 length(y!) axpy_kernel(y!, α, x)
+    @launchkernel CUDADevice() 256 length(y!) axpy_kernel(y!, α, x)
 end
 
 @i function loss(out, y!, α, x)
@@ -43,9 +44,9 @@ cux = x |> CuArray
 
 using Test
 cu_axpy!(cuy!, α, cux)
-@test cuy! ≈ y! .+ α .* x
+@test Array(cuy!) ≈ y! .+ α .* x
 (~cu_axpy!)(cuy!, α, cux)
-@test cuy! ≈ y!
+@test Array(cuy!) ≈ y!
 
 # Let's check the gradients
 lsout = 0.0

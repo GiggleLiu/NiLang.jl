@@ -1,7 +1,9 @@
 using FixedPointNumbers, Test
 
 """
-## Reference
+Reference
+-------------------
+
 [1] C. S. Turner,  "A Fast Binary Logarithm Algorithm", IEEE Signal
      Processing Mag., pp. 124,140, Sep. 2010.
 """

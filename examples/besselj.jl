@@ -38,7 +38,7 @@ end
 			@from k==0 while s.log > -25 # upto precision e^-25
 				k += 1
 				## s *= 1 / k / (k+ν) * (z/2)^2
-				s *= halfz_power_2 / (k*(k+ν))
+				s *= halfz_power_2 / (@const k*(k+ν))
 				if k%2 == 0
 					out_anc += convert(s)
 				else
@@ -72,7 +72,7 @@ println("The hessian dy^2/dx^2 is $(grad(hxx).partials[1])")
 # To execute the above function on GPU, we need only 11 lines of code.
 
 # ```julia
-# using CuArrays, GPUArrays, KernelAbstractions
+# using CUDA, GPUArrays, KernelAbstractions
 #
 # @i @kernel function bessel_kernel(out!, v, z)
 #     @invcheckoff i ← @index(Global)
@@ -85,13 +85,13 @@ println("The hessian dy^2/dx^2 is $(grad(hxx).partials[1])")
 # So it is possible to launch directly like.
 # ```julia
 # @i function befunc(out!, v::Integer, z)
-#     @launchkernel CUDA() 256 length(out!) bessel_kernel(out!, v, z)
+#     @launchkernel CUDADevice() 256 length(out!) bessel_kernel(out!, v, z)
 # end
 # ```
 
 # It is equivalent to call
 # ```julia
-# (~bessel_kernel)(CUDA(), 256)(out!, v, z; ndrange=length(out!))
+# (~bessel_kernel)(CUDADevice(), 256)(out!, v, z; ndrange=length(out!))
 # ```
 # But it will execute the job eagerly for you.
 # We will consider better support in the future.

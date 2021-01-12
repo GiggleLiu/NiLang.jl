@@ -376,12 +376,12 @@ function primitive_grad end
 
 @i function (mf::MinusEq)(out!::GVar, args...; kwargs...)
     out!.x -= mf.f((args .|> value)...; kwargs...)
-    (args .|> grad) .+= (@skip! out!.g) .* primitive_grad(mf.f, (args .|> value)...; kwargs...)
+    (args .|> grad) .+= (@skip! out!.g) .* (@skip! primitive_grad(mf.f, (args .|> value)...; kwargs...))  # unsafe statement, error on recursive gradient
 end
 
 @i function (mf::MinusEq)(out!::GVar, x::GVar; kwargs...)
     out!.x -= mf.f(x .|> value; kwargs...)
-    x.g += (@skip! out!.g) * primitive_grad(mf.f, x.x; kwargs...)
+    x.g += (@skip! out!.g) * (@skip! primitive_grad(mf.f, x.x; kwargs...))  # unsafe statement
 end
 
 @i function :(-=)(convert)(out!::GVar{Tx, Tg}, y::GVar) where {Tx, Tg}
