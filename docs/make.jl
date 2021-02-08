@@ -12,13 +12,13 @@ end
 import Pkg
 
 Pkg.add([
-Pkg.PackageSpec(url="https://github.com/GiggleLiu/PlutoUtils.jl", rev="static-export"),
+#Pkg.PackageSpec(url="https://github.com/GiggleLiu/PlutoUtils.jl", rev="static-export"),
 Pkg.PackageSpec(url="https://github.com/fonsp/Pluto.jl", rev="05e5b68"),
 ]);
 
 import PlutoUtils
 
-PlutoUtils.Export.github_action(; export_dir="notebooks", offer_binder=false, output_dir=joinpath("docs", "build", "notebooks"), generate_default_index=false)
+PlutoUtils.Export.github_action(; export_dir="notebooks", offer_binder=false, output_dir=joinpath(dirname(@__DIR__), "docs", "build", "notebooks"), generate_default_index=false)
 
 makedocs(;
     modules=[NiLang],
@@ -56,5 +56,5 @@ makedocs(;
 )
 
 deploydocs(;
-    repo="github.com/GiggleLiu/NiLang.jl",
+    repo="github.com/GiggleLiu/NiLang.jl.git",
 )
