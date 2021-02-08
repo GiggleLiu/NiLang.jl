@@ -36,3 +36,13 @@ using NiLangCore: default_constructor
 	@instr x *= 3
 	@test x.log ≈ log(exp(7.0) * 3)
 end
+
+
+@testset "error on += and -=" begin
+    @i function f(x::ULogarithmic)
+        x += ULogarithmic(3.0)
+    end
+    
+    @test_throws MethodError f(ULogarithmic(2.0))
+    @test_throws MethodError (~f)(ULogarithmic(2.0))
+end

@@ -14,7 +14,7 @@ NiLang features:
 * complex values
 * reversible logarithmic number system
 
-![Documentation](https://github.com/GiggleLiu/NiLang.jl/workflows/Documentation/badge.svg)
+[![Documentation](https://github.com/GiggleLiu/NiLang.jl/workflows/Documentation/badge.svg)](https://giggleliu.github.io/NiLang.jl/stable/)
 ![CI](https://github.com/GiggleLiu/NiLang.jl/workflows/CI/badge.svg)
 
 Start from our [Pluto notebook here](https://github.com/JuliaReverse/NiLangTutorial/).

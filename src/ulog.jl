@@ -77,6 +77,14 @@ end
     out!.log += log(y)
 end
 
+function (f::PlusEq)(out!::ULogarithmic{T}, args...) where T
+    throw(MethodError(f, (out!, args...)))
+end
+
+function (f::MinusEq)(out!::ULogarithmic{T}, args...) where T
+    throw(MethodError(f, (out!, args...)))
+end
+
 Base.convert(::Type{T}, x::ULogarithmic{T}) where {T<:Fixed} = exp(x.log)
 
 function NiLangCore.deanc(x::T, v::T) where T<:ULogarithmic
