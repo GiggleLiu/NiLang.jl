@@ -20,6 +20,8 @@ import PlutoUtils
 
 PlutoUtils.Export.github_action(; export_dir="notebooks", offer_binder=false, output_dir=joinpath(dirname(@__DIR__), "docs", "build", "notebooks"), generate_default_index=false)
 
+@show isdir("/home/leo/.julia/dev/NiLang/docs/build/notebooks")
+
 makedocs(;
     modules=[NiLang],
     format=Documenter.HTML(),
