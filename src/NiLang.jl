@@ -23,4 +23,7 @@ include("stdlib/stdlib.jl")
 include("deprecations.jl")
 
 export AD
+
+project_relative_path(xs...) = normpath(joinpath(dirname(dirname(pathof(@__MODULE__))), xs...))
+
 end # module

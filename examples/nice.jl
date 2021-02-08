@@ -9,7 +9,7 @@ using DelimitedFiles
 using Plots
 
 # `include` the optimizer, you can find it under the `Adam.jl` file in the `examples/` folder.
-include("Adam.jl")
+include(NiLang.project_relative_path("examples", "Adam.jl"))
 
 
 # ## Model definition

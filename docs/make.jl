@@ -3,10 +3,15 @@ using SparseArrays
 
 using Literate
 tutorialpath = joinpath(@__DIR__, "src/examples")
-sourcepath = joinpath(@__DIR__, "../examples")
+sourcepath = joinpath(dirname(@__DIR__), "examples")
 for jlfile in ["besselj.jl", "sparse.jl", "sharedwrite.jl", "qr.jl", "port_zygote.jl", "fib.jl", "unitary.jl", "nice.jl", "realnvp.jl", "boxmuller.jl", "lognumber.jl", "pyramid.jl"]
     Literate.markdown(joinpath(sourcepath, jlfile), tutorialpath)
 end
+
+# Pluto pages
+import PlutoUtils;
+
+PlutoUtils.Export.github_action(; export_dir="notebooks", offer_binder=false, output_dir=joinpath("docs", "build", "notebooks"), generate_default_index=false)
 
 makedocs(;
     modules=[NiLang],
