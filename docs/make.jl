@@ -12,15 +12,9 @@ end
 import Pkg
 
 Pkg.add([
-#Pkg.PackageSpec(url="https://github.com/GiggleLiu/PlutoUtils.jl", rev="static-export"),
+Pkg.PackageSpec(url="https://github.com/GiggleLiu/PlutoUtils.jl", rev="static-export"),
 Pkg.PackageSpec(url="https://github.com/fonsp/Pluto.jl", rev="05e5b68"),
 ]);
-
-import PlutoUtils
-
-PlutoUtils.Export.github_action(; export_dir="notebooks", offer_binder=false, output_dir=joinpath(dirname(@__DIR__), "docs", "build", "notebooks"), generate_default_index=false)
-
-@show isdir("/home/leo/.julia/dev/NiLang/docs/build/notebooks")
 
 makedocs(;
     modules=[NiLang],
@@ -56,6 +50,11 @@ makedocs(;
     sitename="NiLang.jl",
     authors="JinGuo Liu, thautwarm",
 )
+
+import PlutoUtils
+
+PlutoUtils.Export.github_action(; export_dir="notebooks", offer_binder=false, output_dir=joinpath(dirname(@__DIR__), "docs", "build", "notebooks"), generate_default_index=false)
+
 
 deploydocs(;
     repo="github.com/GiggleLiu/NiLang.jl.git",
