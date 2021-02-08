@@ -174,7 +174,7 @@ function showmodel(x_data, model; nsamples=2000)
 end
 
 # you can find the training data in `examples/` folder
-x_data = Matrix(readdlm(joinpath(@__DIR__, "train.dat"))')
+x_data = Matrix(readdlm(NiLang.project_relative_path("examples", "train.dat"))')
 
 import Random; Random.seed!(22)
 model = random_nice_network(Float64, size(x_data, 1), 10, 4; scale=0.1)
