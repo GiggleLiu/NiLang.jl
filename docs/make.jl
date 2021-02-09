@@ -11,10 +11,10 @@ end
 # Pluto pages
 import Pkg
 
-#Pkg.add([
-#Pkg.PackageSpec(url="https://github.com/GiggleLiu/PlutoUtils.jl", rev="static-export"),
-#Pkg.PackageSpec(url="https://github.com/fonsp/Pluto.jl", rev="05e5b68"),
-#]);
+Pkg.add([
+Pkg.PackageSpec(url="https://github.com/GiggleLiu/PlutoUtils.jl", rev="static-export"),
+Pkg.PackageSpec(url="https://github.com/fonsp/Pluto.jl", rev="05e5b68"),
+]);
 
 makedocs(;
     modules=[NiLang],
