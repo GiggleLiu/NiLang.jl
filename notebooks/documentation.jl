@@ -599,6 +599,9 @@ title2("Compute-copy-uncompute statement")
 # ╔═╡ 84321198-93d4-4d22-8c0f-a5a10b884e1f
 md"The *compute-copy-uncompute* statement is a widely used design pattern in reversible programming. 
 We compute the forward pass for the result, then we copy the result to the output variable, and run the backward pass to erase intermediate results.
+
+
+
 For example, to compute `y = x * exp(k)`, we might write the following code"
 
 # ╔═╡ 32244789-afbf-4215-97cd-15483f438eee
@@ -716,8 +719,8 @@ end
 @benchmark exp_without_reversibility_check(0.0, 1.0) seconds=0.3
 
 # ╔═╡ Cell order:
-# ╠═2061b434-0ad1-46eb-a0c7-1a5f432bfa62
-# ╠═a4e76427-f051-4b29-915a-fdfce3a299bb
+# ╟─2061b434-0ad1-46eb-a0c7-1a5f432bfa62
+# ╟─a4e76427-f051-4b29-915a-fdfce3a299bb
 # ╟─c2c7b4d4-f8c9-4ebf-8da2-0103f03136e7
 # ╟─605872cf-f3fd-462e-a2b1-7d1c5ae45efd
 # ╟─fb3dee44-5fa9-4773-8b7f-a83c44358545
@@ -788,7 +791,7 @@ end
 # ╠═2ba68a0f-6e36-4ea2-a91d-6af43741bad1
 # ╠═75cebaf1-38de-475f-892e-346fd2b46f6f
 # ╟─72dcf2fe-eb48-4dee-8121-efafc87637e3
-# ╠═84321198-93d4-4d22-8c0f-a5a10b884e1f
+# ╟─84321198-93d4-4d22-8c0f-a5a10b884e1f
 # ╠═32244789-afbf-4215-97cd-15483f438eee
 # ╟─4b7f0baf-0316-4da7-9ded-50c064ddbaa3
 # ╠═0e02952c-7589-4606-b006-16a9f3e52ae1
