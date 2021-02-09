@@ -11,10 +11,10 @@ end
 # Pluto pages
 import Pkg
 
-Pkg.add([
-Pkg.PackageSpec(url="https://github.com/GiggleLiu/PlutoUtils.jl", rev="static-export"),
-Pkg.PackageSpec(url="https://github.com/fonsp/Pluto.jl", rev="05e5b68"),
-]);
+#Pkg.add([
+#Pkg.PackageSpec(url="https://github.com/GiggleLiu/PlutoUtils.jl", rev="static-export"),
+#Pkg.PackageSpec(url="https://github.com/fonsp/Pluto.jl", rev="05e5b68"),
+#]);
 
 makedocs(;
     modules=[NiLang],
@@ -53,7 +53,7 @@ makedocs(;
 
 import PlutoUtils
 
-PlutoUtils.Export.github_action(; export_dir="notebooks", offer_binder=false, output_dir=joinpath(dirname(@__DIR__), "docs", "build", "notebooks"), generate_default_index=false)
+PlutoUtils.Export.github_action(; export_dir="notebooks", offer_binder=false, output_dir=joinpath(dirname(@__DIR__), "docs", "build", "notebooks"), generate_default_index=false, project=@__DIR__)
 
 
 deploydocs(;
