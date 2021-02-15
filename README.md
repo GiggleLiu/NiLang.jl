@@ -17,7 +17,9 @@ NiLang features:
 [![Documentation](https://github.com/GiggleLiu/NiLang.jl/workflows/Documentation/badge.svg)](https://giggleliu.github.io/NiLang.jl/stable/)
 ![CI](https://github.com/GiggleLiu/NiLang.jl/workflows/CI/badge.svg)
 
-Start from our [Pluto notebook here](https://github.com/JuliaReverse/NiLangTutorial/).
+Start from our Pluto notebooks
+* [tutorial](https://github.com/JuliaReverse/NiLangTutorial/)
+* [documentation](https://giggleliu.github.io/NiLang.jl/dev/notebooks/documentation.html)
 
 > The strangeness of reversible computing is mainly due to
 > our lack of experience with it.—Henry Baker, 1992
