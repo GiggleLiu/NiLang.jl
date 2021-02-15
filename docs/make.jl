@@ -53,7 +53,7 @@ makedocs(;
 
 import PlutoUtils
 
-PlutoUtils.Export.github_action(; export_dir="notebooks", offer_binder=false, output_dir=joinpath(dirname(@__DIR__), "docs", "build", "notebooks"), generate_default_index=false, project=@__DIR__)
+PlutoUtils.Export.github_action(; notebook_dir=NiLang.project_relative_path("notebooks"), offer_binder=false, export_dir=NiLang.project_relative_path("docs", "build", "notebooks"), generate_default_index=false, project=@__DIR__)
 
 
 deploydocs(;
