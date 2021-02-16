@@ -17,7 +17,7 @@ NiLang features:
 [![Documentation](https://github.com/GiggleLiu/NiLang.jl/workflows/Documentation/badge.svg)](https://giggleliu.github.io/NiLang.jl/stable/)
 ![CI](https://github.com/GiggleLiu/NiLang.jl/workflows/CI/badge.svg)
 
-Start from our Pluto notebooks
+Please check our Pluto notebooks
 * [tutorial](https://github.com/JuliaReverse/NiLangTutorial/)
 * [documentation](https://giggleliu.github.io/NiLang.jl/dev/notebooks/documentation.html)
 
