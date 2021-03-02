@@ -2,10 +2,6 @@ using LogarithmicNumbers
 export gaussian_log, gaussian_nlog
 export ULogarithmic
 
-function NiLangCore.default_constructor(ln::Type{<:ULogarithmic}, x)
-	exp(ULogarithmic, x)
-end
-
 @i @inline function (:*=(identity))(x::ULogarithmic, y::ULogarithmic)
     x.log += y.log
 end
