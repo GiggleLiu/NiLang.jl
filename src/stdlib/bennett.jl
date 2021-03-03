@@ -27,6 +27,10 @@ end
     end
 end
 
+@i @inline function i_addto!(target, source)
+    target += source
+end
+
 @i function bennett(step, y::T, x::T, args...; k::Int, nsteps::Int, kwargs...) where T
     state ← Dict{Int, T}()
     state[1] ← zero(x)

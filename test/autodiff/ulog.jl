@@ -6,17 +6,17 @@ using NiLangCore: default_constructor
 
 @testset "ULogarithmic" begin
 	@test check_grad(PlusEq(gaussian_log), (1.0, 2.0); iloss=1)
-	function muleq(f, x, y, z)
-		x = default_constructor(ULogarithmic, x)
-		y = default_constructor(ULogarithmic, y)
-		z = default_constructor(ULogarithmic, z)
+	function muleq(f, x::T, y::T, z::T) where T
+        x = default_constructor(ULogarithmic{T}, x)
+        y = default_constructor(ULogarithmic{T}, y)
+        z = default_constructor(ULogarithmic{T}, z)
 		x *= f(y, z)
 		x.log
 	end
 	g1 = ForwardDiff.gradient(arr->muleq(+, arr...), [7.0, 5.0, 3.0])
-	x, y, z = default_constructor(ULogarithmic, 7.0),
-		default_constructor(ULogarithmic, 5.0),
-		default_constructor(ULogarithmic, 3.0)
+    x, y, z = default_constructor(ULogarithmic{Float64}, 7.0),
+    default_constructor(ULogarithmic{Float64}, 5.0),
+    default_constructor(ULogarithmic{Float64}, 3.0)
 	@instr (MulEq(+))(x, y, z)
 	@instr GVar(x)
 	@instr GVar(y)
@@ -28,9 +28,9 @@ using NiLangCore: default_constructor
 	@test grad(z.log) ≈ g1[3]
 
 	g2 = ForwardDiff.gradient(arr->muleq(-, arr...), [7.0, 5.0, 3.0])
-	x, y, z = default_constructor(ULogarithmic, 2.0),
-		default_constructor(ULogarithmic, 5.0),
-		default_constructor(ULogarithmic, 3.0)
+    x, y, z = default_constructor(ULogarithmic{Float64}, 2.0),
+    default_constructor(ULogarithmic{Float64}, 5.0),
+    default_constructor(ULogarithmic{Float64}, 3.0)
 	@instr (MulEq(-))(x, y, z)
 	@instr GVar(x)
 	@instr GVar(y)
