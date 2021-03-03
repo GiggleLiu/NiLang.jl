@@ -1,8 +1,11 @@
 ### A Pluto.jl notebook ###
-# v0.12.18
+# v0.12.20
 
 using Markdown
 using InteractiveUtils
+
+# ╔═╡ d941d6c2-55bf-11eb-0002-35c7474e4050
+using NiLang, Test
 
 # ╔═╡ 2061b434-0ad1-46eb-a0c7-1a5f432bfa62
 begin
@@ -27,10 +30,9 @@ $(html(right))
 	title2(str) = HTML("""<h4 id=$(replace(str, ' '=>'_'))>$str</h4>""")
 	titleref(str) = HTML("""<a href="#$(replace(str, ' '=>'_'))">$str</a>""")
 	using PlutoUI: TableOfContents
+	using Pkg
+	pkgversion(m::Module) = Pkg.TOML.parsefile(NiLang.project_relative_path("Project.toml"))["version"]
 end;
-
-# ╔═╡ d941d6c2-55bf-11eb-0002-35c7474e4050
-using NiLang, Test
 
 # ╔═╡ 8c2c4fa6-172f-4dde-a279-5d0aecfdbe46
 module M
@@ -75,6 +77,9 @@ function new_forward(x::GVar)
 end
 end
 
+# ╔═╡ 0e1ba158-a6bc-401c-9ba7-ed78020ad068
+using Base.Threads
+
 # ╔═╡ 3199a048-7b39-40f8-8183-6a54cccd91b6
 using BenchmarkTools
 
@@ -110,7 +115,7 @@ h6.example::before {
 """
 
 # ╔═╡ c2c7b4d4-f8c9-4ebf-8da2-0103f03136e7
-md"# NiLang's Documentation (v0.8.0)
+md"# NiLang's (v$(pkgversion(NiLang))) Documentation
 
 NiLang is a embeded domain specific language (eDSL) in Julia, so one need to install [Julia](https://julialang.org/) first. Before reading this documentation, you need to know basic Julia grammar, and how to install and use packages.
 Also, it might be good to read the [README](https://github.com/GiggleLiu/NiLang.jl) first. In this tutorial, we focus on
@@ -275,6 +280,9 @@ end
 
 # ╔═╡ 10d85a50-f2f9-403e-8f6c-baef61cf702a
 f2c(0.0, 3.0)
+
+# ╔═╡ b52648bf-a28a-48af-8912-31729d943ce0
+md"Shared read-write issue is more tricky when one uses NiLang to write kernel function in a parallel program (multi-threading, MPI and CUDA). See $(titleref(\"Multi-threading and CUDA\")) for details."
 
 # ╔═╡ f3503e6d-ded7-4797-9c2f-cb5a7d429949
 md"#### Manipulating allocations on stack and dictionary"
@@ -826,6 +834,35 @@ end
 # ╔═╡ 95060588-f24b-4eeb-9b0b-ed7159962a3c
 @test rfib(0, 6)[1] == 8
 
+# ╔═╡ 91f8cfc6-e261-4945-8506-eed8caa607c2
+title1("Multi-threading and CUDA")
+
+# ╔═╡ c82b3b5c-c4e2-4bf6-b4ec-0d05ba9a669b
+@i function f8a(y::Vector, x::Vector)
+	# check the size of `x` and `y`. `@assert` is not a valid statement in NiLang, so one should decorate it with `@safe` to tell the compiler, doing this is safe, do not check this statement.
+	@safe @assert length(x) == length(y)
+	@threads for i=1:length(y)
+		y[i] += exp(x[i])
+	end
+end; @test f8a(zeros(3), [1.0, 2.0, 3.0])[1] ≈ [exp(1.0), exp(2.0), exp(3.0)]
+
+# ╔═╡ 8c93a773-edc0-4ec2-88ef-1b58b7deddc5
+title2("Shared read-write in parallel computing and autodiff")
+
+# ╔═╡ 16d08950-0575-4a4b-afc8-11ddca3198c7
+md"Let's take a look at a correct prallel code that compute `exp(x)` and broadcast it to the output."
+
+# ╔═╡ 7c594d19-59fc-433a-bffa-c63bad46869e
+@i function f8c(y::Vector, x::Real, z::Vector)
+	@safe @assert length(z) == length(y)
+	@threads for i=1:length(y)
+		y[i] += x * z[i]
+	end
+end; @test f8c(zeros(3), 2.0, [1.0, 2.0, 3.0])[1] ≈ [2.0, 4.0, 6.0]
+
+# ╔═╡ 24421e48-a5fa-464e-b4ea-b55dabc7c6f7
+
+
 # ╔═╡ a7d47e83-7f44-49d0-a43d-e01316fc6eba
 title1("Performance Tips")
 
@@ -889,6 +926,9 @@ end
 # ╔═╡ 95c55847-0591-4f7f-b9a1-aa974ccfef69
 @benchmark exp_without_reversibility_check(0.0, 1.0) seconds=0.3
 
+# ╔═╡ f80353d6-0dfe-4b0a-a1af-655d344473bf
+title1("Resources and libraries")
+
 # ╔═╡ 7ce31932-0447-4445-99aa-7ebced7d0bad
 TableOfContents()
 
@@ -924,6 +964,7 @@ TableOfContents()
 # ╟─34063cd0-171e-46ce-80dd-52a341fa50a1
 # ╠═5d5d01db-8ff9-434c-8771-1fec6393e1fb
 # ╠═10d85a50-f2f9-403e-8f6c-baef61cf702a
+# ╟─b52648bf-a28a-48af-8912-31729d943ce0
 # ╟─f3503e6d-ded7-4797-9c2f-cb5a7d429949
 # ╟─7ba86798-daba-49ef-a259-da4db353fdd8
 # ╠═6e88ede9-879e-42e9-9a7e-2aa3d4837e5d
@@ -1010,6 +1051,13 @@ TableOfContents()
 # ╟─19bb2af5-2a67-453d-82b0-7d3059b1fa47
 # ╠═5b5858bf-63ac-4e31-a516-055a9cd18ffe
 # ╠═95060588-f24b-4eeb-9b0b-ed7159962a3c
+# ╟─91f8cfc6-e261-4945-8506-eed8caa607c2
+# ╠═0e1ba158-a6bc-401c-9ba7-ed78020ad068
+# ╠═c82b3b5c-c4e2-4bf6-b4ec-0d05ba9a669b
+# ╟─8c93a773-edc0-4ec2-88ef-1b58b7deddc5
+# ╠═16d08950-0575-4a4b-afc8-11ddca3198c7
+# ╠═7c594d19-59fc-433a-bffa-c63bad46869e
+# ╠═24421e48-a5fa-464e-b4ea-b55dabc7c6f7
 # ╟─a7d47e83-7f44-49d0-a43d-e01316fc6eba
 # ╟─45985244-adbf-4d6d-9732-a963cca62212
 # ╟─83d7e75f-7273-4c6a-bec1-a2180ebc3fb9
@@ -1020,4 +1068,5 @@ TableOfContents()
 # ╠═ac53eac0-1a59-4407-8bf6-3d8b966a9bff
 # ╠═85c8ac7b-54f5-47dc-bd50-e78ffd6cf1cf
 # ╠═95c55847-0591-4f7f-b9a1-aa974ccfef69
+# ╟─f80353d6-0dfe-4b0a-a1af-655d344473bf
 # ╟─7ce31932-0447-4445-99aa-7ebced7d0bad
