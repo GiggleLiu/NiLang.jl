@@ -25,6 +25,9 @@ html"""<div align="center"><a target="_blank" href="https://raw.githubuserconten
 # ╔═╡ 66e972c2-7ca2-11eb-0a7a-a9305dd20511
 md"# BBMCA - NiLang implementation"
 
+# ╔═╡ c8722cea-7ca5-11eb-3e7d-0f39322ea40a
+md"Check [Physics-like models of computation](https://www.sciencedirect.com/science/article/abs/pii/0167278984902525) (Norman Margolus, 1984) for theories about Billiard ball celluar automata (BBMCA)."
+
 # ╔═╡ 845d1458-7ca2-11eb-0e69-11a10b9894a8
 @i function load_and_clear!(x, config, i, j)
 	m, n ← size(config)
@@ -134,6 +137,7 @@ end
 # ╔═╡ Cell order:
 # ╟─f42405a8-7ca2-11eb-133b-df4f1ce9bb19
 # ╟─66e972c2-7ca2-11eb-0a7a-a9305dd20511
+# ╟─c8722cea-7ca5-11eb-3e7d-0f39322ea40a
 # ╠═845b7d0a-7ca2-11eb-2683-cd370811bf68
 # ╠═845c1292-7ca2-11eb-3e56-996aa5229b4e
 # ╠═845d1458-7ca2-11eb-0e69-11a10b9894a8
