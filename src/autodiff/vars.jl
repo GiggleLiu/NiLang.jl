@@ -85,7 +85,8 @@ end
 grad(gv::T) where T<:Real = zero(T)
 grad(gv::AbstractArray{T}) where T = grad.(gv)
 grad(gv::Function) = 0
-grad(gv::String) = 0
+grad(gv::String) = ""
+grad(t::Tuple) = grad.(t)
 chfield(x::T, ::typeof(grad), g::T) where T = (@invcheck iszero(g) || g≈0; x)
 chfield(x::GVar, ::typeof(grad), g::GVar) where T = GVar(x.x, g)
 chfield(x::Complex{<:GVar}, ::typeof(grad), g::Complex) where T = Complex(GVar(value(x.re), g.re), GVar(value(x.im), g.im))
