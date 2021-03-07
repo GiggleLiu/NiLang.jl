@@ -11,6 +11,9 @@ Attach a gradient field to `x`.
     function GVar{T,GT}(x::T, g::GT) where {T,GT}
         new{T,GT}(x, g)
     end
+    function GVar(x::T, g::T) where T<:Real
+        new{T,T}(x, g)
+    end
     function GVar{T,GT}(x::T) where {T, GT}
         new{T,GT}(x, zero(GT))
     end
@@ -43,6 +46,11 @@ end
 @generated function GVar(x::T) where T
     quote
         $(getfield(T.name.module, nameof(T)))($([:(GVar(getfield(x, $(QuoteNode(NAME))))) for NAME in fieldnames(T)]...))
+    end
+end
+@generated function GVar(x::T, g::T) where T
+    quote
+        $(getfield(T.name.module, nameof(T)))($([:(GVar(getfield(x, $(QuoteNode(NAME))), getfield(g, $(QuoteNode(NAME))))) for NAME in fieldnames(T)]...))
     end
 end
 @generated function (_::Type{Inv{GVar}})(x::T) where T
