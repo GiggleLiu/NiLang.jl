@@ -4,8 +4,9 @@
     GVar(x)
 
 Attach a gradient field to `x`.
+The gradient type `GT` can be a `GVar` for storing second order gradients, the `AutoBcast` type for broadcasting or the same type of `x`.
 """
-@i struct GVar{T,GT} <: IWrapper{T}
+struct GVar{T,GT} <: IWrapper{T}
     x::T
     g::GT
     function GVar{T,GT}(x::T, g::GT) where {T,GT}
@@ -20,50 +21,63 @@ Attach a gradient field to `x`.
     function GVar(x::T, g::GT) where {T,GT}
         new{T,GT}(x, g)
     end
-    @i function GVar(x::Integer)
-    end
-    @i function GVar(x::Bool)
-    end
-    @i function GVar(x::Function)
-    end
-    @i function GVar(x::Tuple)
-        GVar.(x)
-    end
-    @i function GVar(x::NoGrad)
-        (~NoGrad)(x)
-    end
 end
 
-function GVar(x::T) where T<:Real
-    GVar(x, zero(x))
+# `GVar` and `~GVar` on composite types
+@generated function GVar(x::Type{T}) where T
+    :($(getfield(T.name.module, nameof(T))){$(GVar.(T.parameters)...)})
 end
-
-function (_::Type{Inv{GVar}})(x::GVar{T}) where T<:Real
-    @invcheck x.g zero(x.x)
-    x.x
+@generated function (_::Type{Inv{GVar}})(x::Type{T}) where T
+    :($(getfield(T.name.module, nameof(T))){$((~GVar).(T.parameters)...)})
 end
-
+# `GVar` and `~GVar` on composite vars
 @generated function GVar(x::T) where T
-    quote
-        $(getfield(T.name.module, nameof(T)))($([:(GVar(getfield(x, $(QuoteNode(NAME))))) for NAME in fieldnames(T)]...))
-    end
+    Expr(:new, GVar(T), [:(GVar(x.$NAME)) for NAME in fieldnames(T)]...)
 end
 @generated function GVar(x::T, g::T) where T
-    quote
-        $(getfield(T.name.module, nameof(T)))($([:(GVar(getfield(x, $(QuoteNode(NAME))), getfield(g, $(QuoteNode(NAME))))) for NAME in fieldnames(T)]...))
-    end
+    Expr(:new, GVar{T,T}, [:(GVar(x.$NAME, g.$NAME)) for NAME in fieldnames(T)]...)
 end
 @generated function (_::Type{Inv{GVar}})(x::T) where T
-    quote
-        $(getfield(T.name.module, nameof(T)))($([:((~GVar)(getfield(x, $(QuoteNode(NAME))))) for NAME in fieldnames(T)]...))
+    Expr(:new, (~GVar)(T), [:((~GVar)(x.$NAME)) for NAME in fieldnames(T)]...)
+end
+
+for T in [:Real]
+    ## differentiable elementary types
+    @eval GVar(::Type{ET}) where ET<:$T = GVar{ET,ET}
+    @eval (_::Type{Inv{GVar}})(::Type{GVar{ET,GT}}) where {ET<:$T,GT} = ET
+
+    ## differentiable elementary vars
+    @eval GVar(x::$T) = GVar(x, zero(x))
+    @eval @inline function (_::Type{Inv{GVar}})(x::GVar{<:$T})
+        @invcheck x.g zero(x.x)
+        x.x
     end
 end
+
+for T in [:Integer, :Bool, :Function, :String, :Char, :Nothing]
+    ## non-differentiable elementary types
+    @eval GVar(::Type{ET}) where ET<:$T = ET
+    @eval (_::Type{Inv{GVar}})(::Type{ET}) where ET<:$T = ET
+
+    ## non-differentiable elementary vars
+    @eval GVar(x::$T) = x
+    @eval (_::Type{Inv{GVar}})(x::$T) = x
+end
+
+for T in [:Tuple, :AbstractArray]
+    ## broadcastable elementary types
+    @eval GVar(x::$T) = GVar.(x)
+    @eval GVar(x::$T, y::$T) = GVar.(x, y)
+    @eval (_::Type{Inv{GVar}})(x::$T) = (~GVar).(x)
+end
+
+# no gradient wrapper
+GVar(x::NoGrad) = (~NoGrad)(x)
+
+# define on complex numbers to fix ambiguity errors
 GVar(x::Complex) = Complex(GVar(x.re), GVar(x.im))
 GVar(x::Complex, y::Complex) = Complex(GVar(x.re, y.re), GVar(x.im, y.im))
 (_::Type{Inv{GVar}})(x::Complex) = Complex((~GVar)(x.re), (~GVar)(x.im))
-GVar(x::AbstractArray) = GVar.(x)
-GVar(x::AbstractArray, y::AbstractArray) = GVar.(x, y)
-(_::Type{Inv{GVar}})(x::AbstractArray) = (~GVar).(x)
 
 Base.copy(b::GVar) = GVar(b.x, copy(b.g))
 Base.zero(x::GVar) = GVar(Base.zero(x.x), Base.zero(x.g))
@@ -86,9 +100,7 @@ chfield(x::GVar, ::typeof(value), xval::GVar) = GVar(xval, x.g)
 
 @generated function grad(x::T) where T
     isprimitivetype(T) && throw("not supported type to obtain gradients: $T.")
-    quote
-        $(getfield(T.name.module, nameof(T)))($([:(grad(getfield(x, $(QuoteNode(NAME))))) for NAME in fieldnames(T)]...))
-    end
+    Expr(:new, (~GVar)(T), [:(grad(x.$NAME)) for NAME in fieldnames(T)]...)
 end
 grad(gv::T) where T<:Real = zero(T)
 grad(gv::AbstractArray{T}) where T = grad.(gv)
@@ -96,8 +108,8 @@ grad(gv::Function) = 0
 grad(gv::String) = ""
 grad(t::Tuple) = grad.(t)
 chfield(x::T, ::typeof(grad), g::T) where T = (@invcheck iszero(g) || g≈0; x)
-chfield(x::GVar, ::typeof(grad), g::GVar) where T = GVar(x.x, g)
-chfield(x::Complex{<:GVar}, ::typeof(grad), g::Complex) where T = Complex(GVar(value(x.re), g.re), GVar(value(x.im), g.im))
+chfield(x::GVar, ::typeof(grad), g::GVar) = GVar(x.x, g)
+chfield(x::Complex{<:GVar}, ::typeof(grad), g::Complex) = Complex(GVar(value(x.re), g.re), GVar(value(x.im), g.im))
 
 # NOTE: superwarning: check value only to make ancilla gradient descardable.
 NiLangCore.deanc(x::GVar, val::GVar) = NiLangCore.deanc(value(x), value(val))
