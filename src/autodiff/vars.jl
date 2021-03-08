@@ -27,6 +27,9 @@ end
 @generated function GVar(x::Type{T}) where T
     :($(getfield(T.name.module, nameof(T))){$(GVar.(T.parameters)...)})
 end
+@generated function GVar(x::Type{T}, y::Type{T}) where T
+    :($(getfield(T.name.module, nameof(T))){$(GVar.(T.parameters, T.parameters)...)})
+end
 @generated function (_::Type{Inv{GVar}})(x::Type{T}) where T
     :($(getfield(T.name.module, nameof(T))){$((~GVar).(T.parameters)...)})
 end
@@ -35,7 +38,7 @@ end
     Expr(:new, GVar(T), [:(GVar(x.$NAME)) for NAME in fieldnames(T)]...)
 end
 @generated function GVar(x::T, g::T) where T
-    Expr(:new, GVar{T,T}, [:(GVar(x.$NAME, g.$NAME)) for NAME in fieldnames(T)]...)
+    Expr(:new, GVar(T, T), [:(GVar(x.$NAME, g.$NAME)) for NAME in fieldnames(T)]...)
 end
 @generated function (_::Type{Inv{GVar}})(x::T) where T
     Expr(:new, (~GVar)(T), [:((~GVar)(x.$NAME)) for NAME in fieldnames(T)]...)
@@ -44,6 +47,7 @@ end
 for T in [:Real]
     ## differentiable elementary types
     @eval GVar(::Type{ET}) where ET<:$T = GVar{ET,ET}
+    @eval GVar(::Type{ET}, ::Type{ET}) where ET<:$T = GVar{ET,ET}
     @eval (_::Type{Inv{GVar}})(::Type{GVar{ET,GT}}) where {ET<:$T,GT} = ET
 
     ## differentiable elementary vars
@@ -57,6 +61,7 @@ end
 for T in [:Integer, :Bool, :Function, :String, :Char, :Nothing]
     ## non-differentiable elementary types
     @eval GVar(::Type{ET}) where ET<:$T = ET
+    @eval GVar(::Type{ET}, ::Type{ET}) where ET<:$T = GVar{ET,ET}
     @eval (_::Type{Inv{GVar}})(::Type{ET}) where ET<:$T = ET
 
     ## non-differentiable elementary vars
