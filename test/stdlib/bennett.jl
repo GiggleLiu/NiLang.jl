@@ -27,17 +27,29 @@ using NiLang, NiLang.AD
     x[n÷2] = 1
     #state = Dict{Int,Vector{FT}}()
     k = 4
-    nsteps = 100
-    x_last = NiLang.direct_emulate(step!, FT.(x); nsteps=nsteps, α=α, h=h, dt=dt)
-    _, x_last_b, _ = bennett(step!, zero(FT.(x)), FT.(x); k=k, nsteps=nsteps, α=α, h=h, dt=dt)
+    N = 100
+    x_last = NiLang.direct_emulate(step!, FT.(x); N=N, α=α, h=h, dt=dt)
+    log1 = NiLang.BennettLog()
+    log2 = NiLang.BennettLog()
+    _, x_last_b, _ = bennett(step!, zero(FT.(x)), FT.(x); k=k, N=N, α=α, h=h, dt=dt, logger=log1)
+    _, x_last_b2 = bennett!(step!, Dict(1=>FT.(x)); k=k, N=N, α=α, h=h, dt=dt, logger=log2)
     @test sum(x_last_b) ≈ 1
     @test x_last ≈ x_last_b
+    @test x_last ≈ x_last_b2[N+1]
+    @test length(log1.fcalls) > length(log2.fcalls)
+    @test length(log1.fcalls) < 2*length(log2.fcalls)
 
     @i function loss(out, step, y, x; kwargs...)
         bennett((@skip! step), y, x; kwargs...)
         out += y[n÷2]
     end
-    _, _, _, gx = NiLang.AD.gradient(loss, (0.0, step!, zero(x), copy(x)); iloss=1, k=k, nsteps=nsteps, α=α, h=h, dt=dt)
-    x_last_2 = NiLang.direct_emulate(step!, (x2=copy(x); x2[n÷2]+=1e-5; FT.(x2)); nsteps=nsteps, α=α, h=h, dt=dt)
+    @i function loss2(out, step, d; N, kwargs...)
+        bennett!((@skip! step), d; N, kwargs...)
+        out += d[N+1][n÷2]
+    end
+    _, _, _, gx = NiLang.AD.gradient(loss, (0.0, step!, zero(x), copy(x)); iloss=1, k=k, N=N, α=α, h=h, dt=dt)
+    _, _, gx2 = NiLang.AD.gradient(loss2, (0.0, step!, Dict(1=>copy(x))); iloss=1, k=k, N=N, α=α, h=h, dt=dt)
+    x_last_2 = NiLang.direct_emulate(step!, (x2=copy(x); x2[n÷2]+=1e-5; FT.(x2)); N=N, α=α, h=h, dt=dt)
     @test gx[n÷2] ≈ (x_last_2 - x_last)[n÷2]/1e-5
+    @test gx2[1][n÷2] ≈ (x_last_2 - x_last)[n÷2]/1e-5
 end
