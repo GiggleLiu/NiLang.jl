@@ -81,8 +81,8 @@ end
     @invcheckoff if len == 1
         state[base+1] ← zero(state[base])
         @safe logger.peak_mem[] = max(logger.peak_mem[], length(state))
-        step(state[base+1], state[base], args...; kwargs...)
-        logfcall(logger, (@const base+1), step)
+        getf(step, base)(state[base+1], state[base], args...; kwargs...)
+        logfcall(logger, (@const base+1), (@const getf(step, base)))
     else
         @routine begin
             @zeros Int nstep n
@@ -100,3 +100,6 @@ end
         ~@routine
     end
 end
+
+getf(f, i::Int) = f
+getf(f::AbstractArray, i::Int) = f[i]

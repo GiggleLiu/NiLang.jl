@@ -31,13 +31,17 @@ using NiLang, NiLang.AD
     x_last = NiLang.direct_emulate(step!, FT.(x); N=N, α=α, h=h, dt=dt)
     log1 = NiLang.BennettLog()
     log2 = NiLang.BennettLog()
+    log3 = NiLang.BennettLog()
     _, x_last_b, _ = bennett(step!, zero(FT.(x)), FT.(x); k=k, N=N, α=α, h=h, dt=dt, logger=log1)
     _, x_last_b2 = bennett!(step!, Dict(1=>FT.(x)); k=k, N=N, α=α, h=h, dt=dt, logger=log2)
+    _, x_last_b3 = bennett!([step! for _=1:100], Dict(1=>FT.(x)); k=k, N=N, α=α, h=h, dt=dt, logger=log3)
     @test sum(x_last_b) ≈ 1
     @test x_last ≈ x_last_b
     @test x_last ≈ x_last_b2[N+1]
+    @test x_last ≈ x_last_b3[N+1]
     @test length(log1.fcalls) > length(log2.fcalls)
     @test length(log1.fcalls) < 2*length(log2.fcalls)
+    @test length(log3.fcalls) == length(log2.fcalls)
 
     @i function loss(out, step, y, x; kwargs...)
         bennett((@skip! step), y, x; kwargs...)
