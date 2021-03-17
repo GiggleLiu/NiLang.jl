@@ -40,11 +40,6 @@ end
 @generated function GVar(x::T, g::T) where T
     Expr(:new, GVar(T, T), [:(GVar(x.$NAME, g.$NAME)) for NAME in fieldnames(T)]...)
 end
-@generated function GVar(x::T, g::T) where T
-    quote
-        $(getfield(T.name.module, nameof(T)))($([:(GVar(getfield(x, $(QuoteNode(NAME))), getfield(g, $(QuoteNode(NAME))))) for NAME in fieldnames(T)]...))
-    end
-end
 @generated function (_::Type{Inv{GVar}})(x::T) where T
     Expr(:new, (~GVar)(T), [:((~GVar)(x.$NAME)) for NAME in fieldnames(T)]...)
 end

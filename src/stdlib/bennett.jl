@@ -31,6 +31,14 @@ end
 
 @dual logfcall ilogfcall
 
+Base.show(io::IO, ::MIME"text/plain", logger::BennettLog) = Base.show(io, logger)
+function Base.show(io::IO, logger::BennettLog)
+    nreverse = count(x->x[3] isa Inv, logger.fcalls)
+    print(io, """Bennett log
+| peak memory usage = $(logger.peak_mem[])
+| number of function forward/backward calls = $(length(logger.fcalls)-nreverse)/$nreverse""")
+end
+
 """
     bennett(step, y, x, args...; k, N, logger=BennettLog(), kwargs...)
 
