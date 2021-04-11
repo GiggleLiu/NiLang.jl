@@ -21,7 +21,7 @@ end
 
 @testset "assign" begin
     arg = (1,2,GVar(3.0))
-    @assign (arg |> tget(3)).g 4.0
+    @assign (arg.:3).g 4.0
     @test arg[3].g == 4.0
     gv = GVar(1.0, GVar(0.0))
     @test gv.g.g === 0.0
@@ -31,7 +31,7 @@ end
     @assign gv |> grad |> grad 0.0
     @test gv.g.g === 0.0
     args = (GVar(0.0, 1.0),)
-    @assign (args |> tget(1) |> grad) 0.0
+    @assign (args.:1 |> grad) 0.0
     @test args[1].g == 0.0
     arr = [1.0]
     arr0 = arr

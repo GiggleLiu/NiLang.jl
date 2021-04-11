@@ -5,11 +5,11 @@ const GLOBAL_STACK = []
 ############# global stack operations ##########
 @inline function PUSH!(x)
     push!(GLOBAL_STACK, x)
-    cleared(x)
+    _zero(x)
 end
 
 @inline function POP!(x::T) where T
-    @invcheck x cleared(x)
+    @invcheck x _zero(x)
     loaddata(T, pop!(GLOBAL_STACK))
 end
 
@@ -19,23 +19,19 @@ UNSAFE_PUSH!(args...) = PUSH!(args...)
 end
 
 ############# local stack operations ##########
-@inline function PUSH!(stack, x)
+@inline function PUSH!(stack, x::T) where T
     push!(stack, x)
-    stack, cleared(x)
+    stack, _zero(T)
 end
 
 @inline function POP!(stack, x::T) where T
-    @invcheck x cleared(x)
+    @invcheck x _zero(T)
     stack, loaddata(T, pop!(stack))
 end
 
 @inline function UNSAFE_POP!(stack, x::T) where T
     stack, loaddata(T, pop!(stack))
 end
-
-cleared(x) = zero(x)
-cleared(x::AbstractArray{T,N}) where {T,N} = similar(x, zeros(Int, N)...)
-cleared(x::AbstractVector{T}) where {T} = empty(x)
 
 loaddata(::Type{T}, x::T) where T = x
 

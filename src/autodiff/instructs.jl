@@ -334,8 +334,8 @@ end
         (s, c) += sincos(x.x)
     end
     (out! .|> value) -= (s, c)
-    x.g += (out! |> tget(1) |> grad) * c
-    x.g -= (out! |> tget(2) |> grad) * s
+    x.g += (out!.:1 |> grad) * c
+    x.g -= (out!.:2 |> grad) * s
     ~@routine
 end
 

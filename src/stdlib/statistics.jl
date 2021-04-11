@@ -1,4 +1,5 @@
 export i_mean_sum, i_var_mean_sum, i_normal_logpdf, i_cor_cov
+export VarianceInfo
 
 """
     i_mean_sum(out!, sum!, x)
@@ -12,19 +13,34 @@ get the `mean` and `sum` of `x`.
     out! += sum!/(@const length(x))
 end
 
+struct VarianceInfo{T}
+    variance::T
+    variance_accumulated::T
+    mean::T
+    sum::T
+end
+
+function VarianceInfo(::Type{T}) where T
+    VarianceInfo(zero(T), zero(T), zero(T), zero(T))
+end
+
 """
-    i_var_mean_sum(var!, varsum!, mean!, sum!, sqv)
+    i_var_mean_sum(varinfo, sqv)
 
 Compute the variance, the accumulated variance, mean and sum.
+`varinfo` is the `VarianceInfo` object to store outputs.
 """
-@i function i_var_mean_sum(var!, varsum!, mean!, sum!, v::AbstractVector{T}) where T
-    i_mean_sum(mean!, sum!, v)
+@i function i_var_mean_sum(varinfo::VarianceInfo{T}, v::AbstractVector{T}) where T
+    i_mean_sum(varinfo.mean, varinfo.sum, v)
     for i=1:length(v)
-        v[i] -= mean!
-        varsum! += v[i] ^ 2
-        v[i] += mean!
+        @routine @invcheckoff begin
+            x ← zero(T)
+            x += v[i] - varinfo.mean
+        end
+        varinfo.variance_accumulated += x ^ 2
+        ~@routine
     end
-    var! += varsum! / (@const length(v)-1)
+    varinfo.variance += varinfo.variance_accumulated / (@const length(v)-1)
 end
 
 """
@@ -59,18 +75,19 @@ get Pearson correlation and covariance of two vectors `a` and `b`
 @i function i_cor_cov(rho!::T, cov!::T, a::AbstractVector{T}, b::AbstractVector{T}) where T
     @safe @assert length(a) == length(b)
     @routine  @invcheckoff begin
-        @zeros T var1 varsum1 mean1 sum1 std1
-        i_var_mean_sum(var1, varsum1, mean1, sum1, a)
-        std1 += sqrt(var1)
-        @zeros T var2 varsum2 mean2 sum2 std2
-        i_var_mean_sum(var2, varsum2, mean2, sum2, b)
-        std2 += sqrt(var2)
+        @zeros T std1 std2
+        info1 ← _zero(VarianceInfo{T})
+        i_var_mean_sum(info1, a)
+        std1 += sqrt(info1.variance)
+        info2 ← _zero(VarianceInfo{T})
+        i_var_mean_sum(info2, b)
+        std2 += sqrt(info2.variance)
         @zeros T anc5 anc6 anc7
         @inbounds for i=1:length(b)
             @routine begin
                 @zeros T anc3 anc4
-                anc3 += a[i] - mean1
-                anc4 += b[i] - mean2
+                anc3 += a[i] - info1.mean
+                anc4 += b[i] - info2.mean
             end
             anc5 += anc3 * anc4
             ~@routine
