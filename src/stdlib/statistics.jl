@@ -26,22 +26,27 @@ end
 
 """
     i_var_mean_sum(varinfo, sqv)
+    i_var_mean_sum(var!, varsum!, mean!, sum!, v)
 
 Compute the variance, the accumulated variance, mean and sum.
 `varinfo` is the `VarianceInfo` object to store outputs.
 """
 @i function i_var_mean_sum(varinfo::VarianceInfo{T}, v::AbstractVector{T}) where T
-    i_mean_sum(varinfo.mean, varinfo.sum, v)
-    for i=1:length(v)
+    i_var_mean_sum(varinfo.variance, varinfo.variance_accumulated, varinfo.mean, varinfo.sum, v)
+end
+
+@i function i_var_mean_sum(var!, varsum!, mean!, sum!, v::AbstractVector{T}) where T
+    i_mean_sum(mean!, sum!, v)
+     for i=1:length(v)
         @routine @invcheckoff begin
             x ← zero(T)
-            x += v[i] - varinfo.mean
+            x += v[i] - mean!
         end
-        varinfo.variance_accumulated += x ^ 2
+        varsum! += x ^ 2
         ~@routine
-    end
-    varinfo.variance += varinfo.variance_accumulated / (@const length(v)-1)
-end
+     end
+    var! += varsum! / (@const length(v)-1)
+ end
 
 """
     i_normal_logpdf(out, x, μ, σ)
