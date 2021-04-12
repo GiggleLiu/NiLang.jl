@@ -11,21 +11,30 @@ using NiLang, NiLang.AD
 using FixedPointNumbers
 
 @i function i_power(y::T, x::T, n::Int) where T
-    @routine begin
-        lx ← one(ULogarithmic{T})
-        ly ← one(ULogarithmic{T})
-        ## convert `x` to a logarithmic number
-        ## Here, `*=` is reversible for log numbers
-        lx *= convert(x)
-        for i=1:n
-            ly *= lx
+    if !iszero(x)
+        @routine begin
+            lx ← one(ULogarithmic{T})
+            ly ← one(ULogarithmic{T})
+            ## convert `x` to a logarithmic number
+            ## Here, `*=` is reversible for log numbers
+            if x > 0
+                lx *= convert(x)
+            else
+                lx *= convert(-x)
+            end
+            for i=1:n
+                ly *= lx
+            end
         end
+
+        ## convert back to fixed point numbers
+        y += convert(ly)
+        if x < 0 && n%2 == 1
+            NEG(y)
+        end
+
+        ~@routine
     end
-
-    ## convert back to fixed point numbers
-    y += convert(ly)
-
-    ~@routine
 end
 
 # To check the function

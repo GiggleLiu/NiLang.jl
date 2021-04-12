@@ -7,10 +7,11 @@ using Distributions
     x = randn(100)
     y = randn(100)
     @test i_mean_sum(0.0, 0.0, x)[1] ≈ Statistics.mean(x)
-    @test all(i_var_mean_sum(0.0, 0.0, 0.0, 0.0, copy(x)) .≈ (Statistics.var(x), Statistics.var(x)*99, Statistics.mean(x), sum(x), x))
-    @test all(isapprox.((~i_var_mean_sum)(i_var_mean_sum(0.0, 0.0, 0.0, 0.0, copy(x))...), (0.0, 0.0, 0.0, 0.0, x), atol=1e-8))
-    @test all(i_cor_cov(0.0, 0.0, copy(x), copy(y)) .≈ (Statistics.cor(x,y), Statistics.cov(x,y), x, y))
-    @test all(isapprox.((~i_cor_cov)(i_cor_cov(0.0, 0.0, copy(x), copy(y))...), (0.0, 0.0, x, y), atol=1e-8))
+    info = VarianceInfo(Float64)
+    @test almost_same(i_var_mean_sum(info, copy(x))[1], VarianceInfo(Statistics.var(x), Statistics.var(x)*99, Statistics.mean(x), sum(x)))
+    @test almost_same((~i_var_mean_sum)(i_var_mean_sum(info, copy(x))...), (info, x))
+    @test almost_same(i_cor_cov(0.0, 0.0, copy(x), copy(y)), (Statistics.cor(x,y), Statistics.cov(x,y), x, y))
+    @test almost_same((~i_cor_cov)(i_cor_cov(0.0, 0.0, copy(x), copy(y))...), (0.0, 0.0, x, y))
 end
 
 @testset "normal log pdf" begin

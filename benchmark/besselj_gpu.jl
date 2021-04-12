@@ -110,7 +110,7 @@ end
 
 @i function ibesselj(out!::CuVector, ν, z::CuVector; atol=1e-8)
    XY ← GPUArrays.thread_blocks_heuristic(length(out!))
-   @cuda threads=tget(XY,1) blocks=tget(XY,2) ibesselj_kernel(out!, ν, z, atol)
+   @cuda threads=XY.:1 blocks=XY.:2 ibesselj_kernel(out!, ν, z, atol)
    @invcheckoff XY → GPUArrays.thread_blocks_heuristic(length(out!))
 end
 
