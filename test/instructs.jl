@@ -81,8 +81,6 @@ end
     @test x === Int32(3)
     @instr DEC(x)
     @test x === Int32(2)
-    @instr (x,) |> INC |> DEC |> DEC
-    @test x === Int32(1)
 end
 
 @testset "HADAMARD" begin

@@ -54,7 +54,7 @@ end
     newargs[iloss] = :(GVar($newres[$iloss], one($newres[$iloss])))
     quote
         $newres = f(args...; kwargs...)
-        grad.(NiLangCore.wrap_tuple((~f)($(newargs...); kwargs...)))
+        grad((~f)($(newargs...); kwargs...))
     end
 end
 

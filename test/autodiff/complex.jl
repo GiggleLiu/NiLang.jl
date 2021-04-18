@@ -35,7 +35,8 @@ end
             (opm(identity), (x,y)), (opm(+), (x, y, z)),
             (opm(-), (x, y, z)), (opm(*), (x, y, z)),
             (opm(/), (x, y, z)), (opm(^), (x, y, r)),
-            (opm(exp), (x, y)), (opm(log), (x, y))
+            (opm(exp), (x, y)), (opm(log), (x, y)),
+            (opm(inv), (x, y))
             ]
             @test ccheck_grad(subop, args; verbose=true, iloss=1)
             r1 = subop(args...)

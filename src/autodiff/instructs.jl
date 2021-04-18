@@ -27,6 +27,19 @@ end
 @nograd ⊖(identity)(a!::Real, b::GVar)
 @nograd ⊖(identity)(a!::GVar, b::Real)
 
+# inv
+@eval @i @inline function ⊖(inv)(out!::GVar{T}, y::GVar) where T
+    out!.x -= inv(y.x)
+    @routine @invcheckoff begin
+        @zeros T a1
+        a1 += y.x ^ 2
+    end
+    y.g -= out!.g / a1
+    ~@routine
+end
+@nograd ⊖(inv)(a!::Real, b::GVar)
+@nograd ⊖(inv)(a!::GVar, b::Real)
+
 # +- (triple)
 @i @inline function ⊖(+)(out!::GVar, x::GVar, y::GVar)
     out!.x -= x.x + y.x

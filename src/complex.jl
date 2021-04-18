@@ -103,6 +103,15 @@ end
     ~@routine
 end
 
+@i @inline function :(+=)(inv)(y!::Complex{T}, b::Complex{T}) where T
+    @routine @invcheckoff begin
+        b2 ← zero(T)
+        b2 += abs2(b)
+    end
+    y! += b' / b2
+    ~@routine
+end
+
 @i @inline function ⊕(exp)(y!::Complex{T}, x::Complex{T}) where T
     @routine @invcheckoff begin
         @zeros T s c expn

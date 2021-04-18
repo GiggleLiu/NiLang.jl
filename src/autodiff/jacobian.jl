@@ -1,5 +1,7 @@
 export jacobian, jacobian_repeat
 
+wrap_tuple(x, args) = length(args) == 1 ? (x,) : x
+
 """
     jacobian_repeat(f, args...; iin::Int, iout::Int=iin, kwargs...)
 
@@ -10,11 +12,11 @@ function jacobian_repeat(f, args...; iin::Int, iout::Int=iin, kwargs...)
     _check_input(args, iin, iout)
     N = length(args[iout])
     res = zeros(eltype(args[iin]), length(args[iin]), N)
-    xargs = NiLangCore.wrap_tuple(f(args...; kwargs...))
+    xargs = wrap_tuple(f(args...; kwargs...), args)
     for i = 1:N
         gxargs = GVar.(xargs)
         @inbounds gxargs[iout][i] = GVar(value(gxargs[iout][i]), one(eltype(xargs[iout])))
-        @inbounds res[:,i] .= vec(grad.(NiLangCore.wrap_tuple((~f)(gxargs...; kwargs...))[iin]))
+        @inbounds res[:,i] .= vec(grad.(wrap_tuple((~f)(gxargs...; kwargs...), gxargs)[iin]))
     end
     return res
 end
@@ -30,10 +32,10 @@ One can use key word arguments `iin` and `iout` to specify the input and output 
 """
 function jacobian(f, args...; iin::Int, iout::Int=iin, kwargs...)
     _check_input(args, iin, iout)
-    args = NiLangCore.wrap_tuple(f(args...; kwargs...))
+    args = wrap_tuple(f(args...; kwargs...), args)
     ABT = AutoBcast{eltype(args[iout]), length(args[iout])}
     _args = map(i-> i==iout ? wrap_jacobian(ABT, args[i]) : wrap_bcastgrad(ABT, args[i]), 1:length(args))
-    _args = NiLangCore.wrap_tuple((~f)(_args...; kwargs...))
+    _args = wrap_tuple((~f)(_args...; kwargs...), args)
     out = zeros(eltype(args[iin]), length(args[iin]), length(args[iout]))
     for i=1:length(args[iin])
         @inbounds out[i,:] .= grad(_args[iin][i]).x
