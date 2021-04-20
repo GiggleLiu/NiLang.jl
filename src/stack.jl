@@ -47,7 +47,7 @@ end
 @inline function COPYPOP!(stack, x)
     y = pop!(stack)
     NiLangCore.deanc(x, y)
-    stack, x
+    stack, y
 end
 
 UNSAFE_COPYPUSH!(args...) = COPYPUSH!(args...)
