@@ -9,7 +9,7 @@ const GLOBAL_STACK = []
 end
 
 @inline function POP!(x::T) where T
-    @invcheck x _zero(x)
+    NiLangCore.deanc(x, _zero(x))
     loaddata(T, pop!(GLOBAL_STACK))
 end
 
@@ -25,7 +25,7 @@ end
 end
 
 @inline function POP!(stack, x::T) where T
-    @invcheck x _zero(T)
+    NiLangCore.deanc(x, _zero(T))
     stack, loaddata(T, pop!(stack))
 end
 
@@ -46,7 +46,7 @@ end
 
 @inline function COPYPOP!(stack, x)
     y = pop!(stack)
-    @invcheck x y
+    NiLangCore.deanc(x, y)
     stack, x
 end
 
@@ -63,7 +63,7 @@ end
 
 @inline function COPYPOP!(x)
     y = pop!(GLOBAL_STACK)
-    @invcheck x y
+    NiLangCore.deanc(x, y)
     x
 end
 

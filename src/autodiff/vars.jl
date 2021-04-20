@@ -105,8 +105,17 @@ chfield(x::GVar, ::typeof(value), xval::GVar) = GVar(xval, x.g)
 
 @generated function grad(x::T) where T
     isprimitivetype(T) && throw("not supported type to obtain gradients: $T.")
-    Expr(:new, (~GVar)(T), [:(grad(x.$NAME)) for NAME in fieldnames(T)]...)
+    Expr(:new, typegrad(T), [:(grad(x.$NAME)) for NAME in fieldnames(T)]...)
 end
+typegrad(x) = x
+@generated function typegrad(x::Type{T}) where T
+    if isprimitivetype(T)
+        T
+    else
+        :($(getfield(T.name.module, nameof(T))){$(typegrad.(T.parameters)...)})
+    end
+end
+typegrad(::Type{GVar{ET,GT}}) where {ET,GT} = ET
 grad(gv::T) where T<:Real = zero(T)
 grad(gv::AbstractArray{T}) where T = grad.(gv)
 grad(gv::Function) = 0

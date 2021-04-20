@@ -16,6 +16,11 @@ using Test
     @test grad("x") == ""
     @test grad((1.0, GVar(1.0, 2.0))) == (0.0,2.0)
     @test grad(grad) == 0
+    @test grad((1.0, 2.0)) == (0.0,0.0)
+    @test grad([1.0, 2.0]) == [0.0,0.0]
+    @test grad([GVar(1.0, 3.0), GVar(2.0, 1.0)]) == [3.0,1.0]
+    @test grad(Complex(GVar(1.0, 3.0), GVar(2.0, 1.0))) == Complex(3.0,1.0)
+    @test grad(Complex(1.0, 2.0)) == Complex(0.0,0.0)
 end
 
 
