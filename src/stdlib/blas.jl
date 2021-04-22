@@ -25,8 +25,8 @@ compute `x * y` (`x` and `y` are matrices, and store results in `out!`.
 @i function i_mul!(out!::AbstractMatrix{T}, x::AbstractMatrix{T}, y::AbstractMatrix{T}) where T
 	@safe size(x, 2) == size(y, 1) || throw(DimensionMismatch())
 	@invcheckoff @inbounds for k=1:size(y,2)
-		for i=1:size(x,1)
-			for j=1:size(x,2)
+	    for j=1:size(x,2)
+		    for i=1:size(x,1)
 				out![i,k] += x[i,j] * y[j,k]
 			end
 		end
