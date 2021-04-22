@@ -34,7 +34,7 @@ end
         y2 ← zero(y!)
         y2 += abs2(a)
     end
-    y! += y2 ^ 0.5
+    y! += sqrt(y2)
     ~@routine
 end
 

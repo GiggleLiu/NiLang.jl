@@ -229,14 +229,16 @@ for op in [:*, :/, :^, :+, :-]
 end
 
 @i @inline function ⊖(sqrt)(out!::GVar, x::GVar{T}) where T
-    @routine @invcheckoff begin
-        @zeros T anc1 anc2
-        anc1 += sqrt(x.x)
-        anc2 += 2 * anc1
+    if x.x != 0
+        @routine @invcheckoff begin
+            @zeros T anc1 anc2
+            anc1 += sqrt(x.x)
+            anc2 += 2 * anc1
+        end
+        out!.x -= anc1
+        x.g += out!.g / anc2
+        ~@routine
     end
-    out!.x -= anc1
-    x.g += out!.g / anc2
-    ~@routine
 end
 
 @i @inline function ⊖(exp)(out!::GVar, x::GVar{T}) where T
