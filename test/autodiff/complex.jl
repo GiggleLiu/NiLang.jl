@@ -45,7 +45,7 @@ end
         end
 
         for (subop, args) in [
-            (opm(angle), (r, y)), (opm(abs), (r, y)),
+            (opm(angle), (r, y)), (opm(abs), (r, y)), (opm(abs), (r, 0.0im)),
             (opm(abs2), (r, y))
             ]
             @show subop, args

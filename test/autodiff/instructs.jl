@@ -28,6 +28,7 @@ using Test
         @test check_grad(opm(convert), (Fixed43(0.5), 2.0); verbose=true, iloss=1)
         @test check_grad(opm(/), (1.0, 2.0, 2.0); verbose=true, iloss=1)
         @test_broken check_grad(opm(÷), (1.0, 2.0, 2.0); verbose=true, iloss=1)
+        @test gradient(opm(sqrt), (1.0, 0.0); iloss=1)[2] == 0
     end
     @test check_grad(-, (1.0,); verbose=true, iloss=1)
     @test check_grad(NEG, (1.0,); verbose=true, iloss=1)
