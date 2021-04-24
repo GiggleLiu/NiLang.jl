@@ -51,9 +51,9 @@ end
 end
 
 UNSAFE_COPYPUSH!(args...) = COPYPUSH!(args...)
-@inline function UNSAFE_COPYPOP!(stack, x)
+@inline function UNSAFE_COPYPOP!(stack, x::XT) where XT
     y = pop!(stack)
-    stack, y
+    stack, convert(XT, y)
 end
 
 @inline function COPYPUSH!(x)
@@ -61,10 +61,10 @@ end
     x
 end
 
-@inline function COPYPOP!(x)
+@inline function COPYPOP!(x::XT) where XT
     y = pop!(GLOBAL_STACK)
     NiLangCore.deanc(x, y)
-    x
+    convert(XT, y)
 end
 
 @inline function UNSAFE_COPYPOP!(x)
