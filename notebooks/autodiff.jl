@@ -10,6 +10,13 @@ using PlutoUI, Viznet, Compose, Plots
 # ╔═╡ ce44f8bd-692e-4eab-9ba4-055b25e40c81
 using ForwardDiff: Dual
 
+# ╔═╡ a1ef579e-4b66-4042-944e-7e27c660095e
+md"""
+```math
+\newcommand{\comment}[1]{{\bf  \color{blue}{\text{◂~ #1}}}}
+```
+"""
+
 # ╔═╡ 9d11e058-a7d0-11eb-1d78-6592ff7a1b43
 md"# An introduction to automatic differentiation
 
@@ -17,13 +24,6 @@ md"# An introduction to automatic differentiation
 
 # ╔═╡ b73157bf-1a77-47b8-8a06-8d6ec2045023
 html"<button onclick='present()'>present</button>"
-
-# ╔═╡ a1ef579e-4b66-4042-944e-7e27c660095e
-md"""
-```math
-\newcommand{\comment}[1]{{\bf  \color{blue}{\text{◂~ #1}}}}
-```
-"""
 
 # ╔═╡ ec13e0a9-64ff-4f66-a5a6-5fef53428fa1
 md"""
@@ -498,39 +498,61 @@ when is backward mode AD more useful?
 * In most variational optimizations, especially when we are training a neural network with ~ 100M parameters.
 "
 
+# ╔═╡ aa1547f2-5edd-4b7e-b93e-bdfc4e4fc6d5
+md"""# The true reverse mode "automatic" differentiation"""
+
+# ╔═╡ 71f4b476-027d-4c8f-b561-1ee418bc9e61
+md"""
+![](https://raw.githubusercontent.com/GiggleLiu/WuLiXueBao/master/paper/bennett_treeverse_pebbles.svg)
+"""
+
+# ╔═╡ ae096ad2-3ae9-4440-a959-0d7d9a174f1d
+md"## How to differentiate sparse matrix multiplication"
+
+# ╔═╡ 11557d6b-3a1e-416d-874f-b8d217976f76
+md"## How to differentiate QR"
+
+# ╔═╡ 6e7bf956-67b1-430c-9cf5-1746282727b2
+md"## Time and space"
+
 # ╔═╡ Cell order:
-# ╟─9d11e058-a7d0-11eb-1d78-6592ff7a1b43
-# ╠═f11023e5-8f7b-4f40-86d3-3407b61863d9
-# ╠═b73157bf-1a77-47b8-8a06-8d6ec2045023
 # ╟─a1ef579e-4b66-4042-944e-7e27c660095e
-# ╠═ec13e0a9-64ff-4f66-a5a6-5fef53428fa1
-# ╠═f8b0d1ce-99f7-4729-b46e-126da540cbbe
-# ╠═435ac19e-1c0c-4ee5-942d-f2a97c8c4d80
-# ╠═48ecd619-d01d-43ff-8b52-7c2566c3fa2b
-# ╠═4878ce45-40ff-4fae-98e7-1be41e930e4d
+# ╠═f11023e5-8f7b-4f40-86d3-3407b61863d9
+# ╟─9d11e058-a7d0-11eb-1d78-6592ff7a1b43
+# ╟─b73157bf-1a77-47b8-8a06-8d6ec2045023
+# ╟─ec13e0a9-64ff-4f66-a5a6-5fef53428fa1
+# ╟─f8b0d1ce-99f7-4729-b46e-126da540cbbe
+# ╟─435ac19e-1c0c-4ee5-942d-f2a97c8c4d80
+# ╟─48ecd619-d01d-43ff-8b52-7c2566c3fa2b
+# ╟─4878ce45-40ff-4fae-98e7-1be41e930e4d
 # ╠═ce44f8bd-692e-4eab-9ba4-055b25e40c81
 # ╠═b2c1936c-2c27-4fbb-8183-e38c5e858483
 # ╠═8be1b812-fcac-404f-98aa-0571cb990f34
-# ╠═33e0c762-c75e-44aa-bfe2-bff92dd1ace8
-# ╠═c59c35ee-1907-4736-9893-e22c052150ca
+# ╟─33e0c762-c75e-44aa-bfe2-bff92dd1ace8
+# ╟─c59c35ee-1907-4736-9893-e22c052150ca
 # ╠═f12b25d8-7c78-4686-b46d-00b34e565605
-# ╠═d90c3cc9-084d-4cf7-9db7-42cea043030b
-# ╠═93c98cb2-18af-47df-afb3-8c5a34b4723c
-# ╠═2dc74e15-e2ea-4961-b43f-0ada1a73d80a
-# ╠═7ee75a15-eaea-462a-92b6-293813d2d4d7
-# ╠═02a25b73-7353-43b1-8738-e7ca472d0cc7
-# ╠═2afb984f-624e-4381-903f-ccc1d8a66a17
-# ╠═7e5d5e69-90f2-4106-8edf-223c150a8168
-# ╠═92d7a938-9463-4eee-8839-0b8c5f762c79
-# ╠═4b1a0b59-ddc6-4b2d-b5f5-d92084c31e46
-# ╠═a7fc71a2-6d45-4162-8073-4ddb85ded2e8
-# ╠═fb6c3a48-550a-4d2e-a00b-a1e40d86b535
-# ╠═ab6fa4ac-29ed-4722-88ed-fa1caf2072f3
-# ╠═8e72d934-e307-4505-ac82-c06734415df6
-# ╠═e6ff86a9-9f54-474b-8111-a59a25eda506
-# ╠═9c1d9607-a634-4350-aacd-2d40984d647d
-# ╠═63db2fa2-50b2-4940-b8ee-0dc6e3966a57
-# ╠═693167e7-e80c-401d-af89-55b5fae30848
-# ╠═4cd70901-2142-4868-9a33-c46ca0d064ec
-# ╠═4ff09f7c-aeac-48bd-9d58-8446137c3acd
-# ╠═ea44037b-9359-4fbd-990f-529d88d54351
+# ╟─d90c3cc9-084d-4cf7-9db7-42cea043030b
+# ╟─93c98cb2-18af-47df-afb3-8c5a34b4723c
+# ╟─2dc74e15-e2ea-4961-b43f-0ada1a73d80a
+# ╟─7ee75a15-eaea-462a-92b6-293813d2d4d7
+# ╟─02a25b73-7353-43b1-8738-e7ca472d0cc7
+# ╟─2afb984f-624e-4381-903f-ccc1d8a66a17
+# ╟─7e5d5e69-90f2-4106-8edf-223c150a8168
+# ╟─92d7a938-9463-4eee-8839-0b8c5f762c79
+# ╟─4b1a0b59-ddc6-4b2d-b5f5-d92084c31e46
+# ╟─a7fc71a2-6d45-4162-8073-4ddb85ded2e8
+# ╟─fb6c3a48-550a-4d2e-a00b-a1e40d86b535
+# ╟─ab6fa4ac-29ed-4722-88ed-fa1caf2072f3
+# ╟─8e72d934-e307-4505-ac82-c06734415df6
+# ╟─e6ff86a9-9f54-474b-8111-a59a25eda506
+# ╟─9c1d9607-a634-4350-aacd-2d40984d647d
+# ╟─63db2fa2-50b2-4940-b8ee-0dc6e3966a57
+# ╟─693167e7-e80c-401d-af89-55b5fae30848
+# ╟─4cd70901-2142-4868-9a33-c46ca0d064ec
+# ╟─4ff09f7c-aeac-48bd-9d58-8446137c3acd
+# ╟─ea44037b-9359-4fbd-990f-529d88d54351
+# ╟─aa1547f2-5edd-4b7e-b93e-bdfc4e4fc6d5
+# ╟─71f4b476-027d-4c8f-b561-1ee418bc9e61
+# ╟─ae096ad2-3ae9-4440-a959-0d7d9a174f1d
+# ╟─11557d6b-3a1e-416d-874f-b8d217976f76
+# ╟─6e7bf956-67b1-430c-9cf5-1746282727b2
