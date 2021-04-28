@@ -14,10 +14,7 @@ macro bind(def, element)
 end
 
 # ╔═╡ 1ef174fa-16f0-11eb-328a-afc201effd2f
-begin
-	using Pkg, Printf
-	Pkg.activate("Project.toml")
-end
+using Pkg, Printf
 
 # ╔═╡ 55cfdab8-d792-11ea-271f-e7383e19997c
 using PlutoUI;
