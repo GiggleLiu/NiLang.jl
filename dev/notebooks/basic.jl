@@ -156,7 +156,6 @@ md"A statement can be **uncalled** with `~`"
 # ╔═╡ bc98a824-ddf5-11ea-1a6a-1f795452d3d0
 @i function do_nothing(x, y)
 	reversible_plus(x, y)
-	reversible_plus(x, y)
 	~reversible_plus(x, y)  # uncall the expression
 end
 
@@ -274,7 +273,7 @@ is equivalent to
 statement
 ~(statement)
 ```
-This is the famous `compute-copy-uncompute` design pattern in reversible computing.
+This is the famous `compute-copy-uncompute` design pattern in reversible computing. Check this [reference](https://epubs.siam.org/doi/10.1137/0219046).
 """
 
 # ╔═╡ b4ad5830-dfad-11ea-0057-055dda8cc9be
@@ -323,7 +322,7 @@ html"""
 """
 
 # ╔═╡ f3b87892-e080-11ea-353d-8d81c52cf9ac
-md"### You should not do"
+md"### Sometimes, a for loop can break down"
 
 # ╔═╡ b27a3974-e030-11ea-0bcd-7f7035d55165
 @i function power1000_bad(x1000, x::T) where T
@@ -638,7 +637,7 @@ html"""
 
 # ╔═╡ cc0d5622-d788-11ea-19cd-3bf6864d9263
 md"""##### Including NiLang.AD
-![](https://user-images.githubusercontent.com/6257240/116341804-907a9480-a7af-11eb-934f-7eb94803f5f2.png)"""
+![](https://github.com/JuliaReverse/NiLangTutorial/blob/master/notebooks/asset/benchmarks_gmm.png?raw=true)"""
 
 # ╔═╡ a1646ef0-e091-11ea-00f1-e7c246e191ff
 md"## 3. Solve the memory wall problem in machine learning"
