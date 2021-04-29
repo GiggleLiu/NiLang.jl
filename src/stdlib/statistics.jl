@@ -18,7 +18,7 @@ m, s, x = i_mean_sum(0.0, 0.0, x)
 See also: [`i_mean`](@ref), [`i_sum`](@ref)
 """
 @i function i_mean_sum(mean_val, sum_val, x)
-    @inbounds @simd for i in eachindex(x)
+    @inbounds @simd for i in 1:length(x)
         sum_val += x[i]
     end
     mean_val += sum_val/(@const length(x))
@@ -42,7 +42,7 @@ true
     performant version [`i_mean_sum`](@ref).
 """
 @i function i_sum(sum_val, x)
-    @inbounds @simd for i in eachindex(x)
+    @inbounds @simd for i in 1:length(x)
         sum_val += x[i]
     end
 end
@@ -67,7 +67,7 @@ true
 @i function i_mean(mean_val, x::AbstractArray)
     @routine begin
         sum_val ← zero(eltype(x))
-        @inbounds @simd for i in eachindex(x)
+        @inbounds @simd for i in 1:length(x)
             sum_val += x[i]
         end
     end
