@@ -65,7 +65,7 @@ true
     performant version [`i_mean_sum`](@ref).
 """
 @i function i_mean(mean_val, x::AbstractArray)
-    @routine begin
+    @routine @invcheckoff begin
         sum_val ← zero(eltype(x))
         @inbounds @simd for i in 1:length(x)
             sum_val += x[i]
