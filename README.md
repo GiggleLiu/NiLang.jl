@@ -16,7 +16,7 @@ NiLang features:
 [![codecov](https://codecov.io/gh/GiggleLiu/NiLang.jl/branch/master/graph/badge.svg?token=th86D4USSX)](https://codecov.io/gh/GiggleLiu/NiLang.jl)
 
 A collection of Pluto notebooks
-* [tutorial](https://github.com/JuliaReverse/NiLangTutorial/)
+* [tutorial](https://giggleliu.github.io/NiLang.jl/dev/notebooks/basic.html)
 * [documentation](https://giggleliu.github.io/NiLang.jl/dev/notebooks/documentation.html)
 * [Billiard ball model cellular automata](https://giggleliu.github.io/NiLang.jl/dev/notebooks/margolus.html)
 
