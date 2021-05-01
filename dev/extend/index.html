@@ -14,7 +14,7 @@ julia&gt; @instr ~(y += besselj0(x))
 2.1
 
 julia&gt; x, y
-(2.1, 1.0)</code></pre><p>Here the statement</p><pre><code class="language-julia">@instr y += besselj0(x)</code></pre><p>is mapped to</p><pre><code class="language-julia">@instr ⊕(besselj0)(y, x)</code></pre><p>However, doing this does not give you correct gradients. For <code>y += scalar_out_function(x)</code>, one can bind the backward rules like</p><pre><code class="language-julia">julia&gt; using ChainRules, NiLang.AD
+(2.1, 1.0)</code></pre><p>Here the statement</p><pre><code class="language-julia">@instr y += besselj0(x)</code></pre><p>is mapped to</p><pre><code class="language-julia">@instr y += besselj0(x)</code></pre><p>However, doing this does not give you correct gradients. For <code>y += scalar_out_function(x)</code>, one can bind the backward rules like</p><pre><code class="language-julia">julia&gt; using ChainRules, NiLang.AD
 
 julia&gt; besselj0_back(x) = ChainRules.rrule(besselj0, x)[2](1.0)[2]
 besselj0_back (generic function with 1 method)
@@ -37,12 +37,12 @@ GVar(2.1, 0.0)
 julia&gt; xg, yg
 (GVar(2.1, 0.0), GVar(1.0, 1.0))
 
-julia&gt; NiLang.AD.check_grad(⊕(besselj0), (1.0, 2.1); iloss=1)
+julia&gt; NiLang.AD.check_grad(PlusEq(besselj0), (1.0, 2.1); iloss=1)
 true
 
 julia&gt; using BenchmarkTools
 
-julia&gt; @benchmark ⊕(besselj0)($yg, $xg)
+julia&gt; @benchmark PlusEq(besselj0)($yg, $xg)
 BenchmarkTools.Trial: 
   memory estimate:  0 bytes
   allocs estimate:  0
@@ -97,4 +97,4 @@ end
     ROT(grad(a!), grad(b!), π/2)
 end
 
-@nograd IROT(a!::Real, b!::Real, θ::GVar)</code></pre><p>When this inverse function is called, the backward rules are automatically applied.</p><p>Good! This method can also be extended to linear algebra functions, however, the memory allocation overhead is high because one need to wrap each element with <code>GVar</code>.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../instructions/">« Instruction Reference</a><a class="docs-footer-nextpage" href="../examples/sharedwrite/">The shared write problem on GPU »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Thursday 29 April 2021 01:52">Thursday 29 April 2021</span>. Using Julia version 1.6.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+@nograd IROT(a!::Real, b!::Real, θ::GVar)</code></pre><p>When this inverse function is called, the backward rules are automatically applied.</p><p>Good! This method can also be extended to linear algebra functions, however, the memory allocation overhead is high because one need to wrap each element with <code>GVar</code>.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../instructions/">« Instruction Reference</a><a class="docs-footer-nextpage" href="../examples/sharedwrite/">The shared write problem on GPU »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Saturday 1 May 2021 12:18">Saturday 1 May 2021</span>. Using Julia version 1.6.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
