@@ -10,6 +10,6 @@ function NiLang.AD.primitive_grad(::typeof(test_g), x, y; k=0)
 end
 
 @testset "primitive grad" begin
-    @test check_grad(⊕(test_func), (1.0, 1.0), iloss=1)
-    @test check_grad(⊕(test_g), (1.0, 3.0, 2.0), k=2, iloss=1)
+    @test check_grad(PlusEq(test_func), (1.0, 1.0), iloss=1)
+    @test check_grad(PlusEq(test_g), (1.0, 3.0, 2.0), k=2, iloss=1)
 end

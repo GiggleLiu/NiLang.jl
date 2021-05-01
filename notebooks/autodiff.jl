@@ -499,21 +499,46 @@ when is backward mode AD more useful?
 "
 
 # ╔═╡ aa1547f2-5edd-4b7e-b93e-bdfc4e4fc6d5
-md"""# The true reverse mode "automatic" differentiation"""
+md"""# The "true" reverse mode automatic differentiation"""
+
+# ╔═╡ 6e76a107-4f51-4e32-b133-7b6e04d7d107
+md"The true reverse mode autodiff has to handle the memory wall problem."
+
+# ╔═╡ 32772c2a-6b80-4779-963c-06974ff0d832
+html"""
+<img src="https://raw.githubusercontent.com/GiggleLiu/WuLiXueBao/master/paper/tikzimg-1.svg" style="clip-path: inset(0px 230px 0px 0px); margin-left:40px;" width=500/>
+"""
+
+# ╔═╡ 999f7a8f-d72e-4ccd-8cbf-b5bbb7db1842
+md"""
+#### The optimal checkpointing
+
+1992 ~ Andreas Griewank, Achieving logarithmic growth of temporal and spatial complexity in reverse automatic differentiation.
+
+Julia implementation: [TreeverseAlgorithm.jl](https://github.com/GiggleLiu/TreeverseAlgorithm.jl)
+"""
+
+# ╔═╡ 832cc81d-a49d-46e7-9d2b-d8bde9bb1273
+html"""
+<img src="https://user-images.githubusercontent.com/6257240/116494309-91263000-a86e-11eb-8054-9b91646be0e5.png" style="clip-path: inset(40px 350px 0px 0px);"/>
+"""
 
 # ╔═╡ 71f4b476-027d-4c8f-b561-1ee418bc9e61
-md"""
-![](https://raw.githubusercontent.com/GiggleLiu/WuLiXueBao/master/paper/bennett_treeverse_pebbles.svg)
+html"""
+<img src="https://raw.githubusercontent.com/GiggleLiu/WuLiXueBao/master/paper/bennett_treeverse_pebbles.svg" style="clip-path: inset(50px 350px 0px 0px);"/>
 """
+
+# ╔═╡ 82593cd0-1403-4597-8370-919c80494479
+md"# Our program is not linear!"
+
+# ╔═╡ 6bf46802-0586-42f8-bd7e-9f0c5a36689b
+md"# Examples"
 
 # ╔═╡ ae096ad2-3ae9-4440-a959-0d7d9a174f1d
 md"## How to differentiate sparse matrix multiplication"
 
 # ╔═╡ 11557d6b-3a1e-416d-874f-b8d217976f76
 md"## How to differentiate QR"
-
-# ╔═╡ 6e7bf956-67b1-430c-9cf5-1746282727b2
-md"## Time and space"
 
 # ╔═╡ Cell order:
 # ╟─a1ef579e-4b66-4042-944e-7e27c660095e
@@ -552,7 +577,12 @@ md"## Time and space"
 # ╟─4ff09f7c-aeac-48bd-9d58-8446137c3acd
 # ╟─ea44037b-9359-4fbd-990f-529d88d54351
 # ╟─aa1547f2-5edd-4b7e-b93e-bdfc4e4fc6d5
+# ╟─6e76a107-4f51-4e32-b133-7b6e04d7d107
+# ╟─32772c2a-6b80-4779-963c-06974ff0d832
+# ╟─999f7a8f-d72e-4ccd-8cbf-b5bbb7db1842
+# ╟─832cc81d-a49d-46e7-9d2b-d8bde9bb1273
+# ╟─71f4b476-027d-4c8f-b561-1ee418bc9e61
+# ╟─82593cd0-1403-4597-8370-919c80494479
+# ╟─6bf46802-0586-42f8-bd7e-9f0c5a36689b
 # ╟─ae096ad2-3ae9-4440-a959-0d7d9a174f1d
 # ╟─11557d6b-3a1e-416d-874f-b8d217976f76
-# ╟─6e7bf956-67b1-430c-9cf5-1746282727b2
-# ╟─71f4b476-027d-4c8f-b561-1ee418bc9e61

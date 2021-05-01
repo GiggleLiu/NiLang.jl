@@ -29,7 +29,7 @@ end
     ~@routine
 end
 
-@i function ⊖(det)(out!::T, A::AbstractMatrix{T}) where T<:GVar
+@i function :(-=)(det)(out!::T, A::AbstractMatrix{T}) where T<:GVar
     @routine @invcheckoff begin
         vA ← value.(A)
         detA ← det(vA)
@@ -42,7 +42,7 @@ end
     ~@routine
 end
 
-@i function ⊖(logdet)(out!::T, A::AbstractMatrix{T}) where T<:GVar
+@i function :(-=)(logdet)(out!::T, A::AbstractMatrix{T}) where T<:GVar
     @routine @invcheckoff begin
         gA ← grad(out!) * transpose(inv(value.(A)))
     end

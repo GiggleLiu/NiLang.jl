@@ -146,6 +146,15 @@ Base.show(io::IO, ::MIME"plain/text", gv::GVar) = Base.show(io, gv)
 Base.isfinite(x::GVar) = isfinite(x.x)
 # interfaces
 
+_replace_opmx_callable(ex) = @smatch ex begin
+    :(:+=($f)) => :(PlusEq($f))
+    :(:-=($f)) => :(MinusEq($f))
+    :(:*=($f)) => :(MulEq($f))
+    :(:/=($f)) => :(DivEq($f))
+    :(:⊻=($f)) => :(XorEq($f))
+    _ => ex
+end
+
 """
     @nograd f(args...)
 
@@ -154,6 +163,7 @@ Mark `f(args...)` as having no gradients.
 macro nograd(ex)
     @smatch ex begin
         :($f($(args...))) => begin
+            f2 = _replace_opmx_callable(f)
             newargs = []
             for arg in args
                 push!(newargs, @smatch arg begin
@@ -166,7 +176,7 @@ macro nograd(ex)
             end
             esc(quote
                 @i function $f($(args...))
-                    $f($(newargs...))
+                    $f2($(newargs...))
                 end
             end)
         end

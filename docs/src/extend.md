@@ -29,7 +29,7 @@ Here the statement
 
 is mapped to
 ```julia
-@instr ⊕(besselj0)(y, x)
+@instr y += besselj0(x)
 ```
 
 However, doing this does not give you correct gradients.
@@ -59,12 +59,12 @@ GVar(2.1, 0.0)
 julia> xg, yg
 (GVar(2.1, 0.0), GVar(1.0, 1.0))
 
-julia> NiLang.AD.check_grad(⊕(besselj0), (1.0, 2.1); iloss=1)
+julia> NiLang.AD.check_grad(PlusEq(besselj0), (1.0, 2.1); iloss=1)
 true
 
 julia> using BenchmarkTools
 
-julia> @benchmark ⊕(besselj0)($yg, $xg)
+julia> @benchmark PlusEq(besselj0)($yg, $xg)
 BenchmarkTools.Trial: 
   memory estimate:  0 bytes
   allocs estimate:  0

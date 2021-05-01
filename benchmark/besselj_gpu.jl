@@ -2,8 +2,8 @@ using NiLang, NiLang.AD
 using CuArrays, CUDAnative, GPUArrays
 using BenchmarkTools
 
-@i @inline function ⊖(CUDAnative.pow)(out!::GVar{T}, x::GVar{T}, n::GVar) where T
-    ⊖(CUDAnative.pow)(value(out!), value(x), value(n))
+@i @inline function :(-=)(CUDAnative.pow)(out!::GVar{T}, x::GVar{T}, n::GVar) where T
+    value(out!) -= CUDAnative.pow(value(x), value(n))
 
     # grad x
     @routine @invcheckoff begin
@@ -24,8 +24,8 @@ using BenchmarkTools
     ~@routine
 end
 
-@i @inline function ⊖(CUDAnative.pow)(out!::GVar{T}, x::GVar, n) where T
-    ⊖(CUDAnative.pow)(value(out!), value(x), n)
+@i @inline function :(-=)(CUDAnative.pow)(out!::GVar{T}, x::GVar, n) where T
+    value(out!) -= CUDAnative.pow(value(x), n)
     @routine @invcheckoff begin
         anc1 ← zero(value(x))
         jac ← zero(value(x))
@@ -39,8 +39,8 @@ end
     ~@routine
 end
 
-@i @inline function ⊖(CUDAnative.pow)(out!::GVar{T}, x, n::GVar) where T
-    ⊖(CUDAnative.pow)(value(out!), x, value(n))
+@i @inline function :(-=)(CUDAnative.pow)(out!::GVar{T}, x, n::GVar) where T
+    value(out!) -= CUDAnative.pow(x, value(n))
     # get jac of n
     @routine @invcheckoff begin
         anc1 ← zero(x)

@@ -2,8 +2,8 @@ using NiLang, NiLang.AD, Test
 using NiLang.AD: hessian_numeric
 
 @testset "hessian" begin
-    h1 = hessian_backback(⊕(*), (0.0, 2.0, 3.0); iloss=1)
-    h2 = hessian_numeric(⊕(*), (0.0, 2.0, 3.0); iloss=1)
+    h1 = hessian_backback(PlusEq(*), (0.0, 2.0, 3.0); iloss=1)
+    h2 = hessian_numeric(PlusEq(*), (0.0, 2.0, 3.0); iloss=1)
     @test h1 ≈ h2
 
     @i function test(a,b,c,d)

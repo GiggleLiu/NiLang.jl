@@ -69,7 +69,7 @@ end
 @testset "AD over pipe" begin
     @i function mean(out!, anc, x)
         for i=1:length(x)
-            ⊕(identity)(anc, x[i])
+            PlusEq(identity)(anc, x[i])
             SWAP(anc, x[i])
         end
         out! += anc / (@const length(x))
