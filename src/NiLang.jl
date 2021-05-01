@@ -2,7 +2,7 @@ module NiLang
 
 using Reexport
 @reexport using NiLangCore
-import NiLangCore: ⊕, ⊖, invtype
+import NiLangCore: invtype
 
 using FixedPointNumbers: Q20f43, Fixed
 export Fixed43

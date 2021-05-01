@@ -33,7 +33,7 @@ function printall()
     syms = [Basic(:a), Basic(:b), Basic(:c)]
 
     for (subop, nargs) in [(identity, 2), (*, 3), (/, 3), (^, 3), (exp, 2), (log, 2), (sin, 2), (cos, 2)]
-        for opm in [⊕, ⊖]
+        for opm in [PlusEq, MinusEq]
             op = opm(subop)
             @show op
             printone(op, syms, nargs)

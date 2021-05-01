@@ -20,15 +20,15 @@ end
 end
 
 # +-
-@i @inline function ⊖(identity)(a!::GVar, b::GVar)
+@i @inline function :(-=)(identity)(a!::GVar, b::GVar)
     a!.x -= b.x
     b.g += a!.g
 end
-@nograd ⊖(identity)(a!::Real, b::GVar)
-@nograd ⊖(identity)(a!::GVar, b::Real)
+@nograd :(-=)(identity)(a!::Real, b::GVar)
+@nograd :(-=)(identity)(a!::GVar, b::Real)
 
 # inv
-@eval @i @inline function ⊖(inv)(out!::GVar{T}, y::GVar) where T
+@eval @i @inline function :(-=)(inv)(out!::GVar{T}, y::GVar) where T
     out!.x -= inv(y.x)
     @routine @invcheckoff begin
         @zeros T a1
@@ -37,38 +37,38 @@ end
     y.g -= out!.g / a1
     ~@routine
 end
-@nograd ⊖(inv)(a!::Real, b::GVar)
-@nograd ⊖(inv)(a!::GVar, b::Real)
+@nograd :(-=)(inv)(a!::Real, b::GVar)
+@nograd :(-=)(inv)(a!::GVar, b::Real)
 
 # +- (triple)
-@i @inline function ⊖(+)(out!::GVar, x::GVar, y::GVar)
+@i @inline function :(-=)(+)(out!::GVar, x::GVar, y::GVar)
     out!.x -= x.x + y.x
     x.g += out! |> grad
     y.g += out! |> grad
 end
 
-@i @inline function ⊖(+)(out!::GVar, x::GVar, y::Real)
+@i @inline function :(-=)(+)(out!::GVar, x::GVar, y::Real)
     out!.x -= (x |> value) + (y |> value)
     x.g += out! |> grad
 end
 
-@i @inline function ⊖(+)(out!::GVar, x::Real, y::GVar)
+@i @inline function :(-=)(+)(out!::GVar, x::Real, y::GVar)
     out!.x -= (x |> value) + (y |> value)
     y.g += out! |> grad
 end
 
-@i @inline function ⊖(-)(out!::GVar, x::GVar, y::GVar)
+@i @inline function :(-=)(-)(out!::GVar, x::GVar, y::GVar)
     out!.x -= x.x - y.x
     x.g += out! |> grad
     y.g -= out! |> grad
 end
 
-@i @inline function ⊖(-)(out!::GVar, x::Real, y::GVar)
+@i @inline function :(-=)(-)(out!::GVar, x::Real, y::GVar)
     out!.x -= (x |> value) - y.x
     y.g -= out!.g
 end
 
-@i @inline function ⊖(-)(out!::GVar, x::GVar, y::Real)
+@i @inline function :(-=)(-)(out!::GVar, x::GVar, y::Real)
     out!.x -= x.x - (y |> value)
     x.g += out! |> grad
 end
@@ -80,24 +80,24 @@ end
 end
 
 # */
-@i @inline function ⊖(*)(out!::GVar, x::GVar, y::GVar)
+@i @inline function :(-=)(*)(out!::GVar, x::GVar, y::GVar)
     out!.x -= x.x * y.x
     x.g += out!.g * y.x
     y.g += x.x * out!.g
 end
 
-@i @inline function ⊖(*)(out!::GVar, x::Real, y::GVar)
+@i @inline function :(-=)(*)(out!::GVar, x::Real, y::GVar)
     out!.x -= (x |> value) * y.x
     y.g += (x |> value) * out!.g
 end
 
-@i @inline function ⊖(*)(out!::GVar, x::GVar, y::Real)
+@i @inline function :(-=)(*)(out!::GVar, x::GVar, y::Real)
     out!.x -= x.x * (y |> value)
     x.g += out!.g * (y |> value)
 end
 
 for DIV in [:/, :÷]
-@eval @i @inline function ⊖($DIV)(out!::GVar{T}, x::GVar, y::GVar) where T
+    @eval @i @inline function :(-=)($DIV)(out!::GVar{T}, x::GVar, y::GVar) where T
     out!.x -= $DIV(x.x, y.x)
     @routine @invcheckoff begin
         a1 ← zero(out! |> grad)
@@ -110,7 +110,7 @@ for DIV in [:/, :÷]
     ~@routine
 end
 
-@eval @i @inline function ⊖($DIV)(out!::GVar{T}, x::Real, y::GVar) where T
+@eval @i @inline function :(-=)($DIV)(out!::GVar{T}, x::Real, y::GVar) where T
     out!.x -= $DIV(x, y.x)
     @routine @invcheckoff begin
         a1 ← zero(out!.g)
@@ -122,14 +122,14 @@ end
     ~@routine
 end
 
-@eval @i @inline function ⊖($DIV)(out!::GVar, x::GVar, y::Real)
+@eval @i @inline function :(-=)($DIV)(out!::GVar, x::GVar, y::Real)
     out!.x -= $DIV(x.x, y)
     x.g += $DIV(out!.g, y)
 end
 end
 
-@i @inline function ⊖(^)(out!::GVar{T}, x::GVar, n::GVar) where T
-    ⊖(^)(out!.x, x.x, n.x)
+@i @inline function :(-=)(^)(out!::GVar{T}, x::GVar, n::GVar) where T
+    out!.x -= x.x ^ n.x
 
     # grad x
     @routine @invcheckoff begin
@@ -149,8 +149,8 @@ end
     ~@routine
 end
 
-@i @inline function ⊖(^)(out!::GVar{T}, x::GVar, n::Real) where T
-    ⊖(^)(out!.x, x.x, n)
+@i @inline function :(-=)(^)(out!::GVar{T}, x::GVar, n::Real) where T
+    out!.x -= x.x ^ n
     @routine @invcheckoff begin
         anc1 ← zero(x.x)
         jac ← zero(x.x)
@@ -164,8 +164,8 @@ end
     ~@routine
 end
 
-@i @inline function ⊖(^)(out!::GVar{T}, x::Real, n::GVar) where T
-    ⊖(^)(out!.x, x, n.x)
+@i @inline function :(-=)(^)(out!::GVar{T}, x::Real, n::GVar) where T
+    :(-=)(^)(out!.x, x, n.x)
     # get jac of n
     @routine @invcheckoff begin
         anc1 ← zero(x)
@@ -180,8 +180,8 @@ end
     ~@routine
 end
 
-@i @inline function ⊖(atan)(out!::GVar{T}, y::GVar, x::GVar) where T
-    ⊖(atan)(out!.x, y.x, x.x)
+@i @inline function :(-=)(atan)(out!::GVar{T}, y::GVar, x::GVar) where T
+    out!.x -= atan(y.x, x.x)
     @routine @invcheckoff begin
         @zeros T xy2 jac_x jac_y
         xy2 += abs2(x.x)
@@ -194,8 +194,8 @@ end
     ~@routine
 end
 
-@i @inline function ⊖(atan)(out!::GVar{T}, x::GVar) where T
-    ⊖(atan)(out!.x, x.x)
+@i @inline function :(-=)(atan)(out!::GVar{T}, x::GVar) where T
+    out!.x -= atan(x.x)
     @routine @invcheckoff begin
         xy2 ← one(T)
         xy2 += abs2(x.x)
@@ -204,7 +204,7 @@ end
     ~@routine
 end
 
-@i @inline function ⊖(abs)(out!::GVar, x::GVar{T}) where T
+@i @inline function :(-=)(abs)(out!::GVar, x::GVar{T}) where T
     out!.x -= abs(x.x)
     if (x > 0, ~)
         x.g += out!.g
@@ -213,22 +213,22 @@ end
     end
 end
 
-@i @inline function ⊖(abs2)(out!::GVar, x::GVar{T}) where T
+@i @inline function :(-=)(abs2)(out!::GVar, x::GVar{T}) where T
     out!.x -= abs2(x.x)
     x.g += out!.g * x.x
     x.g += out!.g * x.x
 end
-@nograd ⊖(abs2)(a!::GVar, b::Real)
-@nograd ⊖(abs2)(a!::Real, b::GVar)
+@nograd :(-=)(abs2)(a!::GVar, b::Real)
+@nograd :(-=)(abs2)(a!::Real, b::GVar)
 
 for op in [:*, :/, :^, :+, :-]
-    @eval @nograd ⊖($op)(out!::GVar, x::Real, y::Real)
-    @eval @nograd ⊖($op)(out!::Real, x::Real, y::GVar)
-    @eval @nograd ⊖($op)(out!::Real, x::GVar, y::GVar)
-    @eval @nograd ⊖($op)(out!::Real, x::GVar, y::Real)
+    @eval @nograd :(-=)($op)(out!::GVar, x::Real, y::Real)
+    @eval @nograd :(-=)($op)(out!::Real, x::Real, y::GVar)
+    @eval @nograd :(-=)($op)(out!::Real, x::GVar, y::GVar)
+    @eval @nograd :(-=)($op)(out!::Real, x::GVar, y::Real)
 end
 
-@i @inline function ⊖(sqrt)(out!::GVar, x::GVar{T}) where T
+@i @inline function :(-=)(sqrt)(out!::GVar, x::GVar{T}) where T
     if x.x != 0
         @routine @invcheckoff begin
             @zeros T anc1 anc2
@@ -241,7 +241,7 @@ end
     end
 end
 
-@i @inline function ⊖(exp)(out!::GVar, x::GVar{T}) where T
+@i @inline function :(-=)(exp)(out!::GVar, x::GVar{T}) where T
     @routine @invcheckoff begin
         anc1 ← zero(T)
         anc1 += exp(x.x)
@@ -251,12 +251,12 @@ end
     ~@routine
 end
 
-@i @inline function ⊖(log)(out!::GVar, x::GVar{T}) where T
+@i @inline function :(-=)(log)(out!::GVar, x::GVar{T}) where T
     out!.x -= log(x.x)
     x.g += out!.g / x.x
 end
 
-@i @inline function ⊖(sin)(out!::GVar, x::GVar{T}) where T
+@i @inline function :(-=)(sin)(out!::GVar, x::GVar{T}) where T
     @routine @invcheckoff begin
         @zeros T s c
         (s, c) += sincos(x.x)
@@ -266,7 +266,7 @@ end
     ~@routine
 end
 
-@i @inline function ⊖(sinh)(out!::GVar, x::GVar{T}) where T
+@i @inline function :(-=)(sinh)(out!::GVar, x::GVar{T}) where T
     out!.x -= sinh(x.x)
     @routine @invcheckoff begin
         anc1 ← zero(x.x)
@@ -297,7 +297,7 @@ end
     ~@routine
 end
 
-@i @inline function ⊖(cosh)(out!::GVar, x::GVar{T}) where T
+@i @inline function :(-=)(cosh)(out!::GVar, x::GVar{T}) where T
     out!.x -= cosh(x.x)
     @routine @invcheckoff begin
         anc1 ← zero(x.x)
@@ -307,7 +307,7 @@ end
     ~@routine
 end
 
-@i @inline function ⊖(acos)(out!::GVar, x::GVar{T}) where T
+@i @inline function :(-=)(acos)(out!::GVar, x::GVar{T}) where T
     out!.x -= acos(x.x)
     @routine @invcheckoff begin
         @zeros T sqrt_1_x2 x2
@@ -318,7 +318,7 @@ end
     ~@routine
 end
 
-@i @inline function ⊖(tan)(out!::GVar, x::GVar{T}) where T
+@i @inline function :(-=)(tan)(out!::GVar, x::GVar{T}) where T
     @routine @invcheckoff begin
         anc1 ← zero(x.x)
         anc2 ← one(x.x)
@@ -330,7 +330,7 @@ end
     ~@routine
 end
 
-@i @inline function ⊖(tanh)(out!::GVar, x::GVar{T}) where T
+@i @inline function :(-=)(tanh)(out!::GVar, x::GVar{T}) where T
     @routine @invcheckoff begin
         anc1 ← zero(x.x)
         anc2 ← one(x.x)
@@ -342,7 +342,7 @@ end
     ~@routine
 end
 
-@i @inline function ⊖(sincos)(out!::Tuple{T1,T1}, x::GVar{T}) where {T1<:GVar, T}
+@i @inline function :(-=)(sincos)(out!::Tuple{T1,T1}, x::GVar{T}) where {T1<:GVar, T}
     @routine @invcheckoff begin
         s ← zero(T)
         c ← zero(T)
@@ -355,12 +355,12 @@ end
 end
 
 for op in [:sqrt, :exp, :log, :sin, :cos, :tanh]
-    @eval @nograd ⊖($op)(out!::Real, x::GVar)
-    @eval @nograd ⊖($op)(out!::GVar, x::Real)
+    @eval @nograd :(-=)($op)(out!::Real, x::GVar)
+    @eval @nograd :(-=)($op)(out!::GVar, x::Real)
 end
 
-@nograd ⊖(sincos)(out!::Tuple{<:Real,<:Real}, x::GVar)
-@nograd ⊖(sincos)(out!::Tuple{<:GVar,<:GVar}, x::Real)
+@nograd :(-=)(sincos)(out!::Tuple{<:Real,<:Real}, x::GVar)
+@nograd :(-=)(sincos)(out!::Tuple{<:GVar,<:GVar}, x::Real)
 
 @i @inline function IROT(a!::GVar, b!::GVar, θ::GVar)
     IROT(a!.x, b!.x, θ.x)

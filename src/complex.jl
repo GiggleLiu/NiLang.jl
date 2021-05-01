@@ -11,11 +11,11 @@ end
     -(y!.im)
 end
 
-@i @inline function ⊕(angle)(r!::Real, x::Complex)
+@i @inline function :(+=)(angle)(r!::Real, x::Complex)
     r! += atan(x.im, x.re)
 end
 
-@i @inline function ⊕(identity)(y!::Complex, a::Complex)
+@i @inline function :(+=)(identity)(y!::Complex, a::Complex)
     y!.re += a.re
     y!.im += a.im
 end
@@ -24,12 +24,12 @@ end
     b!, a!
 end
 
-@i @inline function ⊕(abs2)(y!::Real, a::Complex)
+@i @inline function :(+=)(abs2)(y!::Real, a::Complex)
     y! += a.re^2
     y! += a.im^2
 end
 
-@i @inline function ⊕(abs)(y!::Real, a::Complex)
+@i @inline function :(+=)(abs)(y!::Real, a::Complex)
     @routine @invcheckoff begin
         y2 ← zero(y!)
         y2 += abs2(a)
@@ -38,39 +38,39 @@ end
     ~@routine
 end
 
-@i @inline function ⊕(*)(y!::Complex, a::Complex, b::Complex)
+@i @inline function :(+=)(*)(y!::Complex, a::Complex, b::Complex)
     y!.re += a.re * b.re
     y!.re += a.im * (-b.im)
     y!.im += a.re * b.im
     y!.im += a.im * b.re
 end
 
-@i @inline function ⊕(*)(y!::Complex, a::Real, b::Complex)
+@i @inline function :(+=)(*)(y!::Complex, a::Real, b::Complex)
     y!.re += a * b.re
     y!.im += a * b.im
 end
 
-@i @inline function ⊕(*)(y!::Complex, a::Complex, b::Real)
+@i @inline function :(+=)(*)(y!::Complex, a::Complex, b::Real)
     y!.re += a.re * b
     y!.im += a.im * b
 end
 
 for OP in [:+, :-]
-    @eval @i @inline function ⊕($OP)(y!::Complex, a::Complex, b::Complex)
+    @eval @i @inline function :(+=)($OP)(y!::Complex, a::Complex, b::Complex)
         y!.re += $OP(a.re, b.re)
         y!.im += $OP(a.im, b.im)
     end
 
-    @eval @i @inline function ⊕($OP)(y!::Complex, a::Complex, b::Real)
+    @eval @i @inline function :(+=)($OP)(y!::Complex, a::Complex, b::Real)
         y!.re += $OP(a.re, b)
     end
 
-    @eval @i @inline function ⊕($OP)(y!::Complex, a::Real, b::Complex)
+    @eval @i @inline function :(+=)($OP)(y!::Complex, a::Real, b::Complex)
         y!.re += $OP(a, b.re)
     end
 end
 
-@i @inline function ⊕(/)(y!::Complex, a::Complex, b::Complex{T}) where T
+@i @inline function :(+=)(/)(y!::Complex, a::Complex, b::Complex{T}) where T
     @routine @invcheckoff begin
         b2 ← zero(T)
         ab ← zero(y!)
@@ -82,12 +82,12 @@ end
     ~@routine
 end
 
-@i @inline function ⊕(/)(y!::Complex, a::Complex, b::Real)
+@i @inline function :(+=)(/)(y!::Complex, a::Complex, b::Real)
     y!.re += a.re / b
     y!.im += a.im / b
 end
 
-@i @inline function ⊕(/)(y!::Complex, a::Real, b::Complex{T}) where T
+@i @inline function :(+=)(/)(y!::Complex, a::Real, b::Complex{T}) where T
     @routine @invcheckoff begin
         b2 ← zero(T)
         ab ← zero(y!)
@@ -108,7 +108,7 @@ end
     ~@routine
 end
 
-@i @inline function ⊕(exp)(y!::Complex, x::Complex{T}) where T
+@i @inline function :(+=)(exp)(y!::Complex, x::Complex{T}) where T
     @routine @invcheckoff begin
         @zeros T s c expn
         z ← zero(y!)
@@ -121,7 +121,7 @@ end
     ~@routine
 end
 
-@i @inline function ⊕(log)(y!::Complex, x::Complex{T}) where T
+@i @inline function :(+=)(log)(y!::Complex, x::Complex{T}) where T
     @routine @invcheckoff begin
         n ← zero(T)
         n += abs(x)
@@ -131,7 +131,7 @@ end
     ~@routine
 end
 
-@i @inline function ⊕(^)(y!::Complex, a::Complex{T}, b::Real) where T
+@i @inline function :(+=)(^)(y!::Complex, a::Complex{T}, b::Real) where T
     @routine @invcheckoff begin
         @zeros T r θ s c absy bθ
         r += abs(a)
@@ -145,19 +145,19 @@ end
     ~@routine
 end
 
-@i @inline function ⊕(complex)(y!::Complex, a::Real, b::Real)
+@i @inline function :(+=)(complex)(y!::Complex, a::Real, b::Real)
     y!.re += a
     y!.im += b
 end
 
 for OP in [:*, :/, :+, :-, :^]
-    @eval @i @inline function ⊕($OP)(y!::Complex, a::Real, b::Real)
+    @eval @i @inline function :(+=)($OP)(y!::Complex, a::Real, b::Real)
         y!.re += $OP(a, b)
     end
 end
 
 for OP in [:identity, :cos, :sin, :log, :exp]
-    @eval @i @inline function ⊕($OP)(y!::Complex, a::Real)
+    @eval @i @inline function :(+=)($OP)(y!::Complex, a::Real)
         y!.re += $OP(a)
     end
 end

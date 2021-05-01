@@ -1,7 +1,6 @@
 using Test, NiLang, NiLang.AD
-import NiLang: ⊕, ⊖
 
-const add = ⊕(identity)
+const add = PlusEq(identity)
 
 @testset "NGrad" begin
     @test NGrad{3}(exp) isa NGrad{3,typeof(exp)}
@@ -20,10 +19,10 @@ end
     Grad(add)(x, NoGrad(y); iloss=1)
     @test grad(y) === 0.0
 
-    @test check_inv(⊕(*), (0.4, 0.4, 0.5))
-    @test ⊖(*)(GVar(0.0, 1.0), GVar(0.4), GVar(0.6)) == (GVar(-0.24, 1.0), GVar(0.4, 0.6), GVar(0.6, 0.4))
-    @test check_grad(⊕(*), (0.4, 0.4, 0.5); iloss=1)
-    @test check_grad(⊖(*), (0.4, 0.4, 0.5); iloss=1)
+    @test check_inv(PlusEq(*), (0.4, 0.4, 0.5))
+    @test MinusEq(*)(GVar(0.0, 1.0), GVar(0.4), GVar(0.6)) == (GVar(-0.24, 1.0), GVar(0.4, 0.6), GVar(0.6, 0.4))
+    @test check_grad(PlusEq(*), (0.4, 0.4, 0.5); iloss=1)
+    @test check_grad(MinusEq(*), (0.4, 0.4, 0.5); iloss=1)
 end
 
 @testset "i" begin
@@ -128,5 +127,5 @@ end
 end
 
 @testset "gradient" begin
-    @test gradient((⊕(*)), (0.0, 2.0, 3.0); iloss=1) == (1.0, 3.0, 2.0)
+    @test gradient((PlusEq(*)), (0.0, 2.0, 3.0); iloss=1) == (1.0, 3.0, 2.0)
 end

@@ -28,7 +28,7 @@ end
     y = 2.0 - 2.3im
     z = 3.0 + 1.0im
     r = 4.0
-    for opm in [⊕, ⊖]
+    for opm in [PlusEq, MinusEq]
         @test check_inv(opm(complex), (1+2.0im, 2.0, 3.0); verbose=true)
         @test ccheck_grad(opm(complex), (1+2.0im, 2.0, 3.0); verbose=true, iloss=1)
         for (subop, args) in [
@@ -40,7 +40,7 @@ end
             ]
             @test ccheck_grad(subop, args; verbose=true, iloss=1)
             r1 = subop(args...)
-            r2 = [(opm == (⊕) ? Base.:+ : Base.:-)(args[1], subop.f(args[2:end]...)), args[2:end]...]
+            r2 = [(opm == (PlusEq) ? Base.:+ : Base.:-)(args[1], subop.f(args[2:end]...)), args[2:end]...]
             @test all(r1 .≈ r2)
         end
 
@@ -50,7 +50,7 @@ end
             ]
             @show subop, args
             r1 = [subop(args...)...]
-            r2 = [(opm == (⊕) ? Base.:+ : Base.:-)(args[1], subop.f(args[2:end]...)), args[2:end]...]
+            r2 = [(opm == (PlusEq) ? Base.:+ : Base.:-)(args[1], subop.f(args[2:end]...)), args[2:end]...]
             @test r1 ≈ r2
             @test check_grad(subop, args; verbose=true, iloss=1)
         end
