@@ -121,7 +121,7 @@ grad(gv::AbstractArray{T}) where T = grad.(gv)
 grad(gv::Function) = 0
 grad(gv::String) = ""
 grad(t::Tuple) = grad.(t)
-chfield(x::T, ::typeof(grad), g::T) where T = (@invcheck iszero(g) || g≈0; x)
+chfield(x::T, ::typeof(grad), g::T) where T = (@invcheck g zero(g); x)
 chfield(x::GVar, ::typeof(grad), g::GVar) = GVar(x.x, g)
 chfield(x::Complex{<:GVar}, ::typeof(grad), g::Complex) = Complex(GVar(value(x.re), g.re), GVar(value(x.im), g.im))
 

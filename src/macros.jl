@@ -2,8 +2,15 @@ using MatchCore, NiLang
 
 function alloc end
 
+macro auto_alloc(ex)
+    esc(auto_alloc(ex))
+end
+
 function auto_alloc(ex)
     @smatch ex begin
+        :($f($out, $(args...))) => begin
+            Expr(:block, :($out ← $alloc($f, $(args...))), ex)
+        end
         :($out = $f($(args...))) => begin
             if length(args) == 0
                 error("number of arguments must be >= 1.")
@@ -11,12 +18,22 @@ function auto_alloc(ex)
                 Expr(:block, :($out ← $alloc($f, $(args...))), :($out += $f($(args...))))
             end
         end
+        _ => error("can not allocate automatically for expression: `$ex`")
     end
 end
 
-alloc(::PlusEq{typeof(+)}, x::T1, ::T2) where {T1,T2} = zero(promote_type(T1, T2))
-alloc(::PlusEq{typeof(*)}, x::T1, ::T2) where {T1,T2} = zero(promote_type(T1, T2))
-alloc(::PlusEq{typeof(sin)}, x) = zero(x)
+for OPM in [:PlusEq, :MinusEq]
+    for OP in [:+, :-, :*, :/, :^]
+        @eval alloc(::$OPM{typeof($OP)}, x::T1, ::T2) where {T1<:Number,T2<:Number} = zero(promote_type(T1, T2))
+    end
+    for OP in [:sin, :cos, :tan, :asin, :atan, :acos, :sinh, :cosh, :tanh, :identity, :sqrt, :exp, :log]
+        @eval alloc(::$OPM{typeof($OP)}, x::T) where T<:Number = zero(T)
+    end
+    for OP in [:abs, :abs2]
+        @eval alloc(::$OPM{typeof($OP)}, x::T) where T<:Number = zero(real(T))
+    end
+    @eval alloc(::$OPM{typeof(sincos)}, x::T) where T<:Number = (zero(T), zero(T))
+end
 
 function auto_expand(ex)
     res = Expr[]
@@ -48,19 +65,19 @@ function auto_expand!(ex, exprs, sym=nothing, addnew=true)
             end
         end
         :($a += $b) || :($a -= $b) || :($a *= $b) || :($a /= $b) || :($a ⊻= $b) => begin
-            ex = NiLangCore.compile_ex(@__MODULE__, NiLangCore.precom_ex(@__MODULE__, ex, NiLangCore.PreInfo(Symbol[])), NiLangCore.CompileInfo())
-            auto_expand!(ex.args[3], exprs, sym, addnew)
+            auto_expand!(NiLangCore.to_standard_format(ex), exprs, sym, addnew)
         end
         _ => error("Can only expand an expression like `f(args...)`, got $(ex)!")
     end
 end
-
 
 macro auto_expand(ex)
     esc(auto_expand(ex))
 end
 
 using Test
+
+alloc(::typeof(NiLang.i_sum), x::AbstractArray{T}) where T = zero(T)
 
 @testset begin
     @test auto_alloc(:(y = exp(x))) == Expr(:block, :(y ← $alloc(exp, x)), :(y += exp(x)))
@@ -80,4 +97,14 @@ using Test
     x, y, z, a = 1.0, 2.0, 3.0, 4.0
     @test Complex(test(x, y, z, a)[1:2]...) == 1+im*y + sin(z+im*sin(a))
     @test check_inv(test, (x, y, z, a))
+
+    @i function test2(y, x)
+        @routine begin
+            @auto_alloc i_sum(z, x)
+        end
+        y += z
+        ~@routine
+    end
+    @test test2(1.0, [2,3.0])[1] == 6.0
+    @test check_inv(test2, (1.0, [2,3.0]))
 end
