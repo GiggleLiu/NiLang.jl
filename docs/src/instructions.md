@@ -23,7 +23,7 @@ The list of reversible instructions that implemented in NiLang
 | $y \mathrel{+}= \sin(x)$ | $y+\sin x, x$ |
 | $y \mathrel{+}= \cos(x)$ | $y+\cos x, x$ |
 | $y \mathrel{+}= {\rm abs}(x)$ | $y+ |x|, x$ |
-| $-(y)$ | $-y$ |
+| $NEG(y)$ | $-y$ |
 
 "." is the broadcasting operations in Julia.
 

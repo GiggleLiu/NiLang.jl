@@ -1,10 +1,4 @@
 # unary
-# TODO: deprecate
-@i @inline function Base.:-(a!::GVar)
-    -(a!.x)
-    -(a!.g)
-end
-
 @i @inline function NEG(a!::GVar)
     NEG(a!.x)
     NEG(a!.g)

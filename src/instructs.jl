@@ -9,15 +9,19 @@ export HADAMARD
 
 A `NoGrad(x)` is equivalent to `GVar^{-1}(x)`, which cancels the `GVar` wrapper.
 """
-@pure_wrapper NoGrad
+struct NoGrad{T} <: IWrapper{T}
+    x::T
+end
+NoGrad(x::NoGrad{T}) where T = x # to avoid ambiguity error
+NoGrad{T}(x::NoGrad{T}) where T = x # to avoid ambiguity error
+(_::Type{Inv{NoGrad}})(x) = x.x
+@fieldview value(x::NoGrad) = x.x
 
 const NullType{T} = Union{NoGrad{T}, Partial{T}}
 
-# TODO: deprecate
-@selfdual -
-
 NEG(a!) = -(a!)
 @selfdual NEG
+@selfdual -
 
 INV(a!) = inv(a!)
 @selfdual INV

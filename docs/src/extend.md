@@ -128,25 +128,25 @@ The general approach is *Binding the backward rule on its inverse*!
 
 ```julia
 @i @inline function IROT(a!::GVar, b!::GVar, θ::GVar)
-    IROT(value(a!), value(b!), value(θ))
-    -(value(θ))
-    value(θ) -= π/2
-    ROT(grad(a!), grad(b!), value(θ))
-    grad(θ) += value(a!) * grad(a!)
-    grad(θ) += value(b!) * grad(b!)
-    value(θ) += π/2
-    -(value(θ))
-    ROT(grad(a!), grad(b!), π/2)
+    IROT(a!.x, b!.x, θ.x)
+    NEG(θ.x)
+    θ.x -= π/2
+    ROT(a!.g, b!.g, θ.x)
+    θ.g += a!.x * a!.g
+    θ.g += b!.x * b!.g
+    θ.x += π/2
+    NEG(θ.x)
+    ROT(a!.g, b!.g, π/2)
 end
 
 @i @inline function IROT(a!::GVar, b!::GVar, θ::Real)
-    IROT(value(a!), value(b!), θ)
-    -(θ)
+    IROT(a!.x, b!.x, θ)
+    NEG(θ)
     θ -= π/2
-    ROT(grad(a!), grad(b!), θ)
+    ROT(a!.g, b!.g, θ)
     θ += π/2
-    -(θ)
-    ROT(grad(a!), grad(b!), π/2)
+    NEG(θ)
+    ROT(a!.g, b!.g, π/2)
 end
 
 @nograd IROT(a!::Real, b!::Real, θ::GVar)

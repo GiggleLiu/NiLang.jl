@@ -3,7 +3,7 @@ using Test
 
 @testset "auto bcast" begin
     a = AutoBcast([1.0, 2.0, 3.0])
-    @instr -(a)
+    @instr NEG(a)
     @test a.x == [-1.0,-2.0,-3.0]
     a = AutoBcast([1.0, 2.0, 3.0])
     @instr INC(a)

@@ -55,7 +55,7 @@ end
             @test check_grad(subop, args; verbose=true, iloss=1)
         end
     end
-    for op in [-, NEG]
+    for op in [NEG]
         @test check_inv(op, (x,); verbose=true)
         @test ccheck_grad(op, (x,); verbose=true, iloss=1)
     end

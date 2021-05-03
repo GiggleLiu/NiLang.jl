@@ -9,7 +9,7 @@ struct AutoBcast{T,N} <: IWrapper{T} x::Vector{T} end
 AutoBcast(x::Vector{T}) where {T} = AutoBcast{T, length(x)}(x)
 AutoBcast(x::AutoBcast{T,N}) where {T,N} = x # to avoid ambiguity error
 AutoBcast{T,N}(x::AutoBcast{T,N}) where {T,N} = x
-NiLangCore.value(x::AutoBcast) = x.x
+value(x::AutoBcast) = x.x
 NiLangCore.chfield(x::AutoBcast, ::typeof(value), xval) = chfield(x, Val(:x), xval)
 Base.zero(x::AutoBcast) = AutoBcast(zero(x.x))
 Base.zero(::Type{AutoBcast{T,N}}) where {T,N} = AutoBcast{T,N}(zeros(T, N))

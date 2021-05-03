@@ -90,6 +90,7 @@ Base.zero(::Type{<:GVar{T,GT}}) where {T,GT} = GVar(zero(T), zero(GT))
 Base.one(x::GVar) = GVar(Base.one(x.x), Base.zero(x.g))
 Base.one(::Type{<:GVar{T}}) where T = GVar(one(T))
 Base.adjoint(b::GVar) = GVar(b.x', b.g')
+Base.:-(b::GVar) = GVar(-b.x, -b.g)
 Base.isapprox(x::GVar, y::GVar; kwargs...) = isapprox(x.x, y.x; kwargs...) && isapprox(x.g, y.g; kwargs...)
 
 # define kernel and field views
@@ -123,6 +124,7 @@ grad(gv::String) = ""
 grad(t::Tuple) = grad.(t)
 chfield(x::T, ::typeof(grad), g::T) where T = (@invcheck g zero(g); x)
 chfield(x::GVar, ::typeof(grad), g::GVar) = GVar(x.x, g)
+#chfield(x::GVar, ::typeof(-), val::GVar) = GVar(-val.x, -val.g)
 chfield(x::Complex{<:GVar}, ::typeof(grad), g::Complex) = Complex(GVar(value(x.re), g.re), GVar(value(x.im), g.im))
 
 # NOTE: superwarning: check value only to make ancilla gradient descardable.

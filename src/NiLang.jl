@@ -9,6 +9,7 @@ export Fixed43
 const Fixed43 = Q20f43
 
 include("utils.jl")
+include("wrappers.jl")
 include("vars.jl")
 include("instructs.jl")
 include("ulog.jl")

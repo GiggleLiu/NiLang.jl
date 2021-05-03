@@ -9,6 +9,10 @@ end
     include("utils.jl")
 end
 
+@testset "wrappers.jl" begin
+    include("wrappers.jl")
+end
+
 @testset "instructs.jl" begin
     include("instructs.jl")
 end
