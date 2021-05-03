@@ -88,3 +88,26 @@ end
     end
     @test f() == ()
 end
+
+@testset "NoGrad" begin
+    a = NoGrad(0.5)
+    @test a isa NoGrad
+    @test zero(a) == NoGrad(0.0)
+    @test (~NoGrad)(a) === 0.5
+    @test -NoGrad(0.5) == NoGrad(-0.5)
+
+    a2 = NoGrad{Float64}(a)
+    @test a2 === a
+    println(a2)
+    @test chfield(a2, NoGrad, NoGrad(0.4)) === 0.4
+
+    @test unwrap(NoGrad(a)) == 0.5
+    @test NoGrad(a) < 0.6
+    @test NoGrad(a) <= 0.6
+    @test NoGrad(a) >= 0.4
+    @test a ≈ 0.5
+    @test a == 0.5
+    @test a > 0.4
+    @test isless(a, 0.6)
+end
+

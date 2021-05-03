@@ -499,20 +499,41 @@ when is backward mode AD more useful?
 "
 
 # ╔═╡ aa1547f2-5edd-4b7e-b93e-bdfc4e4fc6d5
-md"""# The "true" reverse mode automatic differentiation"""
+md"""# Memory Management"""
 
 # ╔═╡ 6e76a107-4f51-4e32-b133-7b6e04d7d107
 md"The true reverse mode autodiff has to handle the memory wall problem."
+
+# ╔═╡ 999f7a8f-d72e-4ccd-8cbf-b5bbb7db1842
+md"""
+## Checkpointing
+"""
 
 # ╔═╡ 32772c2a-6b80-4779-963c-06974ff0d832
 html"""
 <img src="https://raw.githubusercontent.com/GiggleLiu/WuLiXueBao/master/paper/tikzimg-1.svg" style="clip-path: inset(0px 230px 0px 0px); margin-left:40px;" width=500/>
 """
 
-# ╔═╡ 999f7a8f-d72e-4ccd-8cbf-b5bbb7db1842
-md"""
-#### The optimal checkpointing
+# ╔═╡ 41642bd5-1321-490a-95ad-4c1d6363456f
+md"
+* red arrow: back propagation
+* black dot: cached
+* white dot: not cached
+"
 
+# ╔═╡ 4978f404-11ff-41b8-a673-f2d051b1f526
+md"Is evenly checkpointed program optimal?"
+
+# ╔═╡ 73bd2e3b-902f-461b-860f-246257608ecd
+html"""
+<img src="https://raw.githubusercontent.com/GiggleLiu/WuLiXueBao/master/paper/tikzimg2-1.svg" style="clip-path: inset(0px 0px 0px 0px); margin-left:40px;" width=500/>
+"""
+
+# ╔═╡ 4dd47dc8-6dfa-47a4-a088-689b4b870762
+md"## Optimal checkpointing"
+
+# ╔═╡ ecd975d2-9374-4f40-80ac-2cceda11e7fb
+md"""
 1992 ~ Andreas Griewank, Achieving logarithmic growth of temporal and spatial complexity in reverse automatic differentiation.
 
 Julia implementation: [TreeverseAlgorithm.jl](https://github.com/GiggleLiu/TreeverseAlgorithm.jl)
@@ -520,7 +541,7 @@ Julia implementation: [TreeverseAlgorithm.jl](https://github.com/GiggleLiu/Treev
 
 # ╔═╡ 832cc81d-a49d-46e7-9d2b-d8bde9bb1273
 html"""
-<img src="https://user-images.githubusercontent.com/6257240/116494309-91263000-a86e-11eb-8054-9b91646be0e5.png" style="clip-path: inset(40px 350px 0px 0px);"/>
+<img src="https://user-images.githubusercontent.com/6257240/116494309-91263000-a86e-11eb-8054-9b91646be0e5.png" style="clip-path: inset(74px 350px 0px 0px);"/>
 """
 
 # ╔═╡ 71f4b476-027d-4c8f-b561-1ee418bc9e61
@@ -578,8 +599,13 @@ md"## How to differentiate QR"
 # ╟─ea44037b-9359-4fbd-990f-529d88d54351
 # ╟─aa1547f2-5edd-4b7e-b93e-bdfc4e4fc6d5
 # ╟─6e76a107-4f51-4e32-b133-7b6e04d7d107
-# ╟─32772c2a-6b80-4779-963c-06974ff0d832
 # ╟─999f7a8f-d72e-4ccd-8cbf-b5bbb7db1842
+# ╟─32772c2a-6b80-4779-963c-06974ff0d832
+# ╟─41642bd5-1321-490a-95ad-4c1d6363456f
+# ╟─4978f404-11ff-41b8-a673-f2d051b1f526
+# ╟─73bd2e3b-902f-461b-860f-246257608ecd
+# ╟─4dd47dc8-6dfa-47a4-a088-689b4b870762
+# ╟─ecd975d2-9374-4f40-80ac-2cceda11e7fb
 # ╟─832cc81d-a49d-46e7-9d2b-d8bde9bb1273
 # ╟─71f4b476-027d-4c8f-b561-1ee418bc9e61
 # ╟─82593cd0-1403-4597-8370-919c80494479

@@ -7,13 +7,13 @@ NiLang.AD.GVar(sym::Basic) = GVar(sym, zero(sym))
 # a patch for symbolic IROT
 @i @inline function NiLang.IROT(a!::GVar{<:Basic}, b!::GVar{<:Basic}, θ::GVar{<:Basic})
     IROT(a!.x, b!.x, θ.x)
-    -(θ.x)
+    NEG(θ.x)
     θ.x -= Basic(π)/2
     ROT(a!.g, b!.g, θ.x)
     θ.g += a!.x * a!.g
     θ.g += b!.x * b!.g
     θ.x += Basic(π)/2
-    -(θ.x)
+    NEG(θ.x)
     ROT(a!.g, b!.g, Basic(π)/2)
 end
 

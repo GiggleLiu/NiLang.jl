@@ -9,6 +9,10 @@ end
     include("utils.jl")
 end
 
+@testset "wrappers.jl" begin
+    include("wrappers.jl")
+end
+
 @testset "instructs.jl" begin
     include("instructs.jl")
 end
@@ -23,6 +27,10 @@ end
 
 @testset "stack.jl" begin
     include("stack.jl")
+end
+
+@testset "macros.jl" begin
+    include("macros.jl")
 end
 
 @testset "autobcast.jl" begin

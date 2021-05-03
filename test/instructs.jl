@@ -29,13 +29,6 @@ end
     @test x == 2 && y == 1
 end
 
-@testset "-" begin
-    x = 0.3
-    @instr -(x)
-    @test x == -0.3
-    @test check_inv(-, (x,))
-end
-
 @testset "NEG" begin
     x = 0.3
     @instr NEG(x)

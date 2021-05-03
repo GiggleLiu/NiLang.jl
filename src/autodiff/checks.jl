@@ -5,7 +5,7 @@ using FixedPointNumbers: Fixed
 
 isvar(x) = nparams(x) != 0
 
-nparams(model) = nparams(NiLangCore.struct2namedtuple(model))
+nparams(model) = nparams(NiLangCore.type2tuple(model))
 nparams(x::AbstractArray{<:AbstractFloat}) = length(x)
 nparams(x::AbstractArray{<:GVar}) = length(x)
 nparams(x::AbstractArray) = sum(nparams, x)

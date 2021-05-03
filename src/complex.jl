@@ -8,7 +8,7 @@ NiLangCore.chfield(x::Complex, ::typeof(imag), r) = chfield(x, Val{:im}(), r)
 end
 
 @i @inline function CONJ(y!::Complex{T}) where T
-    -(y!.im)
+    NEG(y!.im)
 end
 
 @i @inline function :(+=)(angle)(r!::Real, x::Complex)
