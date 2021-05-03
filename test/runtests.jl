@@ -29,6 +29,10 @@ end
     include("stack.jl")
 end
 
+@testset "macros.jl" begin
+    include("macros.jl")
+end
+
 @testset "autobcast.jl" begin
     include("autobcast.jl")
 end

@@ -16,6 +16,7 @@ include("ulog.jl")
 include("stack.jl")
 include("complex.jl")
 include("autobcast.jl")
+include("macros.jl")
 
 include("autodiff/autodiff.jl")
 
