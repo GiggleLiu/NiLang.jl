@@ -76,25 +76,25 @@ true</code></pre><p>For self-reversible functions, one can declare the reversibi
     b!, a!
 end
 @selfdual SWAP</code></pre><p>To bind gradients for this multi-in, multi-out function. The general approach is <em>Binding the backward rule on its inverse</em>!</p><pre><code class="language-julia">@i @inline function IROT(a!::GVar, b!::GVar, θ::GVar)
-    IROT(value(a!), value(b!), value(θ))
-    -(value(θ))
-    value(θ) -= π/2
-    ROT(grad(a!), grad(b!), value(θ))
-    grad(θ) += value(a!) * grad(a!)
-    grad(θ) += value(b!) * grad(b!)
-    value(θ) += π/2
-    -(value(θ))
-    ROT(grad(a!), grad(b!), π/2)
+    IROT(a!.x, b!.x, θ.x)
+    NEG(θ.x)
+    θ.x -= π/2
+    ROT(a!.g, b!.g, θ.x)
+    θ.g += a!.x * a!.g
+    θ.g += b!.x * b!.g
+    θ.x += π/2
+    NEG(θ.x)
+    ROT(a!.g, b!.g, π/2)
 end
 
 @i @inline function IROT(a!::GVar, b!::GVar, θ::Real)
-    IROT(value(a!), value(b!), θ)
-    -(θ)
+    IROT(a!.x, b!.x, θ)
+    NEG(θ)
     θ -= π/2
-    ROT(grad(a!), grad(b!), θ)
+    ROT(a!.g, b!.g, θ)
     θ += π/2
-    -(θ)
-    ROT(grad(a!), grad(b!), π/2)
+    NEG(θ)
+    ROT(a!.g, b!.g, π/2)
 end
 
-@nograd IROT(a!::Real, b!::Real, θ::GVar)</code></pre><p>When this inverse function is called, the backward rules are automatically applied.</p><p>Good! This method can also be extended to linear algebra functions, however, the memory allocation overhead is high because one need to wrap each element with <code>GVar</code>.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../instructions/">« Instruction Reference</a><a class="docs-footer-nextpage" href="../examples/sharedwrite/">The shared write problem on GPU »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Saturday 1 May 2021 12:18">Saturday 1 May 2021</span>. Using Julia version 1.6.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+@nograd IROT(a!::Real, b!::Real, θ::GVar)</code></pre><p>When this inverse function is called, the backward rules are automatically applied.</p><p>Good! This method can also be extended to linear algebra functions, however, the memory allocation overhead is high because one need to wrap each element with <code>GVar</code>.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../instructions/">« Instruction Reference</a><a class="docs-footer-nextpage" href="../examples/sharedwrite/">The shared write problem on GPU »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Monday 3 May 2021 12:41">Monday 3 May 2021</span>. Using Julia version 1.6.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
