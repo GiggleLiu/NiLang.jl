@@ -1,5 +1,5 @@
 using NiLang, NiLang.AD
-using KernelAbstractions, CUDA
+using KernelAbstractions, CUDA, CUDAKernels
 
 @i @kernel function kernel_f(A, B::AbstractVector{TB}) where TB
     # turng off reversibility check, since GPU can not handle errors
