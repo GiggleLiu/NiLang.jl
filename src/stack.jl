@@ -2,6 +2,43 @@ export POP!, PUSH!, COPYPUSH!, COPYPOP!, GLOBAL_STACK
 
 const GLOBAL_STACK = []
 
+struct Stack{T}
+    data::Vector{T}
+    top::Base.RefValue{Int}
+end
+
+function Stack{T}(n::Int)
+    Stack{T}(zeros(T, n), Ref(0))
+end
+
+@inline function Base.push!(stack::Stack, val)
+    stack.top[] += 1
+    @boundscheck stack.top[] <= length(stack.data) || throw(BoundsError("stack of size `$(length(stack))` is too small to fit your data"))
+    stack.data[stack.top[]] = val
+    return stack
+end
+
+@inline function Base.pop!(stack::Stack)
+    @boundscheck stack.top[] <= 0 || throw(BoundsError("hit stack bottom"))
+    val = stack.data[stack.top[]]
+    stack.top[] -= 1
+    return val
+end
+
+# default stack size is 10^6 (~8M for Float64)
+for DT in [:Float64, :Float32, :ComplexF64, :ComplexF32, :Int64, :Int32, :Bool, :UInt8]
+    STACK = Symbol(:GLOBAL_STACK_, DT)
+    @eval const $STACK = Stack{$DT}(1000000)
+    @eval @inline function PUSH!(x::$DT)
+        push!($STACK, x)
+        _zero($DT)
+    end
+    @eval @inline function POP!(x::$DT)
+        NiLangCore.deanc(x, _zero($DT))
+        loaddata($DT, pop!($STACK))
+    end
+end
+
 ############# global stack operations ##########
 @inline function PUSH!(x)
     push!(GLOBAL_STACK, x)
