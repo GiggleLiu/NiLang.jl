@@ -25,10 +25,6 @@ end
     include("ulog.jl")
 end
 
-@testset "stack.jl" begin
-    include("stack.jl")
-end
-
 @testset "macros.jl" begin
     include("macros.jl")
 end

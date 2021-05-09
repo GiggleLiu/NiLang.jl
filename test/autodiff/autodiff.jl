@@ -1,6 +1,7 @@
 using Test, NiLang, NiLang.AD
 
 include("vars.jl")
+include("stack.jl")
 include("gradfunc.jl")
 
 include("instructs.jl")

@@ -5,13 +5,14 @@ using NiLangCore
 using MatchCore, TupleTools
 
 import ..NiLang: ROT, IROT, SWAP,
-    chfield, value, NoGrad, loaddata, INC, DEC, HADAMARD,
+    chfield, value, NoGrad, INC, DEC, HADAMARD,
     AddConst, SubConst, NEG, INV
 using NiLangCore: default_constructor
 
 export GVar, grad, Loss, NoGrad, @nograd
 
 include("vars.jl")
+include("stack.jl")
 include("gradfunc.jl")
 include("checks.jl")
 
