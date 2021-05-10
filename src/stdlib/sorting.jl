@@ -10,18 +10,16 @@ This function can be used to get the maximum value and maximum indices.
 	@invcheckoff if (length(arr) > 0, ~)
 		y ← zero(T)
 		y += arr[1]
-		PUSH!(xs!, y)
+		xs![end+1] ↔ y
 		anc ← 1
-		PUSH!(inds!, anc)
-		anc → 0
+		inds![end+1] ↔ anc
 		@inbounds for i = 2:length(arr)
 			if (arr[i] > xs![end], i==inds![end])
 				ind ← i
 				x ← zero(T)
 				x += arr[i]
-				PUSH!(xs!, x)
-				PUSH!(inds!, ind)
-				ind → 0
+				xs![end+1] ↔ x
+				inds![end+1] ↔ ind
 			end
 		end
 	end

@@ -2,6 +2,7 @@ export SWAP, FLIP
 export ROT, IROT
 export INC, DEC, NEG, INV, AddConst, SubConst
 export HADAMARD
+export PUSH!, POP!, COPYPOP!, COPYPUSH!
 
 """
     NoGrad{T} <: IWrapper{T}
@@ -179,4 +180,40 @@ Base.:~(ac::SubConst) = AddConst(ac.x)
 
 for F in [:INV, :NEG, :FLIP, :INC, :DEC]
     @eval NiLangCore.chfield(x::T, ::typeof($F), xval::T) where T<:Real = (~$F)(xval)
+end
+
+#### The following functions are not safe!
+@i @inline function PUSH!(x::T) where T
+    PUSH!((@skip! GLOBAL_STACK), x)
+end
+
+@i @inline function POP!(x::T) where T
+    POP!((@skip! GLOBAL_STACK), x)
+end
+
+@i @inline function COPYPUSH!(x)
+    COPYPUSH!((@skip! GLOBAL_STACK), x)
+end
+
+@i @inline function COPYPOP!(x)
+    COPYPOP!((@skip! GLOBAL_STACK), x)
+end
+
+# reversibility turned off, in principle, we can not deallocate `GVar{T}` to `T`
+@i @inline function PUSH!(st, x::T) where T
+    @invcheckoff st[end+1] ↔ x
+    @invcheckoff x ← _zero(T)
+end
+
+@i @inline function POP!(st, x::T) where T
+    @invcheckoff x → _zero(T)
+    @invcheckoff st[end] ↔ (x::T)::∅
+end
+
+@i @inline function COPYPUSH!(st, x)
+    @invcheckoff st[end+1] ← x
+end
+
+@i @inline function COPYPOP!(st, x)
+    @invcheckoff st[end] → x
 end

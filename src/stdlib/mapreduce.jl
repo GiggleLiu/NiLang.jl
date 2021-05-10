@@ -12,6 +12,7 @@ Reversible `mapfoldl` function, `map` can be irreversible, but `fold` should be 
         fold(out!, anc)
         anc -= map(iter[i])
     end
+    anc → zero(T)
 end
 
 """

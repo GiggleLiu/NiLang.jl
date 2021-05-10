@@ -36,6 +36,7 @@ end
         test1(a, b, out)
         (~test1)(a, b, out)
         a += b
+        out → 0.0
     end
 
     # compute (a+b)*b -> out

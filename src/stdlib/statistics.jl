@@ -54,9 +54,8 @@ end
 get the pdf of `Normal(μ, σ)` at point `x`.
 """
 @i function i_normal_logpdf(out, x::T, μ, σ) where T
-    @zeros T anc1 anc2 anc3
-
-    @routine begin
+    @routine @invcheckoff begin
+        @zeros T anc1 anc2 anc3
         anc1 += x
         anc1 -= μ
         anc2 += anc1 / σ  # (x- μ)/σ
