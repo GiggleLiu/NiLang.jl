@@ -53,13 +53,13 @@ end
 end
 
 @testset "AD over pop" begin
-    @i function mean(out!, x)
+    @i function mean(out!::T, x) where T
         anc ← zero(out!)
         for i=1:length(x)
             anc += x[i]
         end
         out! += anc / (@const length(x))
-        PUSH!(anc)
+        FLOAT64_STACK[end+1] ↔ anc::T
     end
 
     @test check_grad(mean, (0.0, [1,2,3.0, 4.0]); iloss=1)
@@ -79,20 +79,31 @@ end
 
 @testset "push, load data" begin
     stack = []
-    val = PUSH!(stack, [1,2,3])[2]
+    val = [1,2,3]
+    @instr PUSH!(stack, val)
     @test val == Int[]
-    val = PUSH!(stack, 3.0)[2]
+    val = 3.0
+    @instr PUSH!(stack, val)
     @test val == 0.0
-    PUSH!(stack, 3.0)
-    @test_throws InvertibilityError POP!(stack, GVar(3.0))
-    PUSH!(stack, 3.0)
-    @test POP!(stack, GVar(0.0))[2] == GVar(3.0)
+    val = 3.0
+    @instr PUSH!(stack, val)
+    x = GVar(3.0)
+    #@test_throws InvertibilityError @instr POP!(stack, x)
+    z = 3.0
+    @instr PUSH!(stack, z)
+    z = GVar(0.0)
+    @instr POP!(stack, z)
+    @test z == GVar(3.0)
     x = [1.0, 2.0, 3.0]
-    PUSH!(stack, x)
-    @test POP!(stack, empty(x))[2] == GVar.([1,2,3.0])
+    @instr PUSH!(stack, x)
+    y = empty(x)
+    @instr POP!(stack, y)
+    @test y == GVar.([1,2,3.0])
     x = [1.0, 2.0, 3.0]
-    PUSH!(stack, x)
-    @test POP!(stack, empty(x))[2] == [1,2,3.0]
+    @instr PUSH!(stack, x)
+    y = empty(x)
+    @instr POP!(stack, y)
+    @test y == [1,2,3.0]
 end
 
 @testset "dataviews" begin

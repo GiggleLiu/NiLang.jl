@@ -32,7 +32,7 @@ end
 
 using NiLang
 @i function i_fft!(x::AbstractVector{T}) where T
-    @invcheckoff N ← length(x)
+    @routine @invcheckoff N ← length(x)
     @safe @assert N%2 == 0
     @invcheckoff @inbounds if N <= 1
     elseif N == 2
@@ -57,12 +57,15 @@ using NiLang
         end
         # combine
         for i=1:N÷2
-            θ ← -2*π*(i-1)/N
+            @routine θ ← -2*π*(i-1)/N
             ROT(x[i+N÷2].re, x[i+N÷2].im, θ)
             HADAMARD(x[i].re, x[i+N÷2].re)
             HADAMARD(x[i].im, x[i+N÷2].im)
+            ~@routine
         end
+        x2 → zeros(T, N)
     end
+    ~@routine
 end
 
 using Test, FFTW

@@ -58,6 +58,7 @@ const NiceNetwork{T} = Vector{NiceLayer{T}}
         else
             @inbounds nice_layer!(x! |> subarray(1:np÷2), network[i], x! |> subarray(np÷2+1:np))
         end
+        np → length(x!)
     end
 end
 

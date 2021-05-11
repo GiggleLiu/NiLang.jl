@@ -128,7 +128,7 @@ chfield(x::GVar, ::typeof(grad), g::GVar) = GVar(x.x, g)
 chfield(x::Complex{<:GVar}, ::typeof(grad), g::Complex) = Complex(GVar(value(x.re), g.re), GVar(value(x.im), g.im))
 
 # NOTE: superwarning: check value only to make ancilla gradient descardable.
-NiLangCore.deanc(x::GVar, val::GVar) = NiLangCore.deanc(value(x), value(val))
+NiLangCore.deanc(x::GVar{T}, val::GVar{T}) where T = NiLangCore.deanc(value(x), value(val))
 function deanc(x::T, val::T) where {T<:AbstractArray}
    x === val || deanc.(x, val)
 end
@@ -186,19 +186,6 @@ macro nograd(ex)
     end
 end
 
-# load data from stack
-function loaddata(::Type{TG}, x::T) where {T,TG<:GVar{T}}
-    TG(x)
-end
-
-function loaddata(::Type{T}, x::T) where T <: GVar
-    x
-end
-
-function loaddata(::Type{AGT}, x::AT) where {T, GT, AT<:AbstractArray{T}, AGT<:AbstractArray{GVar{T,T}}}
-    map(x->GVar(x, zero(x)), x)
-end
-
 # ULogarithmic
 _content(x::ULogarithmic) = x.log
 NiLang.AD.GVar(x::ULogarithmic) = exp(ULogarithmic, GVar(_content(x), zero(_content(x))))
@@ -208,10 +195,6 @@ Base.one(x::ULogarithmic{GVar{T,GT}}) where {T, GT} = one(ULogarithmic{GVar{T,GT
 Base.one(::Type{ULogarithmic{GVar{T,GT}}}) where {T,GT} = exp(ULogarithmic, GVar(zero(T), zero(GT)))
 Base.zero(x::ULogarithmic{GVar{T,GT}}) where {T,GT} =zero(ULogarithmic{GVar{T,GT}})
 Base.zero(::Type{ULogarithmic{GVar{T,T}}}) where T = exp(ULogarithmic, GVar(zero(T), zero(T)))
-
-function NiLang.loaddata(::Type{Array{<:ULogarithmic{GVar{T,T}}}}, data::Array{<:ULogarithmic{T}}) where {T}
-    GVar.(data)
-end
 
 # the patch for dicts
 function GVar(d::Dict)

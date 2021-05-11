@@ -17,8 +17,6 @@ end
 Softmax-Cross entropy function.
 """
 @i function i_softmax_crossentropy(x, p, imax, xmax, Z, out::T) where T
-    logZ ← zero(T)
-    yi ← zero(T)
     # subtract maximum
     imax += argmax(x)  # trade off space of xmax to time
     xmax += x[imax]
@@ -27,7 +25,11 @@ Softmax-Cross entropy function.
         x[i] -= xmax
         Z += Base.exp(x[i])
     end
-    logZ += log(Z)
+    @routine begin
+        yi ← zero(T)
+        logZ ← zero(T)
+        logZ += log(Z)
+    end
     for i=1:length(x)
         yi += logZ
         yi -= x[i]
@@ -35,7 +37,7 @@ Softmax-Cross entropy function.
         yi += x[i]
         yi -= logZ
     end
-    logZ -= log(Z)
+    ~@routine
 end
 
 """
@@ -63,9 +65,11 @@ Compute `logout! = log(sum(exp(x)))`.
     * `x`, input vector.
 """
 @i function i_logsumexp(logout!, out!, xs!, inds!, x::AbstractArray{T}) where T
-	mx ← zero(T)
   	i_ascending!(xs!, inds!, x)
-	mx += xs![end]
+    @routine begin
+        mx ← zero(T)
+        mx += xs![end]
+    end
 	@invcheckoff @inbounds for i=1:length(x)
 		x[i] -= mx
 		out! += exp(x[i])
@@ -73,7 +77,7 @@ Compute `logout! = log(sum(exp(x)))`.
 	end
   	logout! += log(out!)
 	logout! += mx
-	mx -= xs![end]
+    ~@routine
 end
 
 

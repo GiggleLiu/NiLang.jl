@@ -22,6 +22,7 @@ using NiLang, NiLang.AD
             dest[i] += dt*g
             ~@routine
         end
+        n → length(dest)
     end
     x = zeros(FT, n)
     x[n÷2] = 1

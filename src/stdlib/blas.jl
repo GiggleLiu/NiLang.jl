@@ -36,12 +36,14 @@ end
 @i function i_mul!(out!::AbstractVector{T}, x::AbstractMatrix, y::AbstractVector) where T
 	@safe size(x, 2) == size(y, 1) || throw(DimensionMismatch())
 	@invcheckoff @inbounds for j=1:size(x,2)
-		yj ← zero(T)
-		yj += y[j]
+        @routine begin
+            yj ← zero(T)
+            yj += y[j]
+        end
 		for i=1:size(x,1)
 			out![i] += x[i,j] * yj
 		end
-		yj -= y[j]
+        ~@routine
 	end
 end
 
@@ -81,8 +83,10 @@ end
 Compute unitary matrix multiplication on `x`, where the unitary matrix is parameterized by (N+1)*N/2 `θ`s.
 """
 @i function i_umm!(x!::AbstractArray, θ)
-    M ← size(x!, 1)
-    N ← size(x!, 2)
+    @routine begin
+        M ← size(x!, 1)
+        N ← size(x!, 2)
+    end
     k ← 0
     @safe @assert length(θ) == M*(M-1)/2
     for l = 1:N
@@ -95,4 +99,5 @@ Compute unitary matrix multiplication on `x`, where the unitary matrix is parame
     end
 
     k → length(θ)
+    ~@routine
 end
