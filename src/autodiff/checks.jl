@@ -3,6 +3,7 @@ export gradient_numeric
 
 using FixedPointNumbers: Fixed
 
+@nospecialize
 isvar(x) = nparams(x) != 0
 
 nparams(model) = nparams(NiLangCore.type2tuple(model))
@@ -122,3 +123,5 @@ function check_grad(f, args; atol::Real=1e-4, verbose::Bool=false, iloss::Int, k
     end
     return true
 end
+
+@specialize
