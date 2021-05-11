@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.12.20
+# v0.14.5
 
 using Markdown
 using InteractiveUtils
@@ -422,11 +422,11 @@ end))
 
 # ╔═╡ 2b57443e-a516-434b-be86-80616a98e2f5
 @i function f2k(t::Type{T}, x) where T
-	x += one(@const T)
+	x += one(@skip! T)
 end; @test f2k(Float64, 0.0)[2] == 1.0
 
 # ╔═╡ fc2e27f9-b7ba-44cc-a953-6745548ad733
-md"A function call that returning a constant should also be decorated with the `@const` or `@skip` macro."
+md"A function call that returning a constant should also be decorated with the `@const` (assert a variable is not changed) or `@skip!` (do not assign this variable back) macro."
 
 # ╔═╡ fc744931-360b-4478-9f77-c50f048de243
 @test_throws LoadError macroexpand(NiLang, :(@i function f2l(y, x::Matrix) where T
@@ -816,9 +816,9 @@ md"The sequence of Fibonacci numbers are: 1, 1, 2, 3, 5, 8"
 
 # ╔═╡ 5b5858bf-63ac-4e31-a516-055a9cd18ffe
 @i function rfib(out!, n::T) where T
-    n1 ← zero(T)
-    n2 ← zero(T)
     @routine begin
+		n1 ← zero(T)
+		n2 ← zero(T)
         n1 += n - 1
         n2 += n - 2
     end
