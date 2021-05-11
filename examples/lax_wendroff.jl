@@ -62,6 +62,7 @@ using NiLang
         cache[nx+1,j] += q[2]
         SWAP(q[nx], cache[nx+1,j])
     end
+    nx → length(q)
 end
 nt = 2000
 i_lax_wendroff!(nt, 1.0, q_init, zero(q_init), zeros(length(q_init)+1,nt))

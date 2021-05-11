@@ -3,9 +3,9 @@
 using NiLang
 
 @i function rfib(out!, n::T) where T
-    n1 ← zero(T)
-    n2 ← zero(T)
     @routine begin
+        n1 ← zero(T)
+        n2 ← zero(T)
         n1 += n - 1
         n2 += n - 2
     end
@@ -31,6 +31,7 @@ end
         rfib(out, n!)
     end
     ~rfib(out, n!)
+    out → 0
 end
 
 # In this example, the postcondition `n!=0` in the `while` statement is false before entering the loop, and it becomes true in later iterations. In the reverse program, the `while` statement stops at `n==0`.
