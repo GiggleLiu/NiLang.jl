@@ -121,8 +121,19 @@ NiLang is a embeded domain specific language (eDSL) in Julia, so one need to ins
 Also, it might be good to read the [README](https://github.com/GiggleLiu/NiLang.jl) first. In this tutorial, we focus on
 
 * NiLang grammar and design patterns.
-* Automatic differentiation based on reversible programming and time-space tradeoff
+* Automatic differentiation based on reversible programming
 "
+
+# ╔═╡ 611b577f-4722-42bf-8f8e-aeb2fb30be71
+md"""
+|  symbol  |  meaning  | how to type |
+| -------  | --------- | ----------- |
+| ← | allocate |  \leftarrow + TAB |
+| → | deallocate | \rightarrow + TAB |
+| ↔ | exchange | \leftrightarrow + TAB |
+| ∅ | empty variable | \emptyset + TAB |
+| ~ | inverse | ~ |
+"""
 
 # ╔═╡ 605872cf-f3fd-462e-a2b1-7d1c5ae45efd
 title1("Getting started")
@@ -138,6 +149,9 @@ end
 
 # ╔═╡ f0e94247-f615-472b-8218-3fa287b38aa1
 md"The function arguments contains keyword and non-keyword arguments, where non-keyword arguments can only be used as constants. There is no `return` statement because this function returns input non-keyword variables automatically. `return` is both not needed and not allowed."
+
+# ╔═╡ 2581aa33-1dc5-40b1-aa9f-6a11cc750c93
+md"In NiLang, a variable is mutable. After running an instruction that defines the mapping ``\mathbb{R}^n\rightarrow\mathbb{R}^n`` (notice inputs and outputs have the same shapes), the outputs are directly assigned back. In other words, every instruction changes the variable inplace."
 
 # ╔═╡ af738f89-3214-429c-9c7d-18a6ea0d9401
 f1(1.0, 2.0; constant=5.0)
@@ -204,9 +218,6 @@ end
 # ╔═╡ b6dcd18c-606f-4340-b2ec-163e8bad03f5
 title1("Variables")
 
-# ╔═╡ 2581aa33-1dc5-40b1-aa9f-6a11cc750c93
-md"In NiLang, a variable is mutable. After running an instruction that defines the mapping ``\mathbb{R}^n\rightarrow\mathbb{R}^n`` (notice inputs and outputs have the same shapes), the outputs are directly assigned back. In other words, every instruction changes the variable inplace."
-
 # ╔═╡ a1a29f34-f8a9-4e9f-9afe-7d0096771440
 title2("Allocate and deallocate a variable")
 
@@ -229,21 +240,195 @@ For example
 """
 
 # ╔═╡ c0259e48-1973-486c-a828-1fcd3e4331c6
-@i function f2a()
+@i function alloc_func1()
 	tmp ← 1
 	# some code that uses `tmp` for computing and restores it to `1`
 	tmp → 1
 end
 
 # ╔═╡ 7bcc1bc6-5b2c-4aae-b71d-52482ae130e9
-md"In reversible computing, it is forbidden to nullify (zero clear or assignment) the content in a variable."
+md"It is forbidden to repeatedly allocate a variable, use a deallocate variable or repeatedly deallocate a variable."
 
 # ╔═╡ fd5d65e7-3d83-45dd-87d7-ff1e1e769430
 #`x` is in the input argument list, the content in `x` should not be cleared and re-allocated to another variable.
-@test_throws LoadError macroexpand(NiLang, :(@i function f2a(x)
+@test_throws LoadError macroexpand(NiLang, :(@i function alloc_func1(x)
 	x ← 1
 	x → 1
 end))
+
+# ╔═╡ 8bbffa31-04a6-49ca-b36f-4d4140d75992
+md"allocate multiple variable of the same type at one time"
+
+# ╔═╡ a6f18c34-80ee-4b52-9ff8-f3c1b1d80f90
+@i function power12(y, x::T) where T
+	@zeros T a b c  # three variable of type `T`
+	a += x^2
+	b += a^2
+	c += b*a
+	y += c^2
+	c -= b*a
+	b -= a^2
+	a -= x^2
+	@safe @show a b c x y
+	~@zeros T a b c
+end
+
+# ╔═╡ a694132b-4f52-467f-8bc4-dc32fe2812db
+@test power12(0, 2)[1] == 4096
+
+# ╔═╡ 8c2c82f2-1240-4f2f-830e-ee8021c1a41a
+md"One can copy and push a value into a stack and use it later. It inverse operation will pop out a variable and assert its value."
+
+# ╔═╡ 6203cf10-f8cc-4fb9-b814-7552b68c01dc
+twocol(md"
+```julia
+stack[end+1] ← variable
+```", md"
+```julia
+stack[end] → variable
+```
+")
+
+# ╔═╡ f97a6bab-b9f9-4b95-98a9-381c51397526
+@i function stack_push_and_pop!(stack, x, y, z)
+	z += y
+	stack[end+1] ← x  # copy a variable into a stack
+	stack[end+1] ← y 
+	stack[end] → z  # pop a variable from a stack, `z` must have the same value as the variable.
+end
+
+# ╔═╡ 2a2970f4-ab01-486b-89a2-6ff96f734018
+md"A less recommended approach is using the global stacks in NiLang, since NiLang is an eDSL, it can not guarantee the access order. Available global stacks are `FLOAT64_STACK`, `COMPLEXF64_STACK`, `INT64_STACK` and their 32 bit counter parts, as well as a `BOOL_STACK`."
+
+# ╔═╡ 0b80d9be-53d7-4bf3-a558-659607af4709
+@i function stack_push_and_pop!(x, y)
+	GLOBAL_STACK[end+1] ← x  # copy a variable into a stack
+	FLOAT64_STACK[end+1] ← y 
+end
+
+# ╔═╡ 4ca48a2e-43da-457a-8e9f-6476097e4d7b
+let
+	stack = FastStack{Float64}(1000) # a preallocated stack of size 1000
+	stack_push_and_pop!(stack, 5.0, 1.0, 0.0)  # you will get a stack of size 1
+	@test length(stack) == 1
+end
+
+# ╔═╡ 92362fda-bae2-4e35-bfe4-dcaea853d50b
+let
+	NiLang.empty_global_stacks!()  # empty stacks
+	stack_push_and_pop!(5.0, 1.0)
+	@test length(GLOBAL_STACK) == 1
+	@test length(FLOAT64_STACK) == 1
+end
+
+# ╔═╡ db9e7940-39f1-4ccf-ac70-146a521daa6e
+md"one can also allocate and deallocate on dicts"
+
+# ╔═╡ 93936612-1447-4114-b864-aba43adef4bd
+md"""
+The forward pass of dictionary allocation adds an entry to the dictionary (cause key error if the key already exists), the backward pass. The backward pass checks the variable in the dictionary is consistent with the asserted variable, and delete the key.
+
+$(
+twocol(md"
+```julia
+dict[key] ← variable
+```", md"
+```julia
+dict[key] → variable
+```
+")
+)
+"""
+
+# ╔═╡ b2add70c-c5d6-4e0f-a153-43e21a197181
+@i function f2f(dict::Dict)
+	var1 ← 3.14
+
+	# copy a new variable to a dict
+	dict["data"] ← var1
+	
+	# deallocate the original variables
+	var1 → dict["data"]
+end
+
+# ╔═╡ 5c03d5a5-99f0-4efd-9a32-ce6d7c2b266c
+f2f(Dict())
+
+# ╔═╡ 2349e3ea-3053-42a4-b9d9-f97a76e4abd7
+title2("Exchange two variables")
+
+# ╔═╡ 269f18ee-3cd8-466a-a522-7c624503e31b
+let 
+	expr = twocol(md"
+```julia
+var1 ↔ var2
+```", md"
+```julia
+var1 ↔ var2
+```
+")
+md"""One can exchange two variables is using `↔`.
+$expr
+"""
+end
+
+# ╔═╡ 89139719-c478-4066-9452-f9893f36d561
+@i function exchange_func1(x, y)
+	x ↔ y
+end
+
+# ╔═╡ d620c5ee-7d9c-4d3f-9e87-0c828dfab9ca
+exchange_func1(3, 5)
+
+# ╔═╡ 255d01b9-a873-4e63-9298-9d8f073348b0
+md"One can also make a \"link\" by exchanging a variable with an empty variable such as `var::∅` and `stack[end+1]`. The forward pass push a variable to the stack and deallocate variable. The backward pass pops a variable and asserts its value."
+
+# ╔═╡ f6cf1729-766c-4ed7-b004-c8c8ec6c7e07
+let 
+	expr = twocol(md"
+```julia
+stack[end+1] ↔ var2
+var1::∅ ↔ var2
+```", md"
+```julia
+stack[end] ↔ var2::∅
+var1 ↔ var2::∅
+```
+")
+end
+
+
+# ╔═╡ 3645d672-423f-4ac8-805f-0452793fee5a
+@i function exchange_func2(x, y)
+	anc ← 0.0
+	anc += x * y
+	anc ↔ z::∅  # declare `z` as an empty variable
+	# after exchange, `anc` is empty and deallocated automatically.
+	z -= x * y
+	z → 0.0
+end
+
+# ╔═╡ c2a0024e-11dd-4ef7-8346-4374d98cafc0
+exchange_func2(3, 4)
+
+# ╔═╡ b20004e9-3c73-4dfb-8fd5-f377786fd53b
+md"When exchanging with a stack top + 1, it means push and deallocate."
+
+# ╔═╡ 5c1952b1-5016-4c87-b23c-8e6a235bf8cd
+@i function stack_exchange(stack, y, x)
+	stack[end+1] ↔ y  # push a variable into a stack and deallocate `y`
+	y ← 1.2  # since `y` is deallocated, you can assign any value to it
+	stack[end] ↔ anc::∅  # pop a variable to `anc`
+	anc ↔ x    # exchange `anc` and x
+	stack[end+1] ↔ anc  # push `anc` back to stack
+end
+
+# ╔═╡ 8e4470ee-01da-4547-b091-c4f65cd729b0
+let
+	stack = FastStack{Float64}(1000) # a preallocated stack
+	stack_exchange(stack, 2.0, 3.0)  # you will get a stack of size 2
+	@test length(stack) == 1 && stack.data[1] == 3.0
+end
 
 # ╔═╡ 4601df35-679f-465d-9191-c18748b2fd83
 title2("Avoid shared read-write")
@@ -283,87 +468,6 @@ f2c(0.0, 3.0)
 
 # ╔═╡ b52648bf-a28a-48af-8912-31729d943ce0
 md"Shared read-write issue is more tricky when one uses NiLang to write kernel function in a parallel program (multi-threading, MPI and CUDA). See $(titleref(\"Multi-threading and CUDA\")) for details."
-
-# ╔═╡ f3503e6d-ded7-4797-9c2f-cb5a7d429949
-md"#### Manipulating allocations on stack and dictionary"
-
-# ╔═╡ 7ba86798-daba-49ef-a259-da4db353fdd8
-md"""
-The forward pass push a variable to the stack and zero-empty the variable, the backward pass. The backward pass checks the variable is empty and pop an variable from the stack and assign it to the variable.
-
-$(
-twocol(md"
-```julia
-PUSH!(stack, variable)
-```", md"
-```julia
-POP!(stack, variable)
-```
-")
-)
-
-
-Or similarly, there is a `COPYPUSH!` instruction that copies the content in the variable to the stack without zero clearing the variable. In the backward pass, it asserts the target variable is the same as the popped variable.
-
-$(
-twocol(md"
-```julia
-COPYPUSH!(stack, variable)
-```", md"
-```julia
-COPYPOP!(stack, variable)
-```
-")
-)
-"""
-
-# ╔═╡ 6e88ede9-879e-42e9-9a7e-2aa3d4837e5d
-@i function f2e(stack1::AbstractVector, stack2::AbstractVector)
-	var1 ← 3.14
-	var2 ← 2.73
-
-	# copy a new variable to a stack
-	COPYPUSH!(stack1, var1)
-	# add a new variable to a stack and empty the original variable
-	PUSH!(stack2, var2)
-	
-	# deallocate the original variables
-	var2 → 0.0
-	var1 → 3.14
-end
-
-# ╔═╡ 94cc42f7-6beb-453e-90cb-952d6f497a8e
-f2e([], [])
-
-# ╔═╡ 93936612-1447-4114-b864-aba43adef4bd
-md"""
-The forward pass of dictionary allocation adds an entry to the dictionary (cause key error if the key already exists), the backward pass. The backward pass checks the variable in the dictionary is consistent with the asserted variable, and delete the key.
-
-$(
-twocol(md"
-```julia
-dict[key] ← variable
-```", md"
-```julia
-dict[key] → variable
-```
-")
-)
-"""
-
-# ╔═╡ b2add70c-c5d6-4e0f-a153-43e21a197181
-@i function f2f(dict::Dict)
-	var1 ← 3.14
-
-	# copy a new variable to a dict
-	dict["data"] ← var1
-	
-	# deallocate the original variables
-	var1 → dict["data"]
-end
-
-# ╔═╡ 5c03d5a5-99f0-4efd-9a32-ce6d7c2b266c
-f2f(Dict())
 
 # ╔═╡ f45db10f-a836-40f3-9d8d-054ea6540e87
 title2("Protect special variables")
@@ -517,7 +621,7 @@ When we say an elementary function is supported, we mean its diffrule is defined
 | ``y \mathrel{\{+,-\}}= f_{+-}(args...)`` | ``y\{+, -\}f_{+-}(args...), args...`` |
 | ``y \mathrel{\{*, /\}}= f_{*/}(args...)`` | ``y\{*, /\}f_{*/}(args...), args...`` |
 
-Functions ``f_{+-} ∈ \rm \{identity, +, -, *, /, ^\wedge, abs, abs2,\rm sqrt, exp, log, sin, sinh, asin, cos, cosh,`` ``acos, tan, tanh, atan, sincos, convert\}`` and ``f_{*/}∈\rm \{identity, +, -, *, /, ^\wedge, convert\}.`` 
+Functions ``f_{+-} ∈ \rm \{identity, +, -, *, /, ^\wedge, abs, abs2, sqrt, exp, log, sin, sinh, asin, cos, cosh,`` ``\rm acos, tan, tanh, atan, sincos, convert\}`` and ``f_{*/}∈\rm \{identity, +, -, *, /, ^\wedge, convert\}.`` 
 Functions `FLIP`, `NEG`, `INV`, `HADAMARD`, `SWAP` and `y ⊻= f_{⊻}(args...)` are self-reversible (or reflexive). {`ROT`, `IROT`} and {`INC`, `DEC`}, {`y += f_{+-}(args...)`, `y -= f_{+-}(args...)`} and {`y *= f_{*/}(args...)`, `y /= f_{*/}(args...)`} are pair-wise reversible.
 
 For Jacobians and Hessians defined on these instructions, please check this [blog post](https://giggleliu.github.io/2020/01/18/jacobians.html).
@@ -583,11 +687,36 @@ example("Complex valued log")
     n → zero(T)
 end; @test complex_log(0.0im, 3.0+2.0im)[1] ≈ log(3.0+2.0im)
 
-# ╔═╡ 99d6fe7b-d704-48f3-b115-2b3159a78068
-md"One can also modify the `Array` directly"
+# ╔═╡ edaa9fdb-3af8-4554-a701-0e3bff2107a5
+md"It is also possbile to extract the fields directly."
+
+# ╔═╡ 7551a880-340e-4e3f-815b-188e73f7eb9a
+@i function complex_add(y::Complex{T}, x::Complex{T}) where T
+    ((a, b), (c, d))::∅ ↔ ((@fields x), (@fields y))
+	a += c
+	b += d
+    ((a, b), (c, d)) ↔ ((@fields x), (@fields y))::∅
+end
+
+# ╔═╡ 0489e51b-781f-4441-bb7f-ff3bd2e848ad
+@test complex_add(1+2im, 3+4im) == (1+2im, 4+6im)
+
+# ╔═╡ 7b0d30d6-39ff-4f6e-b13c-0ddbfcb576e5
+md"Type cast is also possible"
+
+# ╔═╡ 042297d8-6ab3-4ae6-b6e7-3b1ab2d5553b
+@i function add4(a, b, c, d)
+	complex_add(Complex{}(a, b), Complex{}(c, d))  # do not omit `{}`
+end
+
+# ╔═╡ 57d65a36-bfa8-4dc2-8e11-d87fa1324122
+@test add4(1, 2, 3, 4) == (1, 2, 4, 6)
 
 # ╔═╡ c21d81c3-981f-4472-ad61-d1661bfe5c4e
 example("Implementing \"axpy\" function")
+
+# ╔═╡ 99d6fe7b-d704-48f3-b115-2b3159a78068
+md"One can modify the `Array` directly"
 
 # ╔═╡ 1950ff70-54eb-4ece-a26d-a23fd0e90f5a
 @i function arrayaxpy!(y!::Vector{T}, a::T, x::Vector{T}) where T
@@ -608,6 +737,9 @@ end; @test tupleaxpy!((0,0,0), 2, (1,2,3))[1] == (2, 4, 6)
 
 # ╔═╡ 59ec7cb7-6011-456d-9f57-a55bb8ea51a0
 md"Here `data |> function` is called a *dataview* of an object, it defines a modifiable view for a field of a data."
+
+# ╔═╡ 0b37e505-12b7-45a9-a188-8a57cff055ec
+md"One can use the swap between object fields and tuple."
 
 # ╔═╡ c7f2f786-d9ff-43b4-baef-5a48d611aa1e
 title1("Functions")
@@ -860,9 +992,6 @@ md"Let's take a look at a correct prallel code that compute `exp(x)` and broadca
 	end
 end; @test f8c(zeros(3), 2.0, [1.0, 2.0, 3.0])[1] ≈ [2.0, 4.0, 6.0]
 
-# ╔═╡ 24421e48-a5fa-464e-b4ea-b55dabc7c6f7
-
-
 # ╔═╡ a7d47e83-7f44-49d0-a43d-e01316fc6eba
 title1("Performance Tips")
 
@@ -927,7 +1056,7 @@ end
 @benchmark exp_without_reversibility_check(0.0, 1.0) seconds=0.3
 
 # ╔═╡ f80353d6-0dfe-4b0a-a1af-655d344473bf
-title1("Resources and libraries")
+title1("Resources")
 
 # ╔═╡ 7ce31932-0447-4445-99aa-7ebced7d0bad
 TableOfContents()
@@ -936,11 +1065,13 @@ TableOfContents()
 # ╟─2061b434-0ad1-46eb-a0c7-1a5f432bfa62
 # ╟─a4e76427-f051-4b29-915a-fdfce3a299bb
 # ╟─c2c7b4d4-f8c9-4ebf-8da2-0103f03136e7
+# ╟─611b577f-4722-42bf-8f8e-aeb2fb30be71
 # ╟─605872cf-f3fd-462e-a2b1-7d1c5ae45efd
 # ╟─fb3dee44-5fa9-4773-8b7f-a83c44358545
 # ╠═d941d6c2-55bf-11eb-0002-35c7474e4050
 # ╠═70088425-6779-4a2d-ba6d-b0a34c8e93a6
 # ╟─f0e94247-f615-472b-8218-3fa287b38aa1
+# ╟─2581aa33-1dc5-40b1-aa9f-6a11cc750c93
 # ╠═af738f89-3214-429c-9c7d-18a6ea0d9401
 # ╟─4d98d529-1e05-49be-9209-f0d9fcc206f7
 # ╠═48d7ebc1-5def-4a57-9ec1-3fc370a4543f
@@ -950,12 +1081,36 @@ TableOfContents()
 # ╟─e8cd6667-597f-458b-8465-1822e09a7891
 # ╟─20145d75-004a-4c2f-b7ff-c400ca846d42
 # ╟─b6dcd18c-606f-4340-b2ec-163e8bad03f5
-# ╟─2581aa33-1dc5-40b1-aa9f-6a11cc750c93
 # ╟─a1a29f34-f8a9-4e9f-9afe-7d0096771440
 # ╟─90bd6ad4-3dd8-4e7c-b445-aed1d248a2ec
 # ╠═c0259e48-1973-486c-a828-1fcd3e4331c6
 # ╟─7bcc1bc6-5b2c-4aae-b71d-52482ae130e9
 # ╠═fd5d65e7-3d83-45dd-87d7-ff1e1e769430
+# ╟─8bbffa31-04a6-49ca-b36f-4d4140d75992
+# ╠═a6f18c34-80ee-4b52-9ff8-f3c1b1d80f90
+# ╠═a694132b-4f52-467f-8bc4-dc32fe2812db
+# ╟─8c2c82f2-1240-4f2f-830e-ee8021c1a41a
+# ╟─6203cf10-f8cc-4fb9-b814-7552b68c01dc
+# ╠═f97a6bab-b9f9-4b95-98a9-381c51397526
+# ╠═4ca48a2e-43da-457a-8e9f-6476097e4d7b
+# ╟─2a2970f4-ab01-486b-89a2-6ff96f734018
+# ╠═0b80d9be-53d7-4bf3-a558-659607af4709
+# ╠═92362fda-bae2-4e35-bfe4-dcaea853d50b
+# ╟─db9e7940-39f1-4ccf-ac70-146a521daa6e
+# ╟─93936612-1447-4114-b864-aba43adef4bd
+# ╠═b2add70c-c5d6-4e0f-a153-43e21a197181
+# ╠═5c03d5a5-99f0-4efd-9a32-ce6d7c2b266c
+# ╟─2349e3ea-3053-42a4-b9d9-f97a76e4abd7
+# ╟─269f18ee-3cd8-466a-a522-7c624503e31b
+# ╠═89139719-c478-4066-9452-f9893f36d561
+# ╠═d620c5ee-7d9c-4d3f-9e87-0c828dfab9ca
+# ╟─255d01b9-a873-4e63-9298-9d8f073348b0
+# ╟─f6cf1729-766c-4ed7-b004-c8c8ec6c7e07
+# ╠═3645d672-423f-4ac8-805f-0452793fee5a
+# ╠═c2a0024e-11dd-4ef7-8346-4374d98cafc0
+# ╟─b20004e9-3c73-4dfb-8fd5-f377786fd53b
+# ╠═5c1952b1-5016-4c87-b23c-8e6a235bf8cd
+# ╠═8e4470ee-01da-4547-b091-c4f65cd729b0
 # ╟─4601df35-679f-465d-9191-c18748b2fd83
 # ╟─4fc72b9d-19a2-40f1-a4a8-5e97d3d5e529
 # ╠═a0fde16f-8454-4f5c-a29c-a9e415c0c311
@@ -965,13 +1120,6 @@ TableOfContents()
 # ╠═5d5d01db-8ff9-434c-8771-1fec6393e1fb
 # ╠═10d85a50-f2f9-403e-8f6c-baef61cf702a
 # ╟─b52648bf-a28a-48af-8912-31729d943ce0
-# ╟─f3503e6d-ded7-4797-9c2f-cb5a7d429949
-# ╟─7ba86798-daba-49ef-a259-da4db353fdd8
-# ╠═6e88ede9-879e-42e9-9a7e-2aa3d4837e5d
-# ╠═94cc42f7-6beb-453e-90cb-952d6f497a8e
-# ╟─93936612-1447-4114-b864-aba43adef4bd
-# ╠═b2add70c-c5d6-4e0f-a153-43e21a197181
-# ╠═5c03d5a5-99f0-4efd-9a32-ce6d7c2b266c
 # ╟─f45db10f-a836-40f3-9d8d-054ea6540e87
 # ╟─1903563e-ccc2-44d9-9dbe-e5dede275b3c
 # ╟─7ec577d4-1e19-484e-ac1f-5da3f47d1ec4
@@ -1012,12 +1160,19 @@ TableOfContents()
 # ╟─8651d7ec-6bcd-4dbe-a062-c4bde32e5e91
 # ╟─9f5f9de3-9558-4c18-9d98-b77d19b570ec
 # ╠═6dfcfa19-f78f-4dac-89f7-d3c5dbe17987
-# ╟─99d6fe7b-d704-48f3-b115-2b3159a78068
+# ╟─edaa9fdb-3af8-4554-a701-0e3bff2107a5
+# ╠═7551a880-340e-4e3f-815b-188e73f7eb9a
+# ╠═0489e51b-781f-4441-bb7f-ff3bd2e848ad
+# ╟─7b0d30d6-39ff-4f6e-b13c-0ddbfcb576e5
+# ╠═042297d8-6ab3-4ae6-b6e7-3b1ab2d5553b
+# ╠═57d65a36-bfa8-4dc2-8e11-d87fa1324122
 # ╟─c21d81c3-981f-4472-ad61-d1661bfe5c4e
+# ╟─99d6fe7b-d704-48f3-b115-2b3159a78068
 # ╠═1950ff70-54eb-4ece-a26d-a23fd0e90f5a
 # ╟─21458f81-9007-46f8-92e0-7a17c60beb36
 # ╠═7813f4ce-6e98-45f3-94a8-7f5981129f2b
 # ╟─59ec7cb7-6011-456d-9f57-a55bb8ea51a0
+# ╟─0b37e505-12b7-45a9-a188-8a57cff055ec
 # ╟─c7f2f786-d9ff-43b4-baef-5a48d611aa1e
 # ╟─d6519029-231d-4c63-b47d-684462dab287
 # ╟─b3147f49-c0f8-40cc-a794-282f6950b392
@@ -1055,9 +1210,8 @@ TableOfContents()
 # ╠═0e1ba158-a6bc-401c-9ba7-ed78020ad068
 # ╠═c82b3b5c-c4e2-4bf6-b4ec-0d05ba9a669b
 # ╟─8c93a773-edc0-4ec2-88ef-1b58b7deddc5
-# ╠═16d08950-0575-4a4b-afc8-11ddca3198c7
+# ╟─16d08950-0575-4a4b-afc8-11ddca3198c7
 # ╠═7c594d19-59fc-433a-bffa-c63bad46869e
-# ╠═24421e48-a5fa-464e-b4ea-b55dabc7c6f7
 # ╟─a7d47e83-7f44-49d0-a43d-e01316fc6eba
 # ╟─45985244-adbf-4d6d-9732-a963cca62212
 # ╟─83d7e75f-7273-4c6a-bec1-a2180ebc3fb9
