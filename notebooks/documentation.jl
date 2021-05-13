@@ -32,6 +32,7 @@ $(html(right))
 	using PlutoUI: TableOfContents
 	using Pkg
 	pkgversion(m::Module) = Pkg.TOML.parsefile(NiLang.project_relative_path("Project.toml"))["version"]
+	hightlight(str) = HTML("<span style='background-color:yellow'>$str</span>")
 end;
 
 # ╔═╡ 8c2c4fa6-172f-4dde-a279-5d0aecfdbe46
@@ -77,11 +78,11 @@ function new_forward(x::GVar)
 end
 end
 
-# ╔═╡ 0e1ba158-a6bc-401c-9ba7-ed78020ad068
-using Base.Threads
-
 # ╔═╡ 3199a048-7b39-40f8-8183-6a54cccd91b6
 using BenchmarkTools
+
+# ╔═╡ 0e1ba158-a6bc-401c-9ba7-ed78020ad068
+using Base.Threads
 
 # ╔═╡ a4e76427-f051-4b29-915a-fdfce3a299bb
 html"""
@@ -120,9 +121,12 @@ md"# NiLang's (v$(pkgversion(NiLang))) Documentation
 NiLang is a embeded domain specific language (eDSL) in Julia, so one need to install [Julia](https://julialang.org/) first. Before reading this documentation, you need to know basic Julia grammar, and how to install and use packages.
 Also, it might be good to read the [README](https://github.com/GiggleLiu/NiLang.jl) first. In this tutorial, we focus on
 
-* NiLang grammar and design patterns.
-* Automatic differentiation based on reversible programming
+* NiLang grammar and design patterns,
+* Automatic differentiation based on reversible programming.
 "
+
+# ╔═╡ 12f07cc7-979c-43c3-9dc9-36ea1463c1f6
+md"The symbols used in this notebook"
 
 # ╔═╡ 611b577f-4722-42bf-8f8e-aeb2fb30be71
 md"""
@@ -143,30 +147,26 @@ md"
 After installing NiLang in a Julia REPL by typing `]add NiLang`, one can use NiLang and use the macro `@i` to define a reversible function ``f_1: (x, y) → (x+5y, y)``."
 
 # ╔═╡ 70088425-6779-4a2d-ba6d-b0a34c8e93a6
-@i function f1(x, y; constant)
+@i @inline function f1(x, y; constant)
 	x += y * constant
 end
 
-# ╔═╡ f0e94247-f615-472b-8218-3fa287b38aa1
-md"The function arguments contains keyword and non-keyword arguments, where non-keyword arguments can only be used as constants. There is no `return` statement because this function returns input non-keyword variables automatically. `return` is both not needed and not allowed."
-
-# ╔═╡ 2581aa33-1dc5-40b1-aa9f-6a11cc750c93
-md"In NiLang, a variable is mutable. After running an instruction that defines the mapping ``\mathbb{R}^n\rightarrow\mathbb{R}^n`` (notice inputs and outputs have the same shapes), the outputs are directly assigned back. In other words, every instruction changes the variable inplace."
-
 # ╔═╡ af738f89-3214-429c-9c7d-18a6ea0d9401
-f1(1.0, 2.0; constant=5.0)
-
-# ╔═╡ 4d98d529-1e05-49be-9209-f0d9fcc206f7
-md"The inverse call (or backward execution) is"
+f1(1.0, 2.0; constant=5.0)  # call
 
 # ╔═╡ 48d7ebc1-5def-4a57-9ec1-3fc370a4543f
- (~f1)(11.0, 2.0; constant = 5.0)
+ (~f1)(11.0, 2.0; constant = 5.0)  # uncall
 
-# ╔═╡ e839547b-f47e-4a4e-b4d9-2c22921d80e4
-md"Now we see the input arguments are restored"
+# ╔═╡ f0e94247-f615-472b-8218-3fa287b38aa1
+md"A NiLang function defines a ``\mathbb{R}^n\rightarrow\mathbb{R}^n`` (notice inputs and outputs have the same shapes) mapping, it can take both keyword and positional arguments, where positional arguments can only be used as constants. There is no `return` statement because this function returns input non-keyword variables automatically, it is forbiden to write `return` statement inside a NiLang function.
+One can aslo put macros like `@inline` after NiLang's `@i` macro. NiLang's macro will render the body of the function first and pass it to other macros.
+"
+
+# ╔═╡ 2581aa33-1dc5-40b1-aa9f-6a11cc750c93
+md"`x += y * constant` is an instruction that defines a bijective mapping ``\mathbb{R}^3\rightarrow\mathbb{R}^3``. All NiLang instructions change the variable inplace. Here, we accumulate the result to `x` rather than using `y *= constant` to modify the variable directly. This is because in a regular number system, one can easily use the zero element as the eraser to erase all information, which will cause irreversibility."
 
 # ╔═╡ 60575978-081a-4bca-a3ed-2b51cd6abc92
-md"One can also differentiating the function. This is a two-in two-out function (the keyword arguments are not included), we need to specify which variable is the loss when asking for the gradients."
+md"One can differentiate a NiLang function with the `NiLang.gradient(f, args; iloss, kwargs...)` where `args` and `kwargs` are positional and keyword arguments for `f`, and `iloss` is the index of the loss variable."
 
 # ╔═╡ f98305cb-4ba2-404a-a5c3-65510e059504
 NiLang.AD.gradient(f1, (1.0, 2.0); iloss=1, constant=5.0)
@@ -212,11 +212,206 @@ quote
 end
 ```
 """
-	HTML("<details><summary><strong>If you know macros</strong></summary>$(html(content))</details>")
+	HTML("<details><summary><strong>How does the compiler work?</strong></summary>$(html(content))</details>")
 end
 
+# ╔═╡ c682a17f-600f-4034-bfe3-a851ab645c10
+title1("Instructions and operands")
+
+# ╔═╡ 5239dfe2-ea6d-4e07-a1b1-90954fe8ddc9
+md"""
+The basic form of an instruction is `y ⊙= f(args...)`, where `⊙` can be `+`, `-`, `*`, `/` or `⊻`, where `*=` and `/=` are only reversible in the logarithmic number systems. See section $(titleref("Integers, floating-point numbers, fixed-point numbers and logarithmic numbers")) for details.
+
+A function/instruction can be used in NiLang only if its reverse is defined. A NiLang function is differentiable if the function body is composed of differentiable instructions, differentiable NiLang functions and NiLang control flows. A list of differentiable NiLang instructions are
+
+| instruction | output   |
+| ----------- | ---------- |
+| ``{\rm FLIP}(y)`` | ``\sim y`` |
+| ``{\rm NEG}(y)`` | ``-y`` |
+| ``{\rm INC}(y)`` | ``y+1`` |
+| ``{\rm DEC}(y)`` | ``y-1`` |
+| ``{\rm INV}(y)`` | ``y ^ {-1}`` |
+| ``{\rm HADAMARD}(x, y)`` | ``\frac{1}{\sqrt{2}}(x+y), \frac{1}{\sqrt{2}}(x-y)``
+| ``{\rm SWAP}(a, b)`` | ``b, a`` |
+| ``{\rm ROT}(a, b, \theta)`` | ``a \cos\theta - b\sin\theta, b \cos\theta + a\sin\theta, \theta`` |
+| ``{\rm IROT}(a, b, \theta)`` | ``a \cos\theta + b\sin\theta, b \cos\theta - a\sin\theta, \theta`` |
+| ``y \mathrel{\{+,-\}}= f_{+-}(args...)`` | ``y\{+, -\}f_{+-}(args...), args...`` |
+| ``y \mathrel{\{*, /\}}= f_{*/}(args...)`` | ``y\{*, /\}f_{*/}(args...), args...`` |
+
+Functions ``f_{+-} ∈ \rm \{identity, +, -, *, /, ^\wedge, abs, abs2, sqrt, exp, log, sin, sinh, asin, cos, cosh,`` ``\rm acos, tan, tanh, atan, sincos, convert\}`` and ``f_{*/}∈\rm \{identity, +, -, *, /, ^\wedge, convert\}.`` 
+Functions `FLIP`, `NEG`, `INV`, `HADAMARD`, `SWAP` and `y ⊻= f_{⊻}(args...)` are self-reversible (or reflexive). {`ROT`, `IROT`} and {`INC`, `DEC`}, {`y += f_{+-}(args...)`, `y -= f_{+-}(args...)`} and {`y *= f_{*/}(args...)`, `y /= f_{*/}(args...)`} are pair-wise reversible.
+
+For Jacobians and Hessians defined on these instructions, please check this [blog post](https://giggleliu.github.io/2020/01/18/jacobians.html).
+This set of instructions is extensible, see section $(titleref("Extending the instruction set")) for an example.
+"""
+
+# ╔═╡ e4d86a5a-e820-4a70-8a87-08bac416291b
+md"The operands of an instruction can be a composition of the following expressions"
+
+# ╔═╡ c307b6a4-906d-4be7-9fd7-57c942aded51
+md"""
+
+| expression | meaning |
+| ---------- | ------- |
+| x | change a variable |
+| x.field | change a field |
+| x.:1    | change a tuple element |
+| x'      | change the adjoint |
+| -x      | change the inverse |
+| x[i]    | change an array/dict element |
+| (x, y, z)  | change multiple variables |
+| @fields x | change the fields of an object |
+| A{Float64}(x, y) | wrap, update fields and unwrap |
+| x \|> subarray(:,i) | change the view of an array |
+| x \|> f | change a field map or a bijective mapping |
+| @const 3 | target is a constant that can not be changed |
+| @skip! f(x) | an expression that can not be assigned back |
+"""
+
+# ╔═╡ 47b502d4-e8af-4d58-9067-9700784ea435
+md"In the following example, one modifies the negated real part of a complex number in a vector inside a tuple directly."
+
+# ╔═╡ faecc0a7-55d7-42a1-8e9f-7e30143eef9c
+@i function dataview_func1(x::Vector, y::Tuple, θ)
+	(-x[2].re, y.:1) += sincos(θ)
+end
+
+# ╔═╡ 4cbe69d6-b68f-4bda-a0dd-209f9ee54f18
+dataview_func1([1+2.0im, 3+4im], (1.0,2.0), π/6)
+
+# ╔═╡ 7dc82f28-77bf-40da-b520-800ed1bc80c9
+md"""One can check the real part of the second element of `x` is decreased by `sin(π/6)`, while the first element of the tuple is increased by `cos(π/6)`. A NiLang instruction is different to a regular Julia instruction in that $(hightlight("A NiLang instruction changes variables inplace")), eventhough `ComplexF64`, `-x` and `tuple` are all considered as immutable in Julia."""
+
+# ╔═╡ 9f5f9de3-9558-4c18-9d98-b77d19b570ec
+example("Complex valued log")
+
+# ╔═╡ 6dfcfa19-f78f-4dac-89f7-d3c5dbe17987
+@i function complex_log(y!::Complex{T}, x::Complex{T}) where T
+    n ← zero(T)
+    n += abs(x)
+
+    y!.re += log(n)
+    y!.im += angle(x)
+
+    n -= abs(x)
+    n → zero(T)
+end; @test complex_log(0.0im, 3.0+2.0im)[1] ≈ log(3.0+2.0im)
+
+# ╔═╡ dad1c6c0-d61b-4f9f-a71e-e683fe143aaa
+title2("Broadcasting")
+
+# ╔═╡ 3e4a3916-8fe4-4262-bcd3-3014822717a3
+md"The interfaces is similar to julia's native broadcast, but expanded to native NiLang loops."
+
+# ╔═╡ 34906208-e6f1-4a67-860a-a7b056a86dde
+@i function complex_log_broadcast!(ys!, xs)
+	complex_log.(ys!, xs)
+end; @test (x=[1.0+2im, 3.0+4im, 4.0+5im]; complex_log_broadcast!(zeros(ComplexF64, 3), x)[1] ≈ log.(x))
+
+# ╔═╡ 4601df35-679f-465d-9191-c18748b2fd83
+title2("Avoid shared read-write")
+
+# ╔═╡ 4fc72b9d-19a2-40f1-a4a8-5e97d3d5e529
+md"Shared read-write is not allowed"
+
+# ╔═╡ a0fde16f-8454-4f5c-a29c-a9e415c0c311
+# `y -= y` effectively clears the content in `y`, this is why shared read-write is so dangerous.
+@test_throws LoadError macroexpand(NiLang, :(@i function shared_readwrite_error(y)
+	y -= y
+end))
+
+# ╔═╡ 633ff8f3-8d93-4f73-bec2-c42070e6ece9
+md"NiLang is more restrictive, it forbids shared read too. This is in purpose, shared read will become shared write to the gradient field in the back-propagation of gradients - the main goal of NiLang."
+
+# ╔═╡ 57f2d890-b5a0-47b7-9e3d-af4d03b10605
+# `shared read is also forbidden`
+@test_throws LoadError macroexpand(NiLang, :(@i function shared_read_error(x, y)
+	x -= y * y  # should be written as `x -= y^2`
+end))
+
+# ╔═╡ 34063cd0-171e-46ce-80dd-52a341fa50a1
+md"The correct way of avoiding shared read is renaming one of the variable."
+
+# ╔═╡ 5d5d01db-8ff9-434c-8771-1fec6393e1fb
+@i function avoid_shared_read(x, y)
+	tmp ← zero(y)
+	tmp += y
+	x -= y * tmp
+	tmp -= y
+	tmp → zero(y)
+end
+
+# ╔═╡ 10d85a50-f2f9-403e-8f6c-baef61cf702a
+avoid_shared_read(0.0, 3.0)
+
+# ╔═╡ b52648bf-a28a-48af-8912-31729d943ce0
+md"Shared read-write issue is more tricky when one uses NiLang to write kernel function in a parallel program (multi-threading, MPI and CUDA). See $(titleref(\"Multi-threading and CUDA\")) for details."
+
+# ╔═╡ f45db10f-a836-40f3-9d8d-054ea6540e87
+title2("Protect constant variables")
+
+# ╔═╡ 1903563e-ccc2-44d9-9dbe-e5dede275b3c
+md"""
+To achieve the goal of "everything is mutable", NiLang assigns the output value back to the input variable after a call. Sometime it can cause issues for special variables like function, type parameters and constants (including the results generated from a function call). One can use `@const` (assert a variable is a constant) or `@skip!` (skip assigning back) to avoid such complications.
+"""
+
+# ╔═╡ 583f2585-15a3-47c6-a70e-e2f002754028
+md"When using a function (e.g. `exp` as shown bellow) as an variable, one should be careful about the scope issue."
+
+# ╔═╡ 60e6ff80-3593-4ae4-a273-914847f692db
+@i function func_arg(y, f, x)
+	y += f(x)
+end
+
+# ╔═╡ 9e5cfd68-b58d-4d83-aae2-447e5f805c97
+@i function use_func_arg(y, x)
+	func_arg(y, exp, x)
+end
+
+# ╔═╡ dc85a942-cf52-4405-ad03-32a768e1b6e7
+@test_throws UndefVarError use_func_arg(0.0, 3.0)
+
+# ╔═╡ 5cdd346b-10a5-485c-ba78-4c0b3cb0e02f
+md"We see an error, but why calling `f2g` causes an error? If one check the generated code with `macroexpand`, one will see the `exp` is assigned in the local scope. The compiler takes it as a local variable and compaints that `exp` is not defined."
+
+# ╔═╡ af9287b7-6131-46f6-beb8-6885e55e1975
+macroexpand(NiLang, :(@i function use_func_arg(y, x)
+	f2g(y, exp, x)
+end)) |> NiLangCore.rmlines
+
+# ╔═╡ e20eeabf-1c80-431e-8cfc-4d1b79c52b5a
+@i function avoid_assignback(y, x)
+	func_arg(y, (@const exp), x)
+end; @test avoid_assignback(0.0, 3.0)[1] == exp(3)
+
+# ╔═╡ 90d30eea-53de-48a0-9700-ff35681fdf38
+md"Type parameter can not be assigned back too."
+
+# ╔═╡ 390f58a5-6f5f-4d3a-bb16-ba04e43a07e7
+@test_throws ErrorException Core.eval(NiLang, :(@i function type_arg(t::Type{T}, x) where T
+	x += one(T)
+end))
+
+# ╔═╡ 2b57443e-a516-434b-be86-80616a98e2f5
+@i function avoid_type_assignback(t::Type{T}, x) where T
+	x += one(@skip! T)
+end; @test avoid_type_assignback(Float64, 0.0)[2] == 1.0
+
+# ╔═╡ fc2e27f9-b7ba-44cc-a953-6745548ad733
+md"A function call that returning a constant should also be decorated with the `@const` or `@skip!` macro."
+
+# ╔═╡ fc744931-360b-4478-9f77-c50f048de243
+@test_throws LoadError macroexpand(NiLang, :(@i function funccall_arg(y, x::Matrix) where T
+	y += size(x, 1) * size(x, 2)
+end))
+
+# ╔═╡ 9a152b36-f377-44da-9700-ca9e05e365ff
+@i function avoid_funccall_assignback(y, x::Matrix) where T
+	y += (@const size(x, 1)) * (@const size(x, 2))
+end; @test avoid_funccall_assignback(0, randn(3,4))[1] == 12
+
 # ╔═╡ b6dcd18c-606f-4340-b2ec-163e8bad03f5
-title1("Variables")
+title1("Variable manipulation")
 
 # ╔═╡ a1a29f34-f8a9-4e9f-9afe-7d0096771440
 title2("Allocate and deallocate a variable")
@@ -245,16 +440,6 @@ For example
 	# some code that uses `tmp` for computing and restores it to `1`
 	tmp → 1
 end
-
-# ╔═╡ 7bcc1bc6-5b2c-4aae-b71d-52482ae130e9
-md"It is forbidden to repeatedly allocate a variable, use a deallocate variable or repeatedly deallocate a variable."
-
-# ╔═╡ fd5d65e7-3d83-45dd-87d7-ff1e1e769430
-#`x` is in the input argument list, the content in `x` should not be cleared and re-allocated to another variable.
-@test_throws LoadError macroexpand(NiLang, :(@i function alloc_func1(x)
-	x ← 1
-	x → 1
-end))
 
 # ╔═╡ 8bbffa31-04a6-49ca-b36f-4d4140d75992
 md"allocate multiple variable of the same type at one time"
@@ -341,7 +526,7 @@ dict[key] → variable
 """
 
 # ╔═╡ b2add70c-c5d6-4e0f-a153-43e21a197181
-@i function f2f(dict::Dict)
+@i function dict_assign(dict::Dict)
 	var1 ← 3.14
 
 	# copy a new variable to a dict
@@ -352,7 +537,7 @@ dict[key] → variable
 end
 
 # ╔═╡ 5c03d5a5-99f0-4efd-9a32-ce6d7c2b266c
-f2f(Dict())
+dict_assign(Dict())
 
 # ╔═╡ 2349e3ea-3053-42a4-b9d9-f97a76e4abd7
 title2("Exchange two variables")
@@ -430,120 +615,8 @@ let
 	@test length(stack) == 1 && stack.data[1] == 3.0
 end
 
-# ╔═╡ 4601df35-679f-465d-9191-c18748b2fd83
-title2("Avoid shared read-write")
-
-# ╔═╡ 4fc72b9d-19a2-40f1-a4a8-5e97d3d5e529
-md"Shared read-write is not allowed"
-
-# ╔═╡ a0fde16f-8454-4f5c-a29c-a9e415c0c311
-# `y -= y` effectively clears the content in `y`, this is why shared read-write is so dangerous.
-@test_throws LoadError macroexpand(NiLang, :(@i function f2b(y)
-	y -= y
-end))
-
-# ╔═╡ 633ff8f3-8d93-4f73-bec2-c42070e6ece9
-md"NiLang is more restrictive, it forbids shared read too. This is in purpose, shared read will become shared write to the gradient field in the back-propagation of gradients - the main goal of NiLang."
-
-# ╔═╡ 57f2d890-b5a0-47b7-9e3d-af4d03b10605
-# `shared read is also forbidden`
-@test_throws LoadError macroexpand(NiLang, :(@i function f2b(x, y)
-	x -= y * y  # should be written as `x -= y^2`
-end))
-
-# ╔═╡ 34063cd0-171e-46ce-80dd-52a341fa50a1
-md"The correct way of avoiding shared read is renaming one of the variable."
-
-# ╔═╡ 5d5d01db-8ff9-434c-8771-1fec6393e1fb
-@i function f2c(x, y)
-	tmp ← zero(y)
-	tmp += y
-	x -= y * tmp
-	tmp -= y
-	tmp → zero(y)
-end
-
-# ╔═╡ 10d85a50-f2f9-403e-8f6c-baef61cf702a
-f2c(0.0, 3.0)
-
-# ╔═╡ b52648bf-a28a-48af-8912-31729d943ce0
-md"Shared read-write issue is more tricky when one uses NiLang to write kernel function in a parallel program (multi-threading, MPI and CUDA). See $(titleref(\"Multi-threading and CUDA\")) for details."
-
-# ╔═╡ f45db10f-a836-40f3-9d8d-054ea6540e87
-title2("Protect special variables")
-
-# ╔═╡ 1903563e-ccc2-44d9-9dbe-e5dede275b3c
-md"""
-By default, NiLang assigns the value back to the variable after a call. Sometime it can cause issues for special variables like function, type parameters and constants (including the results generated from a function call). One can use `@const` (assert a variable is a constant) or `@skip!` (skip assigning back) to avoid such complications.
-"""
-
-# ╔═╡ 7ec577d4-1e19-484e-ac1f-5da3f47d1ec4
-md"""
-###### A function variable
-"""
-
-# ╔═╡ 583f2585-15a3-47c6-a70e-e2f002754028
-md"When using a function (e.g. `exp` as shown bellow) as an variable, one should be careful about the scope issue."
-
-# ╔═╡ 60e6ff80-3593-4ae4-a273-914847f692db
-@i function f2g(y, f, x)
-	y += f(x)
-end
-
-# ╔═╡ 9e5cfd68-b58d-4d83-aae2-447e5f805c97
-@i function f2h(y, x)
-	f2g(y, exp, x)
-end
-
-# ╔═╡ dc85a942-cf52-4405-ad03-32a768e1b6e7
-@test_throws UndefVarError f2h(0.0, 3.0)
-
-# ╔═╡ 5cdd346b-10a5-485c-ba78-4c0b3cb0e02f
-md"We see an error, but why calling `f2g` causes an error? If one check the generated code with `macroexpand`, one will see the `exp` is assigned in the local scope. The compiler takes it as a local variable and compaints that `exp` is not defined."
-
-# ╔═╡ af9287b7-6131-46f6-beb8-6885e55e1975
-macroexpand(NiLang, :(@i function f2h(y, x)
-	f2g(y, exp, x)
-end)) |> NiLangCore.rmlines
-
-# ╔═╡ e20eeabf-1c80-431e-8cfc-4d1b79c52b5a
-@i function f2i(y, x)
-	f2g(y, (@const exp), x)
-end; @test f2i(0.0, 3.0)[1] == exp(3)
-
-# ╔═╡ e45d53b9-6f02-4293-ab4f-85bd751993ad
-md"""
-###### Type parameters and functions
-"""
-
-# ╔═╡ 90d30eea-53de-48a0-9700-ff35681fdf38
-md"Type parameter can not be assigned back too."
-
-# ╔═╡ 390f58a5-6f5f-4d3a-bb16-ba04e43a07e7
-@test_throws ErrorException Core.eval(NiLang, :(@i function f2j(t::Type{T}, x) where T
-	x += one(T)
-end))
-
-# ╔═╡ 2b57443e-a516-434b-be86-80616a98e2f5
-@i function f2k(t::Type{T}, x) where T
-	x += one(@skip! T)
-end; @test f2k(Float64, 0.0)[2] == 1.0
-
-# ╔═╡ fc2e27f9-b7ba-44cc-a953-6745548ad733
-md"A function call that returning a constant should also be decorated with the `@const` (assert a variable is not changed) or `@skip!` (do not assign this variable back) macro."
-
-# ╔═╡ fc744931-360b-4478-9f77-c50f048de243
-@test_throws LoadError macroexpand(NiLang, :(@i function f2l(y, x::Matrix) where T
-	y += size(x, 1) * size(x, 2)
-end))
-
-# ╔═╡ 9a152b36-f377-44da-9700-ca9e05e365ff
-@i function f2m(y, x::Matrix) where T
-	y += (@const size(x, 1)) * (@const size(x, 2))
-end; @test f2m(0, randn(3,4))[1] == 12
-
 # ╔═╡ 0863bd06-cc70-4dde-b3b2-0a466805a356
-md"""$(title1("Integers, floating-point numbers, fixed-point numbers and logarithmic numbers"))
+md"""$(title2("Integers, floating-point numbers, fixed-point numbers and logarithmic numbers"))
 
 A fixed-point zero with 43 fraction bits can be declared as `x ← Fixed43(0.0)` or `x ← zero(Fixed43)`, a logarithmic one can be declared as `x ← ULogarithmic(1.0)`, `x ← one(ULogarithmic{Float64})` or `x ← ULogarithmic(Fixed43(1.0))`. A complex number zero can be defined as `x ← Complex(0.0, 0.0)`.
 
@@ -569,27 +642,27 @@ One can use the `y ⊙= convert(x)` statement to convert `x` to the target type 
 md"Fixed point numbers and Floating point numbers are reversible under the `+=` operation"
 
 # ╔═╡ 20d6e8a0-2cf5-48ad-9549-60506b42b970
-@i function f3c(y1::T, x::T) where T<:Union{Fixed43, AbstractFloat}
+@i function fixed_pluseq(y1::T, x::T) where T<:Union{Fixed43, AbstractFloat}
 	y1 += x
-end; @test f3c(Fixed43(0.5), Fixed43(0.6))[1] === Fixed43(1.1) && f3c(0.5, 0.6)[1] === 1.1
+end; @test fixed_pluseq(Fixed43(0.5), Fixed43(0.6))[1] === Fixed43(1.1) && fixed_pluseq(0.5, 0.6)[1] === 1.1
 
 # ╔═╡ 7dee5748-ed73-4e13-aa80-7a50efbc8449
-@i function f3d(y1::T, x::T) where T<:Union{Fixed43, AbstractFloat}
+@i function fixed_muleq(y1::T, x::T) where T<:Union{Fixed43, AbstractFloat}
 	y1 *= x
-end; @test_throws MethodError f3d(Fixed43(1.0), Fixed43(2.0))
+end; @test_throws MethodError fixed_muleq(Fixed43(1.0), Fixed43(2.0))
 
 # ╔═╡ 4c719e9b-641e-404e-9ab7-59e89135f3ba
 md"Logarithmic numbers are reversible under the `*=` operation"
 
 # ╔═╡ 77947e00-42c3-4c9e-b62a-b4b29489db43
-@i function f3a(y1::ULogarithmic{T}, x::ULogarithmic{T}) where T
+@i function ulog_pluseq(y1::ULogarithmic{T}, x::ULogarithmic{T}) where T
 	y1 += x
-end; @test_throws MethodError f3a(ULogarithmic(1.0), ULogarithmic(3.0))
+end; @test_throws MethodError ulog_pluseq(ULogarithmic(1.0), ULogarithmic(3.0))
 
 # ╔═╡ 2614127d-34fb-4c3d-b678-42693f3c9341
-@i function f3b(y1::ULogarithmic{T}, x::ULogarithmic{T}) where T
+@i function ulog_muleq(y1::ULogarithmic{T}, x::ULogarithmic{T}) where T
 	y1 *= x
-end; @test f3b(ULogarithmic(1.0), ULogarithmic(3.0))[1] === ULogarithmic(3.0)
+end; @test ulog_muleq(ULogarithmic(1.0), ULogarithmic(3.0))[1] === ULogarithmic(3.0)
 
 # ╔═╡ 8f169235-3bd1-4cc4-a083-79736d306ad5
 example("computing x ^ 3 with logarithmic numbers")
@@ -601,91 +674,13 @@ example("computing x ^ 3 with logarithmic numbers")
 	end
 end; @test power3(ULogarithmic(1.0), 3.0)[1] ≈ 27
 
-# ╔═╡ c4cd9f88-9cd6-4364-b016-78f90aba6a66
-md"""## Mathematical Operations and Elementary Functions
-A mathematical operation can be defined in the form `⊙=`, where `⊙` can be `+`, `-`, `*`, `/` or `⊻`. See section $(titleref("Integers, floating-point numbers, fixed-point numbers and logarithmic numbers")) for their supported number types.
-
-When we say an elementary function is supported, we mean its diffrule is defined. A list of supported elementary differentiable functions are
-
-| instruction | output   |
-| ----------- | ---------- |
-| ``{\rm FLIP}(y)`` | ``\sim y`` |
-| ``{\rm NEG}(y)`` | ``-y`` |
-| ``{\rm INC}(y)`` | ``y+1`` |
-| ``{\rm DEC}(y)`` | ``y-1`` |
-| ``{\rm INV}(y)`` | ``y ^ {-1}`` |
-| ``{\rm HADAMARD}(x, y)`` | ``\frac{1}{\sqrt{2}}(x+y), \frac{1}{\sqrt{2}}(x-y)``
-| ``{\rm SWAP}(a, b)`` | ``b, a`` |
-| ``{\rm ROT}(a, b, \theta)`` | ``a \cos\theta - b\sin\theta, b \cos\theta + a\sin\theta, \theta`` |
-| ``{\rm IROT}(a, b, \theta)`` | ``a \cos\theta + b\sin\theta, b \cos\theta - a\sin\theta, \theta`` |
-| ``y \mathrel{\{+,-\}}= f_{+-}(args...)`` | ``y\{+, -\}f_{+-}(args...), args...`` |
-| ``y \mathrel{\{*, /\}}= f_{*/}(args...)`` | ``y\{*, /\}f_{*/}(args...), args...`` |
-
-Functions ``f_{+-} ∈ \rm \{identity, +, -, *, /, ^\wedge, abs, abs2, sqrt, exp, log, sin, sinh, asin, cos, cosh,`` ``\rm acos, tan, tanh, atan, sincos, convert\}`` and ``f_{*/}∈\rm \{identity, +, -, *, /, ^\wedge, convert\}.`` 
-Functions `FLIP`, `NEG`, `INV`, `HADAMARD`, `SWAP` and `y ⊻= f_{⊻}(args...)` are self-reversible (or reflexive). {`ROT`, `IROT`} and {`INC`, `DEC`}, {`y += f_{+-}(args...)`, `y -= f_{+-}(args...)`} and {`y *= f_{*/}(args...)`, `y /= f_{*/}(args...)`} are pair-wise reversible.
-
-For Jacobians and Hessians defined on these instructions, please check this [blog post](https://giggleliu.github.io/2020/01/18/jacobians.html).
-"""
-# They are translated to `y += f(args...)` is translated to `PlusEq(f)(y, args...)`, `y -= f(args...)` is translated to `MinusEq(f)(y, args...)`, `y *= f(args...)` is translated to `MulEq(f)(y, args...)`, `y /= f(args...)` is translated to `DivEq(f)(y, args...)` and `y ⊻= f(args...)` is translated to `XorEq(f)(y, args...)`.
-
-# ╔═╡ f6049c78-7468-47ce-a4a5-84fab34d115a
-title2("How to create a new elementary reversible function")
-
-# ╔═╡ b0f73825-bbb1-448c-b491-bf634fdd398a
-md"To define a pair of elementary functions that **reverse to each other**,
-1. declare two functions `f` and `g` that each of them defines a mapping ``\mathbb{R}^n \rightarrow \mathbb{R}^n``
-2. use `@dual f g` to tell NiLang they are reversible to each other.
-3. if you want to make `f` and `g` differentiable, you can specify backward rules on these two function by defining two mappings on ``\mathbb{G}^n\rightarrow \mathbb{G}^n``, where ``\mathbb{G}`` is a 2-tuple of ``\mathbb{R}`` (or `NiLang.AD.GVar`) in NiLang. It is similar to `ForwardDiff.Dual` (check [ForwardDiff](https://github.com/JuliaDiff/ForwardDiff.jl)) but defined for the backward pass.
-
-To define a **self-reversible** elementary function
-1. declare a functions `f` that defines a mapping ``\mathbb{R}^n \rightarrow \mathbb{R}^n``
-2. use `@selfdual f` 
-3. define the backward rule on `f` to make it differentiable.
-"
-
-# ╔═╡ 648cdcd6-f4f5-461f-a525-4b350cae9eb0
-example("defining a new elementary function")
-
-# ╔═╡ d6b1abd6-749d-4591-99e8-64aaa9199ab5
-md"""
-One can use the invertibility checker to check if the function is really reversible (under a certain tolerance `NiLangCore.GLOBAL_ATOL[]` = $(NiLangCore.GLOBAL_ATOL[])).
-"""
-
-# ╔═╡ f502b8c1-9b80-4e67-80e8-a64ddb88fb0f
-@test NiLang.check_inv(M.new_forward, (3.0,))
-
-# ╔═╡ 0bce342e-9a8e-4005-8b88-82da2d2c7163
-md"""
-To check of the gradients are properly defined, one can use `NiLang.AD.check_grad`
-"""
-
-# ╔═╡ fd9cf757-2698-4886-9f0a-c6c23ff0d331
-@test NiLang.AD.check_grad(M.new_forward, (3.0,); iloss=1)
-
-# ╔═╡ dda6652a-d063-4511-8041-e869bb88ca26
-@test NiLang.AD.check_grad(M.new_backward, (3.0,); iloss=1)
-
 # ╔═╡ f6bfa015-c101-45e8-995c-2bb6a3b7dc7d
-title1("Types and arrays")
+title2("Types and arrays")
 
 # ╔═╡ 8651d7ec-6bcd-4dbe-a062-c4bde32e5e91
 md"
-A Julia type can be accessed in NiLang if its default constructor is not overloaded, because NiLang requires the default constructor to \"modify\" a field of a immutable type. For example, one can modify the real and imaginary part of a complex number directly in NiLang."
-
-# ╔═╡ 9f5f9de3-9558-4c18-9d98-b77d19b570ec
-example("Complex valued log")
-
-# ╔═╡ 6dfcfa19-f78f-4dac-89f7-d3c5dbe17987
-@i function complex_log(y!::Complex{T}, x::Complex{T}) where T
-    n ← zero(T)
-    n += abs(x)
-
-    y!.re += log(n)
-    y!.im += angle(x)
-
-    n -= abs(x)
-    n → zero(T)
-end; @test complex_log(0.0im, 3.0+2.0im)[1] ≈ log(3.0+2.0im)
+A Julia type can be accessed in NiLang if its default constructor is not overloaded, because NiLang requires the default constructor to \"modify\" a field of a immutable type.
+"
 
 # ╔═╡ edaa9fdb-3af8-4554-a701-0e3bff2107a5
 md"It is also possbile to extract the fields directly."
@@ -716,7 +711,7 @@ end
 example("Implementing \"axpy\" function")
 
 # ╔═╡ 99d6fe7b-d704-48f3-b115-2b3159a78068
-md"One can modify the `Array` directly"
+md"`axpy` function is defined as ``\vec y += a \vec x``. One can modify the `Array` directly"
 
 # ╔═╡ 1950ff70-54eb-4ece-a26d-a23fd0e90f5a
 @i function arrayaxpy!(y!::Vector{T}, a::T, x::Vector{T}) where T
@@ -736,49 +731,7 @@ md"To modify an element of a `Tuple`, we need to use a different style to avoid 
 end; @test tupleaxpy!((0,0,0), 2, (1,2,3))[1] == (2, 4, 6)
 
 # ╔═╡ 59ec7cb7-6011-456d-9f57-a55bb8ea51a0
-md"Here `data |> function` is called a *dataview* of an object, it defines a modifiable view for a field of a data."
-
-# ╔═╡ 0b37e505-12b7-45a9-a188-8a57cff055ec
-md"One can use the swap between object fields and tuple."
-
-# ╔═╡ c7f2f786-d9ff-43b4-baef-5a48d611aa1e
-title1("Functions")
-
-# ╔═╡ d6519029-231d-4c63-b47d-684462dab287
-md"""
-Macros on functions are partly supported, NiLang will render the body of the function first and pass it to the next macro. One can define an inline function like
-```julia
-@i @inline function f(args...)
-	...
-end
-```
-
-However, the generated functions are not yet supported.
-"""
-
-# ╔═╡ b3147f49-c0f8-40cc-a794-282f6950b392
-md"
-Functions can not be chained.
-"
-
-# ╔═╡ 3e1a9006-3930-44f6-9eed-584d78937a57
-@test_throws LoadError macroexpand(NiLang, :(@i function f6a(x)
-	INV(DEC(x))
-end))
-
-# ╔═╡ b5386441-617a-4cc9-a3e8-5d4067e9554e
-md"For single input single out function, one can use `-`, `'` and the pipeline `var |> reversible function or data field getter` to make the function shorter."
-
-# ╔═╡ bc19ff2a-d3ba-4a4b-959a-fe381015f2ef
-@i function f6b(x)
-	INV(-x |> SubConst(4.0))
-end
-
-# ╔═╡ 47c95524-cef5-4654-b9ed-324472707ef0
-f6b(3.0)
-
-# ╔═╡ 03b31baa-9925-4fcb-a95c-7e48bd7708ca
-md"Why the result is not `1/(-3-4)`? This is because the `INV` operation operates on the *dataview* `-x |> SubConst(4.0)`,  rather than on `x` directly. Which mean when it computes the result `-1/7`, it tried to assign this value back to `-x |> SubConst(4.0)`. So it adds 4 to the result and negate it to make the change propagate to the original variable."
+md"Here `data |> tget(i)` represents the `i`th field of the tuple (note it is not allowed to write `data.:i`)."
 
 # ╔═╡ aacf63a2-9708-40db-8928-049621a7bbc4
 md"## Control flows"
@@ -792,13 +745,13 @@ The condition expression in `if` statement contains two parts, one is preconditi
 $(
 twocol(md"
 ```julia
-if (precondition1[, postcondition1])
+if (precondition[, postcondition])
 	...
 end
 ```
 ", md"
 ```julia
-if (postcondition1[, precondition1])
+if (postcondition[, precondition])
 	~(...)
 end
 ```
@@ -809,7 +762,7 @@ where `...` are statements and `~(...)` are the backward execution of them.
 """
 
 # ╔═╡ 94cd1345-3132-4882-86fe-d2429f610d1d
-md"""If no postcondition is provided, it means the precondition is the same as the postcondition. It is translated to `if (cond, cond) ... end`. `elseif` is also supported, to avoid potential complications, we do not discuss it here."""
+md"""If no postcondition is provided, it means the precondition is the same as the postcondition. It is translated to `if (cond, cond) ... end`. `elseif` is also supported."""
 
 # ╔═╡ 4a558bd3-6e42-4c61-bd23-888b7f33ae25
 @i function f7a(x)
@@ -966,34 +919,58 @@ end
 # ╔═╡ 95060588-f24b-4eeb-9b0b-ed7159962a3c
 @test rfib(0, 6)[1] == 8
 
-# ╔═╡ 91f8cfc6-e261-4945-8506-eed8caa607c2
-title1("Multi-threading and CUDA")
+# ╔═╡ c4cd9f88-9cd6-4364-b016-78f90aba6a66
+title1("Extending the instruction set")
+# They are translated to `y += f(args...)` is translated to `PlusEq(f)(y, args...)`, `y -= f(args...)` is translated to `MinusEq(f)(y, args...)`, `y *= f(args...)` is translated to `MulEq(f)(y, args...)`, `y /= f(args...)` is translated to `DivEq(f)(y, args...)` and `y ⊻= f(args...)` is translated to `XorEq(f)(y, args...)`.
 
-# ╔═╡ c82b3b5c-c4e2-4bf6-b4ec-0d05ba9a669b
-@i function f8a(y::Vector, x::Vector)
-	# check the size of `x` and `y`. `@assert` is not a valid statement in NiLang, so one should decorate it with `@safe` to tell the compiler, doing this is safe, do not check this statement.
-	@safe @assert length(x) == length(y)
-	@threads for i=1:length(y)
-		y[i] += exp(x[i])
-	end
-end; @test f8a(zeros(3), [1.0, 2.0, 3.0])[1] ≈ [exp(1.0), exp(2.0), exp(3.0)]
+# ╔═╡ f6049c78-7468-47ce-a4a5-84fab34d115a
+title2("How to create a new elementary reversible function")
 
-# ╔═╡ 8c93a773-edc0-4ec2-88ef-1b58b7deddc5
-title2("Shared read-write in parallel computing and autodiff")
+# ╔═╡ b0f73825-bbb1-448c-b491-bf634fdd398a
+md"To define a pair of elementary functions that **reverse to each other**,
+1. declare two functions `f` and `g` that each of them defines a mapping ``\mathbb{R}^n \rightarrow \mathbb{R}^n``
+2. use `@dual f g` to tell NiLang they are reversible to each other.
+3. if you want to make `f` and `g` differentiable, you can specify backward rules on these two function by defining two mappings on ``\mathbb{G}^n\rightarrow \mathbb{G}^n``, where ``\mathbb{G}`` is a 2-tuple of ``\mathbb{R}`` (or `NiLang.AD.GVar`) in NiLang. It is similar to `ForwardDiff.Dual` (check [ForwardDiff](https://github.com/JuliaDiff/ForwardDiff.jl)) but defined for the backward pass.
 
-# ╔═╡ 16d08950-0575-4a4b-afc8-11ddca3198c7
-md"Let's take a look at a correct prallel code that compute `exp(x)` and broadcast it to the output."
+To define a **self-reversible** elementary function
+1. declare a functions `f` that defines a mapping ``\mathbb{R}^n \rightarrow \mathbb{R}^n``
+2. use `@selfdual f` 
+3. define the backward rule on `f` to make it differentiable.
+"
 
-# ╔═╡ 7c594d19-59fc-433a-bffa-c63bad46869e
-@i function f8c(y::Vector, x::Real, z::Vector)
-	@safe @assert length(z) == length(y)
-	@threads for i=1:length(y)
-		y[i] += x * z[i]
-	end
-end; @test f8c(zeros(3), 2.0, [1.0, 2.0, 3.0])[1] ≈ [2.0, 4.0, 6.0]
+# ╔═╡ 648cdcd6-f4f5-461f-a525-4b350cae9eb0
+example("defining a new elementary function")
+
+# ╔═╡ d6b1abd6-749d-4591-99e8-64aaa9199ab5
+md"""
+One can use the invertibility checker to check if the function is really reversible (under a certain tolerance `NiLangCore.GLOBAL_ATOL[]` = $(NiLangCore.GLOBAL_ATOL[])).
+"""
+
+# ╔═╡ f502b8c1-9b80-4e67-80e8-a64ddb88fb0f
+@test NiLang.check_inv(M.new_forward, (3.0,))
+
+# ╔═╡ 0bce342e-9a8e-4005-8b88-82da2d2c7163
+md"""
+To check of the gradients are properly defined, one can use `NiLang.AD.check_grad`
+"""
+
+# ╔═╡ fd9cf757-2698-4886-9f0a-c6c23ff0d331
+@test NiLang.AD.check_grad(M.new_forward, (3.0,); iloss=1)
+
+# ╔═╡ dda6652a-d063-4511-8041-e869bb88ca26
+@test NiLang.AD.check_grad(M.new_backward, (3.0,); iloss=1)
 
 # ╔═╡ a7d47e83-7f44-49d0-a43d-e01316fc6eba
 title1("Performance Tips")
+
+# ╔═╡ eca3efef-f35b-4623-8af8-0b830a55566d
+md"The following trick still work in NiLang
+* Removing boundary check with `@inbounds` (it works on FastStack),
+* Add `@inline` before short functions,
+* Add `@simd` before a for loop,
+
+Other tricks like type stability are introduced in the [Julia documentation](https://docs.julialang.org/en/v1/manual/performance-tips/).
+"
 
 # ╔═╡ 45985244-adbf-4d6d-9732-a963cca62212
 title2("Remove reversibility check")
@@ -1055,8 +1032,97 @@ end
 # ╔═╡ 95c55847-0591-4f7f-b9a1-aa974ccfef69
 @benchmark exp_without_reversibility_check(0.0, 1.0) seconds=0.3
 
+# ╔═╡ 91f8cfc6-e261-4945-8506-eed8caa607c2
+title1("Multi-threading and CUDA")
+
+# ╔═╡ c82b3b5c-c4e2-4bf6-b4ec-0d05ba9a669b
+@i function multi_thread_exp(y::Vector, x::Vector)
+	# check the size of `x` and `y`. `@assert` is not a valid statement in NiLang, so one should decorate it with `@safe` to tell the compiler, doing this is safe, do not check this statement.
+	@safe @assert length(x) == length(y)
+	@threads for i=1:length(y)
+		y[i] += exp(x[i])
+	end
+end; @test multi_thread_exp(zeros(3), [1.0, 2.0, 3.0])[1] ≈ [exp(1.0), exp(2.0), exp(3.0)]
+
+# ╔═╡ 32d75270-60d7-4326-a4ff-8674d0fbd491
+md"With [CUDA](https://github.com/JuliaGPU/CUDA.jl), one can also define parallel reversile and differentiable GPU device functions. Use the broadcasting version `y += x` as an example."
+
+# ╔═╡ 4b8834c1-8bb3-49f2-ae9e-1dbb8832d7f0
+@i function addkernel(target, source)
+    @invcheckoff begin
+		@routine b ← (blockIdx().x-1) * blockDim().x + threadIdx().x
+		if (b <= length(target), ~)
+			@inbounds target[b] += source[b]
+		end
+		~@routine
+	end
+end
+
+# ╔═╡ d8f0ae56-e643-48a1-86ee-1cd907ecb662
+md"One can launch the kernel function in NiLang with `@cuda`"
+
+# ╔═╡ e72b9dc2-dfac-4631-b114-01ec14297427
+md"""
+```julia
+using CUDA
+
+@i function :(+=)(identity)(target::CuArray, source::CuArray)
+    @safe @assert length(target) == length(source)
+    @cuda threads=256 blocks=ceil(Int,length(target)/256) addkernel(target, source)
+end
+```
+"""
+
+# ╔═╡ 8c93a773-edc0-4ec2-88ef-1b58b7deddc5
+title2("Shared read-write in parallel computing and autodiff")
+
+# ╔═╡ 16d08950-0575-4a4b-afc8-11ddca3198c7
+md"The parallel code may suffer from the shared read issue when computing gradients.
+Let's take a look at a parallel code that computes the loss ``\mathcal{L} = \sum x \vec z``."
+
+# ╔═╡ 7c594d19-59fc-433a-bffa-c63bad46869e
+@i function shared_read(loss::Real, y::Vector, x::Real, z::Vector)
+	@safe @assert length(z) == length(y)
+	@threads for i=1:length(y)
+		y[i] += x * z[i]
+	end
+	for i=1:length(y)
+		loss += y[i]
+	end
+end; @test shared_read(0.0, zeros(3), 2.0, [1.0, 2.0, 3.0])[1] ≈ 12
+
+# ╔═╡ 345b344d-afda-4ce1-a0e7-ce6063a69206
+md"However, when computing the gradients, the gradient on `x` will not be computed correctly."
+
+# ╔═╡ c55eb045-daca-42f9-a357-095edef24644
+let
+	z = randn(100)
+	_, gy, gx, gz = NiLang.AD.gradient(shared_read, (0.0, zeros(100), 2.0, z); iloss=1)
+	@test gx ≈ sum(z)
+end
+
+# ╔═╡ c6903b65-a8b8-4aef-8c43-c822077b9d0e
+md"The error is expected. Because the variable `x` is shared by multiple threads, when updating the gradient field of `x` in the backward pass, all threads will try to update the same gradient field, this is famous [race condition](https://en.wikipedia.org/wiki/Race_condition) in parallel computing."
+
 # ╔═╡ f80353d6-0dfe-4b0a-a1af-655d344473bf
 title1("Resources")
+
+# ╔═╡ 4ca276fb-859d-4c5a-81c3-8e4b28922fa4
+title2("Help and Discussion")
+
+# ╔═╡ 3d020209-b8dd-4605-9329-78a985f0a6a3
+md"""
+`reversible-computing` channel of [Julia slack](https://julialang.org/slack/) and [Julia Zulip](https://julialang.zulipchat.com/register/).
+"""
+
+# ╔═╡ c7ec3496-79ea-4956-976c-b88dd22207c7
+title2("Learning")
+
+# ╔═╡ 8530a9d1-5a27-4a1d-883f-4b033a6f8fe4
+md"""
+1. Reversible computing book: Perumalla, Kalyan S. Introduction to reversible computing. CRC Press, 2013.
+2. Our paper: Liu, Jin-Guo, and Taine Zhao. "Differentiate Everything with a Reversible Programming Language." arXiv:2003.04617 (2020).
+"""
 
 # ╔═╡ 7ce31932-0447-4445-99aa-7ebced7d0bad
 TableOfContents()
@@ -1065,27 +1131,61 @@ TableOfContents()
 # ╟─2061b434-0ad1-46eb-a0c7-1a5f432bfa62
 # ╟─a4e76427-f051-4b29-915a-fdfce3a299bb
 # ╟─c2c7b4d4-f8c9-4ebf-8da2-0103f03136e7
+# ╟─12f07cc7-979c-43c3-9dc9-36ea1463c1f6
 # ╟─611b577f-4722-42bf-8f8e-aeb2fb30be71
 # ╟─605872cf-f3fd-462e-a2b1-7d1c5ae45efd
 # ╟─fb3dee44-5fa9-4773-8b7f-a83c44358545
 # ╠═d941d6c2-55bf-11eb-0002-35c7474e4050
 # ╠═70088425-6779-4a2d-ba6d-b0a34c8e93a6
+# ╠═af738f89-3214-429c-9c7d-18a6ea0d9401
+# ╠═48d7ebc1-5def-4a57-9ec1-3fc370a4543f
 # ╟─f0e94247-f615-472b-8218-3fa287b38aa1
 # ╟─2581aa33-1dc5-40b1-aa9f-6a11cc750c93
-# ╠═af738f89-3214-429c-9c7d-18a6ea0d9401
-# ╟─4d98d529-1e05-49be-9209-f0d9fcc206f7
-# ╠═48d7ebc1-5def-4a57-9ec1-3fc370a4543f
-# ╟─e839547b-f47e-4a4e-b4d9-2c22921d80e4
 # ╟─60575978-081a-4bca-a3ed-2b51cd6abc92
 # ╠═f98305cb-4ba2-404a-a5c3-65510e059504
 # ╟─e8cd6667-597f-458b-8465-1822e09a7891
 # ╟─20145d75-004a-4c2f-b7ff-c400ca846d42
+# ╟─c682a17f-600f-4034-bfe3-a851ab645c10
+# ╟─5239dfe2-ea6d-4e07-a1b1-90954fe8ddc9
+# ╟─e4d86a5a-e820-4a70-8a87-08bac416291b
+# ╟─c307b6a4-906d-4be7-9fd7-57c942aded51
+# ╟─47b502d4-e8af-4d58-9067-9700784ea435
+# ╠═faecc0a7-55d7-42a1-8e9f-7e30143eef9c
+# ╠═4cbe69d6-b68f-4bda-a0dd-209f9ee54f18
+# ╟─7dc82f28-77bf-40da-b520-800ed1bc80c9
+# ╟─9f5f9de3-9558-4c18-9d98-b77d19b570ec
+# ╠═6dfcfa19-f78f-4dac-89f7-d3c5dbe17987
+# ╟─dad1c6c0-d61b-4f9f-a71e-e683fe143aaa
+# ╟─3e4a3916-8fe4-4262-bcd3-3014822717a3
+# ╠═34906208-e6f1-4a67-860a-a7b056a86dde
+# ╟─4601df35-679f-465d-9191-c18748b2fd83
+# ╟─4fc72b9d-19a2-40f1-a4a8-5e97d3d5e529
+# ╠═a0fde16f-8454-4f5c-a29c-a9e415c0c311
+# ╟─633ff8f3-8d93-4f73-bec2-c42070e6ece9
+# ╠═57f2d890-b5a0-47b7-9e3d-af4d03b10605
+# ╟─34063cd0-171e-46ce-80dd-52a341fa50a1
+# ╠═5d5d01db-8ff9-434c-8771-1fec6393e1fb
+# ╠═10d85a50-f2f9-403e-8f6c-baef61cf702a
+# ╟─b52648bf-a28a-48af-8912-31729d943ce0
+# ╟─f45db10f-a836-40f3-9d8d-054ea6540e87
+# ╟─1903563e-ccc2-44d9-9dbe-e5dede275b3c
+# ╟─583f2585-15a3-47c6-a70e-e2f002754028
+# ╠═60e6ff80-3593-4ae4-a273-914847f692db
+# ╠═9e5cfd68-b58d-4d83-aae2-447e5f805c97
+# ╠═dc85a942-cf52-4405-ad03-32a768e1b6e7
+# ╟─5cdd346b-10a5-485c-ba78-4c0b3cb0e02f
+# ╠═af9287b7-6131-46f6-beb8-6885e55e1975
+# ╠═e20eeabf-1c80-431e-8cfc-4d1b79c52b5a
+# ╟─90d30eea-53de-48a0-9700-ff35681fdf38
+# ╠═390f58a5-6f5f-4d3a-bb16-ba04e43a07e7
+# ╠═2b57443e-a516-434b-be86-80616a98e2f5
+# ╟─fc2e27f9-b7ba-44cc-a953-6745548ad733
+# ╠═fc744931-360b-4478-9f77-c50f048de243
+# ╠═9a152b36-f377-44da-9700-ca9e05e365ff
 # ╟─b6dcd18c-606f-4340-b2ec-163e8bad03f5
 # ╟─a1a29f34-f8a9-4e9f-9afe-7d0096771440
 # ╟─90bd6ad4-3dd8-4e7c-b445-aed1d248a2ec
 # ╠═c0259e48-1973-486c-a828-1fcd3e4331c6
-# ╟─7bcc1bc6-5b2c-4aae-b71d-52482ae130e9
-# ╠═fd5d65e7-3d83-45dd-87d7-ff1e1e769430
 # ╟─8bbffa31-04a6-49ca-b36f-4d4140d75992
 # ╠═a6f18c34-80ee-4b52-9ff8-f3c1b1d80f90
 # ╠═a694132b-4f52-467f-8bc4-dc32fe2812db
@@ -1111,32 +1211,6 @@ TableOfContents()
 # ╟─b20004e9-3c73-4dfb-8fd5-f377786fd53b
 # ╠═5c1952b1-5016-4c87-b23c-8e6a235bf8cd
 # ╠═8e4470ee-01da-4547-b091-c4f65cd729b0
-# ╟─4601df35-679f-465d-9191-c18748b2fd83
-# ╟─4fc72b9d-19a2-40f1-a4a8-5e97d3d5e529
-# ╠═a0fde16f-8454-4f5c-a29c-a9e415c0c311
-# ╟─633ff8f3-8d93-4f73-bec2-c42070e6ece9
-# ╠═57f2d890-b5a0-47b7-9e3d-af4d03b10605
-# ╟─34063cd0-171e-46ce-80dd-52a341fa50a1
-# ╠═5d5d01db-8ff9-434c-8771-1fec6393e1fb
-# ╠═10d85a50-f2f9-403e-8f6c-baef61cf702a
-# ╟─b52648bf-a28a-48af-8912-31729d943ce0
-# ╟─f45db10f-a836-40f3-9d8d-054ea6540e87
-# ╟─1903563e-ccc2-44d9-9dbe-e5dede275b3c
-# ╟─7ec577d4-1e19-484e-ac1f-5da3f47d1ec4
-# ╟─583f2585-15a3-47c6-a70e-e2f002754028
-# ╠═60e6ff80-3593-4ae4-a273-914847f692db
-# ╠═9e5cfd68-b58d-4d83-aae2-447e5f805c97
-# ╠═dc85a942-cf52-4405-ad03-32a768e1b6e7
-# ╟─5cdd346b-10a5-485c-ba78-4c0b3cb0e02f
-# ╠═af9287b7-6131-46f6-beb8-6885e55e1975
-# ╠═e20eeabf-1c80-431e-8cfc-4d1b79c52b5a
-# ╟─e45d53b9-6f02-4293-ab4f-85bd751993ad
-# ╟─90d30eea-53de-48a0-9700-ff35681fdf38
-# ╠═390f58a5-6f5f-4d3a-bb16-ba04e43a07e7
-# ╠═2b57443e-a516-434b-be86-80616a98e2f5
-# ╟─fc2e27f9-b7ba-44cc-a953-6745548ad733
-# ╠═fc744931-360b-4478-9f77-c50f048de243
-# ╠═9a152b36-f377-44da-9700-ca9e05e365ff
 # ╟─0863bd06-cc70-4dde-b3b2-0a466805a356
 # ╟─a0bae195-04e1-4642-9e14-fe4691e0906b
 # ╠═20d6e8a0-2cf5-48ad-9549-60506b42b970
@@ -1146,20 +1220,8 @@ TableOfContents()
 # ╠═2614127d-34fb-4c3d-b678-42693f3c9341
 # ╟─8f169235-3bd1-4cc4-a083-79736d306ad5
 # ╠═dfc9d305-5bce-4555-bfa3-d8d61fe4ca09
-# ╟─c4cd9f88-9cd6-4364-b016-78f90aba6a66
-# ╟─f6049c78-7468-47ce-a4a5-84fab34d115a
-# ╟─b0f73825-bbb1-448c-b491-bf634fdd398a
-# ╟─648cdcd6-f4f5-461f-a525-4b350cae9eb0
-# ╠═8c2c4fa6-172f-4dde-a279-5d0aecfdbe46
-# ╟─d6b1abd6-749d-4591-99e8-64aaa9199ab5
-# ╠═f502b8c1-9b80-4e67-80e8-a64ddb88fb0f
-# ╟─0bce342e-9a8e-4005-8b88-82da2d2c7163
-# ╠═fd9cf757-2698-4886-9f0a-c6c23ff0d331
-# ╠═dda6652a-d063-4511-8041-e869bb88ca26
 # ╟─f6bfa015-c101-45e8-995c-2bb6a3b7dc7d
 # ╟─8651d7ec-6bcd-4dbe-a062-c4bde32e5e91
-# ╟─9f5f9de3-9558-4c18-9d98-b77d19b570ec
-# ╠═6dfcfa19-f78f-4dac-89f7-d3c5dbe17987
 # ╟─edaa9fdb-3af8-4554-a701-0e3bff2107a5
 # ╠═7551a880-340e-4e3f-815b-188e73f7eb9a
 # ╠═0489e51b-781f-4441-bb7f-ff3bd2e848ad
@@ -1172,15 +1234,6 @@ TableOfContents()
 # ╟─21458f81-9007-46f8-92e0-7a17c60beb36
 # ╠═7813f4ce-6e98-45f3-94a8-7f5981129f2b
 # ╟─59ec7cb7-6011-456d-9f57-a55bb8ea51a0
-# ╟─0b37e505-12b7-45a9-a188-8a57cff055ec
-# ╟─c7f2f786-d9ff-43b4-baef-5a48d611aa1e
-# ╟─d6519029-231d-4c63-b47d-684462dab287
-# ╟─b3147f49-c0f8-40cc-a794-282f6950b392
-# ╠═3e1a9006-3930-44f6-9eed-584d78937a57
-# ╟─b5386441-617a-4cc9-a3e8-5d4067e9554e
-# ╠═bc19ff2a-d3ba-4a4b-959a-fe381015f2ef
-# ╠═47c95524-cef5-4654-b9ed-324472707ef0
-# ╟─03b31baa-9925-4fcb-a95c-7e48bd7708ca
 # ╟─aacf63a2-9708-40db-8928-049621a7bbc4
 # ╟─ad0097e7-c8ad-457a-82a9-18b998a9e9fb
 # ╟─94cd1345-3132-4882-86fe-d2429f610d1d
@@ -1206,13 +1259,18 @@ TableOfContents()
 # ╟─19bb2af5-2a67-453d-82b0-7d3059b1fa47
 # ╠═5b5858bf-63ac-4e31-a516-055a9cd18ffe
 # ╠═95060588-f24b-4eeb-9b0b-ed7159962a3c
-# ╟─91f8cfc6-e261-4945-8506-eed8caa607c2
-# ╠═0e1ba158-a6bc-401c-9ba7-ed78020ad068
-# ╠═c82b3b5c-c4e2-4bf6-b4ec-0d05ba9a669b
-# ╟─8c93a773-edc0-4ec2-88ef-1b58b7deddc5
-# ╟─16d08950-0575-4a4b-afc8-11ddca3198c7
-# ╠═7c594d19-59fc-433a-bffa-c63bad46869e
+# ╟─c4cd9f88-9cd6-4364-b016-78f90aba6a66
+# ╟─f6049c78-7468-47ce-a4a5-84fab34d115a
+# ╟─b0f73825-bbb1-448c-b491-bf634fdd398a
+# ╟─648cdcd6-f4f5-461f-a525-4b350cae9eb0
+# ╠═8c2c4fa6-172f-4dde-a279-5d0aecfdbe46
+# ╟─d6b1abd6-749d-4591-99e8-64aaa9199ab5
+# ╠═f502b8c1-9b80-4e67-80e8-a64ddb88fb0f
+# ╟─0bce342e-9a8e-4005-8b88-82da2d2c7163
+# ╠═fd9cf757-2698-4886-9f0a-c6c23ff0d331
+# ╠═dda6652a-d063-4511-8041-e869bb88ca26
 # ╟─a7d47e83-7f44-49d0-a43d-e01316fc6eba
+# ╟─eca3efef-f35b-4623-8af8-0b830a55566d
 # ╟─45985244-adbf-4d6d-9732-a963cca62212
 # ╟─83d7e75f-7273-4c6a-bec1-a2180ebc3fb9
 # ╟─7fb05c65-f47c-430a-b588-c2f9bade40a9
@@ -1222,5 +1280,22 @@ TableOfContents()
 # ╠═ac53eac0-1a59-4407-8bf6-3d8b966a9bff
 # ╠═85c8ac7b-54f5-47dc-bd50-e78ffd6cf1cf
 # ╠═95c55847-0591-4f7f-b9a1-aa974ccfef69
+# ╟─91f8cfc6-e261-4945-8506-eed8caa607c2
+# ╠═0e1ba158-a6bc-401c-9ba7-ed78020ad068
+# ╠═c82b3b5c-c4e2-4bf6-b4ec-0d05ba9a669b
+# ╟─32d75270-60d7-4326-a4ff-8674d0fbd491
+# ╠═4b8834c1-8bb3-49f2-ae9e-1dbb8832d7f0
+# ╟─d8f0ae56-e643-48a1-86ee-1cd907ecb662
+# ╟─e72b9dc2-dfac-4631-b114-01ec14297427
+# ╟─8c93a773-edc0-4ec2-88ef-1b58b7deddc5
+# ╟─16d08950-0575-4a4b-afc8-11ddca3198c7
+# ╠═7c594d19-59fc-433a-bffa-c63bad46869e
+# ╟─345b344d-afda-4ce1-a0e7-ce6063a69206
+# ╠═c55eb045-daca-42f9-a357-095edef24644
+# ╟─c6903b65-a8b8-4aef-8c43-c822077b9d0e
 # ╟─f80353d6-0dfe-4b0a-a1af-655d344473bf
+# ╟─4ca276fb-859d-4c5a-81c3-8e4b28922fa4
+# ╟─3d020209-b8dd-4605-9329-78a985f0a6a3
+# ╟─c7ec3496-79ea-4956-976c-b88dd22207c7
+# ╟─8530a9d1-5a27-4a1d-883f-4b033a6f8fe4
 # ╟─7ce31932-0447-4445-99aa-7ebced7d0bad
