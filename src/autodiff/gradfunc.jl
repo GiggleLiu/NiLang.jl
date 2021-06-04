@@ -65,7 +65,7 @@ X = rand(2, 2)
 grads = NiLang.AD.gradient(Val(1), i_norm2, (0.0, X))
 grads[2] ≈ 2 .* X
 
-#output
+# output
 true
 ```
 
