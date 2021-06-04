@@ -11,11 +11,14 @@ NiLang features:
 * complex values
 * reversible logarithmic number system
 
-[![Documentation](https://github.com/GiggleLiu/NiLang.jl/workflows/Documentation/badge.svg)](https://giggleliu.github.io/NiLang.jl/stable/)
 ![CI](https://github.com/GiggleLiu/NiLang.jl/workflows/CI/badge.svg)
 [![codecov](https://codecov.io/gh/GiggleLiu/NiLang.jl/branch/master/graph/badge.svg?token=th86D4USSX)](https://codecov.io/gh/GiggleLiu/NiLang.jl)
 
-A collection of Pluto notebooks
+The main docs can be found here:
+[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://giggleliu.github.io/NiLang.jl/stable/)
+[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://giggleliu.github.io/NiLang.jl/dev/)
+
+There are also some Pluto-based notebooks:
 * [tutorial](https://giggleliu.github.io/NiLang.jl/dev/notebooks/basic.html)
 * [documentation](https://giggleliu.github.io/NiLang.jl/dev/notebooks/documentation.html)
 * [Billiard ball model cellular automata](https://giggleliu.github.io/NiLang.jl/dev/notebooks/margolus.html)
