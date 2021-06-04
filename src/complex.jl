@@ -40,7 +40,7 @@ end
 
 @i @inline function :(+=)(*)(y!::Complex, a::Complex, b::Complex)
     y!.re += a.re * b.re
-    y!.re += a.im * (-b.im)
+    y!.re -= a.im * b.im
     y!.im += a.re * b.im
     y!.im += a.im * b.re
 end

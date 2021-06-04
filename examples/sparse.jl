@@ -10,17 +10,20 @@ using NiLang, NiLang.AD
 using SparseArrays
 
 @i function idot(r::T, A::SparseMatrixCSC{T},B::SparseMatrixCSC{T}) where {T}
-    m ← size(A, 1)
-    n ← size(A, 2)
-    @invcheckoff branch_keeper ← zeros(Bool, 2*m)
+    @routine begin
+        m, n ← size(A)
+        branch_keeper ← zeros(Bool, 2*m)
+    end
     @safe size(B) == (m,n) || throw(DimensionMismatch("matrices must have the same dimensions"))
     @invcheckoff @inbounds for j = 1:n
-        ia1 ← A.colptr[j]
-        ib1 ← B.colptr[j]
-        ia2 ← A.colptr[j+1]
-        ib2 ← B.colptr[j+1]
-        ia ← ia1
-        ib ← ib1
+        @routine begin
+            ia1 ← A.colptr[j]
+            ib1 ← B.colptr[j]
+            ia2 ← A.colptr[j+1]
+            ib2 ← B.colptr[j+1]
+            ia ← ia1
+            ib ← ib1
+        end
         @inbounds for i=1:ia2-ia1+ib2-ib1-1
             ra ← A.rowval[ia]
             rb ← B.rowval[ib]
@@ -46,8 +49,9 @@ using SparseArrays
                 INC(ia)
             end
         end
+        ~@routine
     end
-    @invcheckoff branch_keeper → zeros(Bool, 2*m)
+    ~@routine
 end
 
 # Here, the key point is using a \texttt{branch\_keeper} vector to cache branch decisions.
