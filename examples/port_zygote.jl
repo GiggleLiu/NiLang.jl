@@ -1,4 +1,8 @@
-# # How to port NiLang to Zygote
+# # [How to port NiLang to Zygote](@id port_zygote)
+#
+# In this demo we'll show how to insert NiLang's gradient implementation to boost Zygote's gradient.
+# A similar demo for ChainRules can be found in [How to port NiLang to ChainRules](@ref port_chainrules).
+
 using NiLang, NiLang.AD, Zygote
 
 # Let's start from the Julia native implementation of `norm2` function.
@@ -10,13 +14,14 @@ function norm2(x::AbstractArray{T}) where T
     return out
 end
 
-# Zygote is able to generate correct gradients, but much slower than the original program.
+# Zygote is able to generate correct dual function, i.e., gradients, but much slower than the primal
+# function `norm2`
 using BenchmarkTools
 x = randn(1000);
 original_grad = norm2'(x)
 @benchmark norm2'($x) seconds=1
 
-# The orignal program is
+# The primal function is
 @benchmark norm2($x) seconds=1
 
 # Then we have the reversible implementation
