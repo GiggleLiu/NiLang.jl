@@ -115,6 +115,15 @@ for F1 in [:(Base.:-), :NEG, :(ac::AddConst), :(sc::SubConst)]
     end
 end
 
+@inline @generated function (::PlusEq{typeof(identity)})(x::T, y::T) where T
+    if isprimitivetype(T) || T isa Array
+        Expr(:tuple, :(x + y), :y)
+    else
+        Expr(:tuple, Expr(:new, T, Any[:($(PlusEq(identity))(x.$field, y.$field)[1]) for field in fieldnames(T)]...), :y)
+    end
+end
+(f::PlusEq{typeof(identity)})(x::T, y::T) where T<:Tuple = invoke(f, Tuple{T,T} where T, x, y)
+
 for F2 in [:SWAP, :HADAMARD, :((inf::PlusEq)), :((inf::MinusEq)), :((inf::XorEq))]
     @eval @inline function $F2(a::NullType, b::Real)
         @instr $(NiLangCore.get_argname(F2))(a |> value, b)

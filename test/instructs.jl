@@ -115,3 +115,12 @@ end
         @test x ≈ 2.0 + op(0.5, 0.8)
     end
 end
+
+@testset "additive identity" begin
+    struct TestAdd{T}
+        x::T
+        y::T
+    end
+
+    @test PlusEq(identity)(TestAdd(1, 2), TestAdd(10, 2)) == (TestAdd(11, 4), TestAdd(10, 2))
+end
