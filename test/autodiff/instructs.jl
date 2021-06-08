@@ -115,3 +115,16 @@ end
     end
     @test check_grad(f, (0.2, 0.5, 0.8); iloss=1)
 end
+
+@testset "additive identity" begin
+    struct TestAdd2{T}
+        x::T
+        y::Vector{T}
+    end
+    x = TestAdd2(GVar(1.0, 2.0), [GVar(2.0, 1.2)])
+    y = TestAdd2(GVar(6.0, 3.0), [GVar(4.0, 4.1)])
+    @test getfield.(MinusEq(identity)(x, y), :x) == getfield.((TestAdd2(GVar(-5.0, 2.0), [GVar(-2.0, 1.2)]), TestAdd2(GVar(6.0, 5.0), [GVar(4.0, 5.3)])), :x)
+    x = TestAdd2(GVar(1.0, 2.0), [GVar(2.0, 1.2)])
+    y = TestAdd2(GVar(6.0, 3.0), [GVar(4.0, 4.1)])
+    @test getfield.(MinusEq(identity)(x, y), :y) == getfield.((TestAdd2(GVar(-5.0, 2.0), [GVar(-2.0, 1.2)]), TestAdd2(GVar(6.0, 5.0), [GVar(4.0, 5.3)])), :y)
+end
