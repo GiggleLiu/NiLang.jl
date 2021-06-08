@@ -117,10 +117,16 @@ end
 end
 
 @testset "additive identity" begin
-    struct TestAdd{T}
+    struct TestAdd2{T}
         x::T
-        y::T
+        y::Vector{T}
     end
-
-    @test PlusEq(identity)(TestAdd(1, 2), TestAdd(10, 2)) == (TestAdd(11, 4), TestAdd(10, 2))
+    @test getfield.(PlusEq(identity)(TestAdd2(1, [2]), TestAdd2(10, [2])), :x) == (TestAdd2(11, [4]).x, TestAdd2(10, [2]).x)
+    @test getfield.(PlusEq(identity)(TestAdd2(1, [2]), TestAdd2(10, [2])), :y) == (TestAdd2(11, [4]).y, TestAdd2(10, [2]).y)
+    x = TestAdd2(GVar(1.0, 2.0), [GVar(2.0, 1.2)])
+    y = TestAdd2(GVar(6.0, 3.0), [GVar(4.0, 4.1)])
+    @test getfield.(MinusEq(identity)(x, y), :x) == getfield.((TestAdd2(GVar(-5.0, 2.0), [GVar(-2.0, 1.2)]), TestAdd2(GVar(6.0, 5.0), [GVar(4.0, 5.3)])), :x)
+    x = TestAdd2(GVar(1.0, 2.0), [GVar(2.0, 1.2)])
+    y = TestAdd2(GVar(6.0, 3.0), [GVar(4.0, 4.1)])
+    @test getfield.(MinusEq(identity)(x, y), :y) == getfield.((TestAdd2(GVar(-5.0, 2.0), [GVar(-2.0, 1.2)]), TestAdd2(GVar(6.0, 5.0), [GVar(4.0, 5.3)])), :y)
 end

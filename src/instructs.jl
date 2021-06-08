@@ -115,14 +115,24 @@ for F1 in [:(Base.:-), :NEG, :(ac::AddConst), :(sc::SubConst)]
     end
 end
 
-@inline @generated function (::PlusEq{typeof(identity)})(x::T, y::T) where T
-    if isprimitivetype(T) || T isa Array
-        Expr(:tuple, :(x + y), :y)
-    else
-        Expr(:tuple, Expr(:new, T, Any[:($(PlusEq(identity))(x.$field, y.$field)[1]) for field in fieldnames(T)]...), :y)
+for (OP, F, f) in [(:(PlusEq{typeof(identity)}), :(PlusEq(identity)), :+), (:(MinusEq{typeof(identity)}), :(MinusEq(identity)), :-)]
+    @eval @inline @generated function (::$OP)(x::T, y::T) where T
+        if isprimitivetype(T)
+            Expr(:tuple, Expr(:call, $f, :x, :y), :y)
+        else
+            res = gensym("results")
+            computes = Any[:($($F)(x.$field, y.$field)) for field in fieldnames(T)]
+            comp = Expr(:(=), res, Expr(:tuple, computes...))
+            res1 = Expr(:new, T, [:($res[$i][1]) for i=1:length(computes)]...)
+            res2 = Expr(:new, T, [:($res[$i][2]) for i=1:length(computes)]...)
+            quote
+                $comp
+                ($res1, $res2)
+            end
+        end
     end
+    @eval (f::$OP)(x::T, y::T) where T<:Tuple = invoke(f, Tuple{T,T} where T, x, y)
 end
-(f::PlusEq{typeof(identity)})(x::T, y::T) where T<:Tuple = invoke(f, Tuple{T,T} where T, x, y)
 
 for F2 in [:SWAP, :HADAMARD, :((inf::PlusEq)), :((inf::MinusEq)), :((inf::XorEq))]
     @eval @inline function $F2(a::NullType, b::Real)
