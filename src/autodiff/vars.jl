@@ -15,8 +15,8 @@ struct GVar{T,GT} <: IWrapper{T}
     function GVar(x::T, g::T) where T<:Real
         new{T,T}(x, g)
     end
-    function GVar{T,GT}(x::T) where {T, GT}
-        new{T,GT}(x, zero(GT))
+    function GVar{T,GT}(x::T2) where {T,T2,GT}
+        new{T,GT}(T(x), zero(GT))
     end
     function GVar(x::T, g::GT) where {T,GT}
         new{T,GT}(x, g)

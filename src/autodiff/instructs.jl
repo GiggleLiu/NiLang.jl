@@ -18,8 +18,6 @@ end
     a!.x -= b.x
     b.g += a!.g
 end
-@nograd :(-=)(identity)(a!::Real, b::GVar)
-@nograd :(-=)(identity)(a!::GVar, b::Real)
 
 # inv
 @eval @i @inline function :(-=)(inv)(out!::GVar{T}, y::GVar) where T
@@ -31,8 +29,6 @@ end
     y.g -= out!.g / a1
     ~@routine
 end
-@nograd :(-=)(inv)(a!::Real, b::GVar)
-@nograd :(-=)(inv)(a!::GVar, b::Real)
 
 # +- (triple)
 @i @inline function :(-=)(+)(out!::GVar, x::GVar, y::GVar)
@@ -123,43 +119,40 @@ end
 end
 
 @i @inline function :(-=)(^)(out!::GVar{T}, x::GVar, n::GVar) where T
-    out!.x -= x.x ^ n.x
-
     # grad x
     @routine @invcheckoff begin
-        @zeros T anc1 anc2 anc3 jac1 jac2
-        DEC(n.x)
-        anc1 += x.x^n.x
-        INC(n.x)
+        @zeros T anc1 anc2 anc3 jac1 jac2 nx_1
+        nx_1 += n.x - 1
+        anc1 += x.x ^ nx_1
         jac1 += anc1 * n.x
 
         # get grad of n
         anc2 += log(x.x)
-        anc3 += x.x ^ n.x
-        jac2 += anc3*anc2
+        anc3 += anc1 * x.x
+        jac2 += anc3 * anc2
     end
+    out!.x -= anc1 * x.x
     x.g += out!.g * jac1
     n.g += out!.g * jac2
     ~@routine
 end
 
 @i @inline function :(-=)(^)(out!::GVar{T}, x::GVar, n::Real) where T
-    out!.x -= x.x ^ n
     @routine @invcheckoff begin
         anc1 ← zero(x.x)
         jac ← zero(x.x)
+	nx_1 ← zero(n)
 
-        DEC(n |> value)
-        anc1 += x.x ^ n
-        INC(n |> value)
+	nx_1 += n - 1
+        anc1 += x.x ^ nx_1
         jac += anc1 * n
     end
+    out!.x -= anc1 * x.x
     x.g += out!.g * jac
     ~@routine
 end
 
 @i @inline function :(-=)(^)(out!::GVar{T}, x::Real, n::GVar) where T
-    :(-=)(^)(out!.x, x, n.x)
     # get jac of n
     @routine @invcheckoff begin
         anc1 ← zero(x)
@@ -170,6 +163,7 @@ end
         anc2 += x ^ n.x
         jac += anc1*anc2
     end
+    out!.x -= anc2
     n.g += out!.g * jac
     ~@routine
 end
@@ -185,6 +179,28 @@ end
     end
     y.g += out!.g * jac_y
     x.g += out!.g * jac_x
+    ~@routine
+end
+@i @inline function :(-=)(atan)(out!::GVar{T}, y::Real, x::GVar) where T
+    out!.x -= atan(y, x.x)
+    @routine @invcheckoff begin
+        @zeros T xy2 jac_x
+        xy2 += abs2(x.x)
+        xy2 += abs2(y)
+        jac_x += (-y) / xy2
+    end
+    x.g += out!.g * jac_x
+    ~@routine
+end
+@i @inline function :(-=)(atan)(out!::GVar{T}, y::GVar, x::Real) where T
+    out!.x -= atan(y.x, x)
+    @routine @invcheckoff begin
+        @zeros T xy2 jac_y
+        xy2 += abs2(x)
+        xy2 += abs2(y.x)
+        jac_y += x / xy2
+    end
+    y.g += out!.g * jac_y
     ~@routine
 end
 
@@ -212,10 +228,8 @@ end
     x.g += out!.g * x.x
     x.g += out!.g * x.x
 end
-@nograd :(-=)(abs2)(a!::GVar, b::Real)
-@nograd :(-=)(abs2)(a!::Real, b::GVar)
 
-for op in [:*, :/, :^, :+, :-]
+for op in [:*, :/, :^, :+, :-, :atan]
     @eval @nograd :(-=)($op)(out!::GVar, x::Real, y::Real)
     @eval @nograd :(-=)($op)(out!::Real, x::Real, y::GVar)
     @eval @nograd :(-=)($op)(out!::Real, x::GVar, y::GVar)
@@ -348,7 +362,7 @@ end
     ~@routine
 end
 
-for op in [:sqrt, :exp, :log, :sin, :cos, :tanh]
+for op in [:sqrt, :exp, :log, :sin, :cos, :tanh, :abs, :abs2, :identity, :inv]
     @eval @nograd :(-=)($op)(out!::Real, x::GVar)
     @eval @nograd :(-=)($op)(out!::GVar, x::Real)
 end
@@ -383,27 +397,27 @@ end
 export primitive_grad
 function primitive_grad end
 
-@i function (mf::MinusEq)(out!::GVar, args...; kwargs...)
+@i @inline function (mf::MinusEq)(out!::GVar, args...; kwargs...)
     out!.x -= mf.f((args .|> value)...; kwargs...)
     (args .|> grad) .+= (@skip! ntuple(x->out!.g, length(args))) .* (@skip! primitive_grad(mf.f, (args .|> value)...; kwargs...))  # unsafe statement, error on recursive gradient
 end
 
-@i function (mf::MinusEq)(out!::GVar, x::GVar; kwargs...)
+@i @inline function (mf::MinusEq)(out!::GVar, x::GVar; kwargs...)
     out!.x -= mf.f(x |> value; kwargs...)
     x.g += (@skip! out!.g) * (@skip! primitive_grad(mf.f, x.x; kwargs...))  # unsafe statement
 end
 
-@i function :(-=)(convert)(out!::GVar{Tx, Tg}, y::GVar) where {Tx, Tg}
+@i @inline function :(-=)(convert)(out!::GVar{Tx, Tg}, y::GVar) where {Tx, Tg}
     out!.x -= convert(y.x)
     y.g += convert(out!.g)
 end
 
-@i function HADAMARD(x::GVar, y::GVar)
+@i @inline function HADAMARD(x::GVar, y::GVar)
     HADAMARD(x.x, y.x)
     HADAMARD(x.g, y.g)
 end
 
-@i function (f::AddConst)(y::GVar)
+@i @inline function (f::AddConst)(y::GVar)
     y.x += f.x
 end
 
