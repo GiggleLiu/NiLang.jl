@@ -44,6 +44,30 @@ using Test
     @test check_grad(HADAMARD, (3.0, 2.0); verbose=true, iloss=2)
 end
 
+@testset "partial gvar" begin
+    @i function testf1(f, a, b)
+	f(a, b, 2.0)
+    end
+    @i function testf2(f, a, b)
+	f(a, 2.0, b)
+    end
+    for testf in [testf1, testf2]
+    	for opm in [PlusEq, MinusEq]
+            @test check_grad(testf, (opm(*), 1.0, 2.0); verbose=true, iloss=2)
+            @test check_grad(testf, (opm(+), 1.0, 2.0); verbose=true, iloss=2)
+            @test check_grad(testf, (opm(-), 1.0, 2.0); verbose=true, iloss=2)
+            @test check_grad(testf, (opm(^), 1.0, 2.0); verbose=true, iloss=2)
+            @test check_grad(testf, (opm(atan), 1.0, -2.0); verbose=true, iloss=2)
+            @test check_grad(testf, (opm(/), 1.0, 2.0); verbose=true, iloss=2)
+	end
+    end
+    @test check_grad(testf1, (ROT, 1.0, 2.0); verbose=true, iloss=2)
+    @test check_grad(testf1, (ROT, 1.0, 2.0); verbose=true, iloss=3)
+    @test check_grad(testf1, (IROT, 1.0, 2.0); verbose=true, iloss=2)
+    @test check_grad(testf1, (IROT, 1.0, 2.0); verbose=true, iloss=3)
+    # ROT and HADAMARD does not allow different types of rotation elements
+end
+
 @testset "sincos" begin
     @i function f(s, c, x)
         (s, c) += sincos(x)
