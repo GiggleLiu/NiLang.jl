@@ -8,9 +8,9 @@ using Random
 
     @test check_inv(i_inv!, (randn(3, 3), randn(3, 3)))
     @test check_inv(PlusEq(det), (0.3, randn(3, 3)))
-    @test check_inv(PlusEq(logdet), (0.3, randn(3, 3)))
+    @test check_inv(PlusEq(logdet), (0.3, rand(3, 3)))
     @test check_grad(PlusEq(det), (0.3, randn(3, 3)), iloss=1)
-    @test check_grad(PlusEq(logdet), (0.3, randn(3, 3)), iloss=1)
+    @test check_grad(PlusEq(logdet), (0.3, rand(3, 3)), iloss=1)
 
     @i function loss(out!, y, A)
         i_inv!(y, A)
