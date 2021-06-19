@@ -4,7 +4,7 @@ function direct_emulate(step, x0::T, args...; N::Int, kwargs...) where T
     xpre = copy(x0)
     local x
     for i=1:N
-        x = zero(xpre)
+        x = _zero(xpre)
         res = step(x, xpre, args...; kwargs...)
         xpre = res[1]
         args = res[3:end]
@@ -52,13 +52,13 @@ end
 """
 @i function bennett(step, y::T, x::T, args...; k::Int, N::Int, logger=BennettLog(), kwargs...) where T
     state ← Dict{Int, T}()
-    state[1] ← zero(x)
+    state[1] ← _zero(x)
     state[1] +=  x
     bennett!((@skip! step), state, k, 1, N, args...; do_uncomputing=true, logger=logger, kwargs...)
     SWAP(y, state[N+1])
     state[1] -= x
-    state[1] → zero(x)
-    state[N+1] → zero(x)
+    state[1] → _zero(x)
+    state[N+1] → _zero(x)
     state → Dict{Int, T}()
 end
 
@@ -79,7 +79,7 @@ end
 @i function bennett!(step, state::Dict{Int,T}, k::Int, base, len, args...; logger, do_uncomputing, kwargs...) where T
     @safe logger.depth[] += 1
     @invcheckoff if len == 1
-        state[base+1] ← zero(state[base])
+        state[base+1] ← _zero(state[base])
         @safe logger.peak_mem[] = max(logger.peak_mem[], length(state))
         getf(step, base)(state[base+1], state[base], args...; kwargs...)
         logfcall(logger, (@const base+1), (@const getf(step, base)))

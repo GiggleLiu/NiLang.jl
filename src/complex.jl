@@ -38,11 +38,17 @@ end
     ~@routine
 end
 
-@i @inline function :(+=)(*)(y!::Complex, a::Complex, b::Complex)
-    y!.re += a.re * b.re
-    y!.re -= a.im * b.im
-    y!.im += a.re * b.im
-    y!.im += a.im * b.re
+@i @inline function :(+=)(*)(y!::Complex{T}, a::Complex, b::Complex) where T
+    @routine @invcheckoff begin
+        @zeros T rere imim reim imre
+        rere += a.re * b.re
+        imim += a.im * b.im
+        reim += a.re * b.im
+        imre += a.im * b.re
+    end
+    y!.re += rere - imim
+    y!.im += reim + imre
+    ~@routine
 end
 
 @i @inline function :(+=)(*)(y!::Complex, a::Real, b::Complex)
