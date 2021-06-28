@@ -432,12 +432,3 @@ end
 for F in [:INV, :NEG, :FLIP, :INC, :DEC]
     @eval NiLangCore.chfield(x::T, ::typeof($F), xval::T) where T<:GVar = (~$F)(xval)
 end
-
-# accumulation on arrays: initially for Bennett algorithm
-# TODO: also define it for composite types. or maybe a macro for it.
-@i function :(+=)(identity)(target::AbstractArray, source::AbstractArray)
-    @safe @assert length(target) == length(source)
-    @inbounds for i=1:length(target)
-        target[i] += source[i]
-    end
-end

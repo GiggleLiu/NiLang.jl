@@ -57,11 +57,11 @@ using ForwardDiff: Dual
 # ╔═╡ a56445b5-e530-4035-9ac6-a2d196a6276a
 using NiLang.AD: GVar
 
+# ╔═╡ 873ef2c2-653e-425e-9732-b1ed19f7a0b7
+using TreeverseAlgorithm
+
 # ╔═╡ c6bd40af-50ed-4cee-8043-60b2bac05058
 using NiLang: bennett
-
-# ╔═╡ 7288e081-5cbc-4ad6-ae20-3e65f0194d98
-using TreeverseAlgorithm
 
 # ╔═╡ 141e21c0-1bdf-4e6b-b76d-129567a1180f
 using LinearAlgebra
@@ -73,7 +73,36 @@ using Test
 using BenchmarkTools
 
 # ╔═╡ e20e2d2e-4b28-4e32-8d80-ce029928a094
-html"""<button onclick="present()">present</button>"""
+html"""
+<script>
+document.body.onkeyup = function(e) {
+if (e.ctrlKey && e.altKey && e.which == 80) {
+    present();
+} else if (e.ctrlKey && e.which == 37) {
+	var prev_button = document.querySelector(".changeslide.prev");
+	prev_button.dispatchEvent(new Event('click'));
+} else if (e.ctrlKey && e.which == 39) {
+	var prev_button = document.querySelector(".changeslide.next");
+	prev_button.dispatchEvent(new Event('click'));
+  }
+};
+document.body.onclick = function(e) {
+	if (e.target.tagName == 'BODY'){
+		e.preventDefault();
+		var prev_button = document.querySelector(".changeslide.next");
+		prev_button.dispatchEvent(new Event('click'));
+} else if (e.target.tagName == 'PLUTO-SHOULDER'){
+	e.preventDefault();
+	var prev_button = document.querySelector(".changeslide.prev");
+	prev_button.dispatchEvent(new Event('click'));
+	}
+};
+</script>
+
+<style>
+mjx-assistive-mml { display: none !important; }
+</style>
+"""
 
 # ╔═╡ 8308df59-3faa-4abf-8f05-119bbae48f64
 let
@@ -111,25 +140,6 @@ let
 <img src="https://www.ux1.eiu.edu/~cfadd/1360/29MagFlds/Images/Fig29.26.jpg" height=210/>"""
 	leftright(updown(img2, html"<div align='center'>electromagnetic force</div>"), updown(img1, html"<div align='center'>friction</div>"))
 end
-
-# ╔═╡ 3223b9be-c951-4bc9-91ab-714c3e938acb
-md"## They all have a unified reversible underlying dynamics"
-
-# ╔═╡ 6bd49078-416f-470e-b460-1398b7bb80d6
-md"""
-For an isolated system, forward time evolution"""
-
-# ╔═╡ f83c3d26-c299-4839-95a3-6a5b096b0222
-md"
-```math
-\psi(t) ~~~= \underbrace{e^{-iHt} \vphantom{\psi(0)}}_{\text{time evolution}}~~~\underbrace{\psi(0)}_{\text{our universe in a vector (t=0)}}
-```
-
-Backward time evolution
-```math
-\psi(0) ~~~= \underbrace{e^{-i(-H)t} \vphantom{\psi(0)}}_{\text{time evolution}}~~~\underbrace{\psi(t)}_{\text{our universe in a vector (t=t)}}
-```
-"
 
 # ╔═╡ 6078758e-b392-4bdb-a1e7-44b135ce900e
 md"""
@@ -357,11 +367,14 @@ md"# Summary
 # ╔═╡ 20c34526-c7c4-11eb-21fa-d706fd684a4c
 md"# A short introduction to the reversible programming"
 
-# ╔═╡ 3cb0d566-9bae-4e1f-87e8-542a3f2d3195
-md"## A brief introduction to NiLang"
+# ╔═╡ 3f96abdf-fb5f-4d79-a288-e20b8c1f55d1
+html"""<img src="https://github.com/GiggleLiu/NiLang.jl/raw/master/docs/src/asset/logo3.png"/>"""
+
+# ╔═╡ 5d51231a-8bf0-4414-9a39-cea264df84f2
+md"Initially by Jinguo Liu and Taine Zhao (The author of MLStyle)"
 
 # ╔═╡ e10e0be8-b26e-4719-92dc-8ca46af0b4b5
-md"1. one function for two"
+md"## Feature 1. one function for two"
 
 # ╔═╡ 00342a51-36d8-4fdd-aab7-ee02e2122c49
 @i function f1(x1, x2)
@@ -383,16 +396,16 @@ f1(2, 3)
 (~f1)(2, 3)
 
 # ╔═╡ 8320d326-c1ab-4807-befb-13dda3480bf5
-md"2. every instruction is reversible, every object is ''mutable''"
+md"## Feature 2. every instruction is reversible, every object is ''mutable''"
 
 # ╔═╡ 93238608-3b86-49f1-ad60-9360e12cff1c
 md"Most instructions are in the form `y += f(x)`,  `y -= f(x)` and  `y ⊻= f(x)`, but there are also instructions like `SWAP`, `ROT`. Check NiLang documentations for details."
 
 # ╔═╡ 629a2549-745c-48a2-9bbc-a8f5fb046d11
 @i function f2(x1::Complex, x2::Complex)
-	x2 += exp(x1)
-	SWAP(x1.im, x2.im)
-	f1(x1, x2)
+	x2 += exp(x1)       # accumulative form
+	SWAP(x1.im, x2.im)  # other primitive functions
+	f1(x1, x2)			# other reversible functions
 end
 
 # ╔═╡ 640e0029-7931-4afd-bdf9-fed317efbd8e
@@ -413,11 +426,11 @@ f2(1.0+2im, 2.0+4.9im)
 (~f2)(f2(1.0+2im, 2.0+4.9im)...)
 
 # ╔═╡ 2dc665a9-b131-4fef-acde-db346eb0f48b
-md"3. One can reverse the control flows too"
+md"## Feature 3. One can reverse the control flows too"
 
 # ╔═╡ 4e479f48-42cd-476d-8604-08ecbb503a90
 md"""
-The reversible `if` statement
+#### Reversible `if` statement
 """
 
 # ╔═╡ dc41e99a-f598-4bf6-9f76-ecdb04f5f40c
@@ -500,7 +513,7 @@ end
 abs_correct(-3, false)
 
 # ╔═╡ 02b7e1b4-4622-4e68-966e-ff79817557d1
-md"Similarly, we can defined the reversible `while` statement"
+md"#### Reversible `while` statement"
 
 # ╔═╡ 364fd613-0ebd-4b45-a3fd-f9baa8c487e3
 leftright(md"
@@ -545,9 +558,31 @@ TikzPicture(L"""
     norm/.style={->, draw, black},
     it/.style={font={\sffamily\small\itshape}}", preamble=raw"\usetikzlibrary{shapes.geometric,arrows.meta,chains,positioning,quotes}")
 
+# ╔═╡ 288331c3-2dfb-4941-985f-554be409c0ab
+@i function fib(y, n)
+    @invcheckoff if (n >= 1, ~)
+        counter ← 0
+        counter += n
+        @from counter==n while counter > 1
+			counter -= 1
+            fib(y, counter)
+            counter -= 1
+        end
+        counter -= n % 2
+        counter → 0
+    end
+    y += 1
+end
+
+# ╔═╡ 12a30359-d6ff-4113-bab5-b198e908cf1a
+fib(0, 10)
+
+# ╔═╡ 23ea88b4-6b89-462a-92da-0e8bdf5c73b5
+(~fib)(89, 10)
+
 # ╔═╡ 4bfdabd6-b7ff-40fb-b567-52910acb5a07
 md"""
-The reversible `for` statement
+#### Reversible `for` statement
 
 $(
 leftright(md"
@@ -567,7 +602,7 @@ end
 """
 
 # ╔═╡ 2603147b-e7a2-4cae-b88f-2cfebe16bacb
-md"4. storage access should also be reversible"
+md"## Feature 4. storage access should also be reversible"
 
 # ╔═╡ 12d49e2e-cc6e-48d6-b11a-e7c311453bfc
 md"""
@@ -597,112 +632,16 @@ dict[key] → variable
 )
 """
 
-# ╔═╡ 9d92db53-6930-4830-b40c-95220158248a
-md"NiLang defines `+=` operation for a type automatically, where `_zero` is the additive identity,
-"
-
-# ╔═╡ b5b6d19e-bd9b-4956-a400-bd87f1c54e82
-struct MyType{T}
-	x::T
-	y::T
-end
-
-# ╔═╡ 1c2a32bb-c9e2-48a6-945a-d36ca5802f59
-_zero(MyType(2, 3))
-
-# ╔═╡ e2b8b587-8a65-457a-97e7-60eb34d804d1
-_zero(MyType([1,2.0], [3, 4.0]))
-
-# ╔═╡ cbda1e70-bcd5-4e0b-916b-9e4b90a0e0a9
-@i function add_mytype(x, y)
-	x += y
-end
-
-# ╔═╡ b5a26ad8-781e-4309-9820-16c040fe56b5
-add_mytype(MyType(1.0, 3.0), MyType(2.0, 4.0))
-
-# ╔═╡ fc686191-05e2-418c-a450-19ef98729cfe
-md"5. Eerything is differentiable"
-
-# ╔═╡ 2dad3acd-332c-46b9-8f84-21c076bdef41
-md"## Forward mode autodiff and reverse mode autodiff"
-
-# ╔═╡ 124a9ecd-0bda-4823-9507-92efcf449d9c
-md"""
-```math
-y = A x
-```
-"""
-
-# ╔═╡ 6819498c-7a46-48fa-9eec-38341dca72f9
-let
-	tl = md"tensor level view"
-	tl2 = md"
-```julia
-y = A * x
-```
-"
-	sl = md"scalar level view"
-	sl2 = md"
-```julia
-for j=1:n
-	for i=1:m
-		y[i] += A[i,j] * x[j]
-	end
-end
-```"
-	leftright(updown(tl, tl2, width=300), updown(sl, sl2, width=300))
-end
-
-# ╔═╡ a674bde5-70e1-4d21-aedf-8977f8039c36
-md"
-A program: ``\vec p \mapsto \vec q``, containing the following forward/backward instruction.
-
-```math
-\begin{cases}
-\vec y \mapsto f(\vec x) \\
-\vec x \mapsto f^{-1}(\vec y)
-\end{cases}
-```
-"
-
-# ╔═╡ bf696784-23d4-42b2-8ee1-bfec11ff8d78
-let
-	fd = md"""
-```math
-\begin{align}
-    \frac{d \vec x}{d p_i} = \underbrace{\frac{d \vec y}{d \vec x}}_{\text{local jacobian}}\frac{d \vec x}{d p_i}
-\end{align}
-```
-
-
-forward diff: ``(\vec x, \frac{d\vec x}{dp_i}) \mapsto (y, \frac{d\vec y}{dp_i})``
-"""
-
-	bd = md"""
-```math
-\begin{align*}
-    \frac{d q_j}{d \vec x} &\mathrel{+}= \frac{\partial q_j}{\partial \vec y}\underbrace{\frac{d \vec y}{d \vec x}}_{\text{local jacobian}}
-\end{align*}
-```
-reverse diff: ``(\vec y, \frac{d\mathcal{L}}{d\vec y}) \mapsto (\vec x, \frac{d\mathcal{L}}{d\vec x})``
-"""
-	leftright(fd, bd)
-end
-
-# ╔═╡ 9193fcbb-ec4f-41b4-8fca-be8e183dea31
-sin(Dual(π/3, 1.0))
-
-# ╔═╡ 3fadf1d4-8fa2-4c02-aa21-b7969b465536
-# note: y += sin(x) is translate to `PlusEq(sin)(y, x)` in NiLang.
-MinusEq(sin)(GVar(sin(π/3), 1.0), GVar(π/3, 0.0))
-
 # ╔═╡ 14d8ff9b-c9b2-43aa-a3f5-4d85b56a16bd
-md"""## Time space tradeoff
+md"""## Feature 5: Time space tradeoff
 """
 
 # ╔═╡ 03f58f2a-24b6-4235-9102-71a19b9679ac
-md"Example: implementing `y += log(x)` for complex number."
+md"Example: implementing `y += log(x)` for complex number.
+
+```math
+\log(z) = \log(|z|) + i {\rm Arg}(z)
+```"
 
 # ╔═╡ 22a5853e-4f9a-4da0-bc03-84a6b0061cfe
 @i function clog_v1(y::Complex{T}, squaren::T, n::T, x::Complex{T}) where T
@@ -780,8 +719,102 @@ end
 # ╔═╡ 320e4114-f0da-4106-90ab-a9f7b0ef0099
 @test clog_v3(0.0im, 3.0im)[1] ≈ log(3.0im)
 
+# ╔═╡ 2d944e8d-e19d-48be-ab7f-c3e54e9f43ef
+md"# III. Automatic differentiation in NiLang"
+
+# ╔═╡ 4f53fa8e-ea9b-461f-8199-7bbe2a3ef544
+md"## Scalar or tensor"
+
+# ╔═╡ 56ea4f5f-ea88-46d6-beed-b9a7afed315d
+md"Differentiating matrix vector multiplication"
+
+# ╔═╡ 124a9ecd-0bda-4823-9507-92efcf449d9c
+md"""
+```math
+y = A x
+```
+"""
+
+# ╔═╡ 6819498c-7a46-48fa-9eec-38341dca72f9
+let
+	tl = md"tensor level view"
+	tl2 = md"
+```julia
+y = A * x
+```
+"
+	sl = md"scalar level view"
+	sl2 = md"
+```julia
+for j=1:n
+	for i=1:m
+		y[i] += A[i,j] * x[j]
+	end
+end
+```"
+	leftright(updown(tl, tl2, width=300), updown(sl, sl2, width=300))
+end
+
+# ╔═╡ 400f79cf-9260-4195-9582-0e8c486ddb5a
+html"""implementing AD on scalars
+<ul>
+<li style="color:green">limited primitive function</li>
+<li style="color:red">hard to utilize BLAS</li>
+<li style="color:red">harder to manage memory caching</li>
+</ul>
+"""
+
+# ╔═╡ 2dad3acd-332c-46b9-8f84-21c076bdef41
+md"## Forward mode autodiff and reverse mode autodiff"
+
+# ╔═╡ a674bde5-70e1-4d21-aedf-8977f8039c36
+md"
+A program: ``\vec p \mapsto \vec q``, containing the following forward/backward instruction.
+
+```math
+\begin{cases}
+\vec y \mapsto f(\vec x) \\
+\vec x \mapsto f^{-1}(\vec y)
+\end{cases}
+```
+"
+
+# ╔═╡ bf696784-23d4-42b2-8ee1-bfec11ff8d78
+let
+	fd = md"""
+```math
+\begin{align}
+    \frac{d \vec x}{d p_i} = \underbrace{\frac{d \vec y}{d \vec x}}_{\text{local jacobian}}\frac{d \vec x}{d p_i}
+\end{align}
+```
+
+
+forward diff: ``(\vec x, \frac{d\vec x}{dp_i}) \mapsto (y, \frac{d\vec y}{dp_i})``
+"""
+
+	bd = md"""
+```math
+\begin{align*}
+    \frac{d q_j}{d \vec x} &\mathrel{+}= \frac{\partial q_j}{\partial \vec y}\underbrace{\frac{d \vec y}{d \vec x}}_{\text{local jacobian}}
+\end{align*}
+```
+reverse diff: ``(\vec y, \frac{d\mathcal{L}}{d\vec y}) \mapsto (\vec x, \frac{d\mathcal{L}}{d\vec x})``
+"""
+	leftright(fd, bd)
+end
+
+# ╔═╡ 9193fcbb-ec4f-41b4-8fca-be8e183dea31
+g_forwarddiff = sin(Dual(π/3, 1.0))
+
+# ╔═╡ 3fadf1d4-8fa2-4c02-aa21-b7969b465536
+# note: y += sin(x) is translate to `PlusEq(sin)(y, x)` in NiLang.
+g_nilang = MinusEq(sin)(GVar(sin(π/3), 1.0), GVar(π/3, 0.0))
+
+# ╔═╡ 12e933ca-13f3-414c-926a-f1bb1bbe66cf
+@test g_forwarddiff.partials[1] ≈ g_nilang[2].g
+
 # ╔═╡ 4403c183-5eeb-4fd0-87a4-4ad29e1f4dc2
-md"Check gradients"
+md"## Differentiating complex valued log"
 
 # ╔═╡ 4c3f9b91-4f27-4fb8-a9db-1ddbfd62dbdd
 @i function real_of_clog(loss::Real, y::Complex, x::Complex)
@@ -792,12 +825,21 @@ end
 # ╔═╡ af71e2d7-a600-46fd-9a46-1b9d4607f06d
 @test let
 	# forward pass to compute results
-	results_clog = real_of_clog(0.0, 0.0im, 2+3.0im)
+	loss_out, y_out, x_out = real_of_clog(0.0, 0.0im, 2+3.0im)
+
 	# backward pass to compute inputs from results, using element type `GVar`
-	gvar_inputs = (~real_of_clog)(GVar(results_clog[1], 1.0), GVar(results_clog[2]), GVar(results_clog[3]))
+	gloss_out = GVar(loss_out, 1.0)
+	gy_out = GVar(y_out)
+	gx_out = GVar(x_out)
+	gloss_out, gy_out, gx_out = (~real_of_clog)(gloss_out, gy_out, gx_out)
+
 	# forward diff
-	forwarddiff_grad = real_of_clog(Dual(0.0, 0.0), Complex(Dual(0.0, 0.0), Dual(0.0, 0.0)), Complex(Dual(2.0, 1.0), Dual(3.0, 0.0)))[1].partials[1]
-	gvar_inputs[3].re.g ≈ forwarddiff_grad
+	dloss_out = Dual(loss_out, 0.0)
+	dy_out = Complex(Dual(0.0, 0.0), Dual(0.0, 0.0))
+	dx_out = Complex(Dual(2.0, 1.0), Dual(3.0, 0.0))
+	dloss_out, dy_out, dx_out = real_of_clog(dloss_out, dy_out, dx_out)
+	
+	gx_out.re.g ≈ dloss_out.partials[1]
 end
 
 # ╔═╡ 1d3c7324-6828-47aa-b30e-bcac0e052213
@@ -805,6 +847,135 @@ md"A shortcut"
 
 # ╔═╡ 2993fe1f-042b-4c85-85b8-bcc7ed449a54
 NiLang.AD.gradient(real_of_clog, (0.0, 0.0im, 2+3.0im); iloss=1)
+
+# ╔═╡ 048d482e-3e5b-496f-95d7-17589a5f6f11
+md"## Overheads matters!"
+
+# ╔═╡ 8b564e7d-e321-4d72-8bd2-7b540a317595
+md"Case 1: Regular forward computing"
+
+# ╔═╡ bcf29051-7db8-47e7-8809-2dbbf0446596
+TikzPicture(L"""
+\def\r{0.15};
+\def\n{10};
+\foreach \x in {\n}{
+	\fill[fill=black] (\x, 0) circle [radius=\r];
+	\node[white] at (\x, 0) {$s_{\x}$};
+}
+\foreach \x in {1,...,9}{
+	\draw (\x, 0) circle [radius=\r];
+	\node[black] at (\x, 0) {$s_{\x}$};
+}
+\fill[fill=white] (\n+0.5, 0) circle [radius=\r];
+\foreach \x/\t in {1/1,2/2,3/3,4/4,5/5,6/6,7/7,8/8,9/9}{
+	\draw [black, thick, ->] (\x+\r, \r) .. controls (\x+0.5, 0.3) .. (\x+1-\r, \r);
+	\node[black] at (\x+0.5, 0.4) {\t};
+	}
+"""
+, options="scale=2.0", preamble="")
+
+# ╔═╡ 6b01e75a-615f-4717-9ba6-5b1cf5504a1f
+md"Case 2: Forward computing in reverse mode AD without checkpointing"
+
+# ╔═╡ 0529896a-697b-430c-b8ea-9b9352d98387
+TikzPicture(L"""
+\def\r{0.15};
+\def\n{10};
+\foreach \x in {1,...,\n}{
+	\fill[fill=black] (\x, 0) circle [radius=\r];
+	\node[white] at (\x, 0) {$s_{\x}$};
+}
+\fill[fill=white] (\n+0.5, 0) circle [radius=\r];
+\foreach \x/\t in {1/1,2/2,3/3,4/4,5/5,6/6,7/7,8/8,9/9}{
+	\draw [black, thick, ->] (\x+\r, \r) .. controls (\x+0.5, 0.3) .. (\x+1-\r, \r);
+	\node[black] at (\x+0.5, 0.4) {\t};
+	}
+"""
+, options="scale=2.0", preamble="")
+
+# ╔═╡ 4fcf0fea-2c25-4e61-8aea-0b6c70367afa
+md"backward pass"
+
+# ╔═╡ 2c052962-e7aa-45d1-9623-16975a4a761d
+TikzPicture(L"""
+\def\r{0.15};
+\def\n{10};
+\foreach \x in {1,...,\n}{
+	\fill[fill=black] (\x, 0) circle [radius=\r];
+	\node[white] at (\x, 0) {$s_{\x}$};
+}
+\fill[fill=white] (\n+0.5, 0) circle [radius=\r];
+\foreach[evaluate={\t=int(\n-\x)}] \x in {1,...,9}{
+	\draw [red, thick, <-] (\x+\r, -\r) .. controls (\x+0.5, -0.3) .. (\x+1-\r, -\r);
+	\node[red] at (\x+0.5, -0.4) {\t};
+	}
+"""
+, options="scale=2.0", preamble="")
+
+# ╔═╡ dcec701e-f7fc-4673-a409-907af436fe6c
+md"Case 3: Forward computing in reverse mode AD with checkpointing"
+
+# ╔═╡ 626907b3-78d6-4458-a45f-389a7ed0d84a
+TikzPicture(L"""
+\def\r{0.15};
+\def\n{10};
+\foreach \x in {1,4,7,10}{
+	\fill[fill=black] (\x, 0) circle [radius=\r];
+	\node[white] at (\x, 0) {$s_{\x}$};
+}
+\foreach \x in {2,3,5,6,8,9}{
+	\draw (\x, 0) circle [radius=\r];
+	\node[black] at (\x, 0) {$s_{\x}$};
+}
+\fill[fill=white] (\n+0.5, 0) circle [radius=\r];
+\foreach \x/\t in {1/1,2/2,3/3,4/4,5/5,6/6,7/7,8/8,9/9}{
+	\draw [black, thick, ->] (\x+\r, \r) .. controls (\x+0.5, 0.3) .. (\x+1-\r, \r);
+	\node[black] at (\x+0.5, 0.4) {\t};
+	}
+"""
+, options="scale=2.0", preamble="")
+
+# ╔═╡ 07b65031-ad36-4a74-b30f-d05df3222521
+md"backward pass"
+
+# ╔═╡ 660ee09d-d8a9-4188-bbd7-867b6dc9916f
+TikzPicture(L"""
+\def\r{0.15};
+\def\n{10};
+\foreach \x in {1,4,7,10}{
+	\fill[fill=black] (\x, 0) circle [radius=\r];
+	\node[white] at (\x, 0) {$s_{\x}$};
+}
+\foreach \x in {2,3,5,6,8,9}{
+	\draw (\x, 0) circle [radius=\r];
+	\node[black] at (\x, 0) {$s_{\x}$};
+}
+\fill[fill=white] (\n+0.5, 0) circle [radius=\r];
+
+\foreach \x/\t in {7/1, 8/2}{
+	\draw [black, thick, ->] (\x+\r, \r) .. controls (\x+0.5, 0.3) .. (\x+1-\r, \r);
+	\node[black] at (\x+0.5, 0.4) {\t};
+	}
+\foreach \x/\t in {7/5,8/4,9/3}{
+	\draw [red, thick, <-] (\x+\r, -\r) .. controls (\x+0.5, -0.3) .. (\x+1-\r, -\r);
+	\node[red] at (\x+0.5, -0.4) {\t};
+	}
+"""
+, options="scale=2.0", preamble="")
+
+# ╔═╡ a54d5fc4-643c-47d2-be97-4626a060c9b4
+md"Optimal checkpointing is recursive, Griewank (1992)"
+
+# ╔═╡ 8b556fbe-275f-4e7b-94a0-7434ce81ad8b
+md"Time complexity is ``O(T\log(T))``"
+
+# ╔═╡ 8e9c55f6-8175-4cb4-8798-91107c4d16ee
+md"Space complexity is ``O(S\log(T))``"
+
+# ╔═╡ 65c2a513-a965-4a05-82b6-5b3bfe6a74cc
+let
+	treeverse_pebblegame(20, 5; scale=0.3)[1]
+end
 
 # ╔═╡ 7e4f28ec-86a0-430d-ad38-ba04dd4443c3
 md"## Imagine we have a very long linear program"
@@ -973,6 +1144,15 @@ md"
 Space complexity: ``O(\log(T)S)``
 
 Time complexity: ``O(T^{1+\epsilon})``
+"
+
+# ╔═╡ 83d0c5fc-9cb7-4e37-bfdb-ed630b94d9b4
+md"
+This tradeoff scheme is probably optimal for a reversible program.
+
+Reversible Simulation of Irreversible Computation by Pebble Games (1997), 
+
+Ming Li (University of Waterloo), John Tromp (CWI), Paul Vitanyi (CWI and University of Amsterdam)
 "
 
 # ╔═╡ 8489404b-2420-4f09-bc63-e8ef39eebcb0
@@ -1458,21 +1638,11 @@ md"""
 * Reeb, David, and Michael M. Wolf. "An improved Landauer principle with finite-size corrections." (2014).
 * Athas, William C., and L. J. Svensson. "Reversible logic issues in adiabatic CMOS." Proceedings Workshop on Physics and Computation. (1994).
 * Takeuchi, N., Y. Yamanashi, and N. Yoshikawa. "Reversible logic gate using adiabatic superconducting devices." (2014)
+* Griewank, Andreas. "Achieving logarithmic growth of temporal and spatial complexity in reverse automatic differentiation." Optimization Methods and software 1.1 (1992): 35-54.
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
-[compat]
-BenchmarkTools = "~1.0.0"
-Compose = "~0.9.2"
-ForwardDiff = "~0.10.18"
-NiLang = "~0.9.0"
-PlutoUI = "~0.7.9"
-Revise = "~3.1.17"
-TikzPictures = "~3.3.3"
-TreeverseAlgorithm = "~0.1.0"
-Viznet = "~0.3.3"
-
 [deps]
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 Compose = "a81c6b42-2e10-5240-aca2-a61377ecd94b"
@@ -1486,6 +1656,17 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 TikzPictures = "37f6aa50-8035-52d0-81c2-5a1d08754b2d"
 TreeverseAlgorithm = "e1c63c57-2fea-45bf-a8bf-df3ea6afb545"
 Viznet = "52a3aca4-6234-47fd-b74a-806bdf78ede9"
+
+[compat]
+BenchmarkTools = "~1.0.0"
+Compose = "~0.9.2"
+ForwardDiff = "~0.10.18"
+NiLang = "~0.9.0"
+PlutoUI = "~0.7.9"
+Revise = "~3.1.17"
+TikzPictures = "~3.3.3"
+TreeverseAlgorithm = "~0.1.0"
+Viznet = "~0.3.3"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
@@ -2107,9 +2288,6 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╟─15657e4b-848e-43ad-a99f-37143d11705e
 # ╟─34a6b7f4-7d72-485d-86dc-f4b1ba6174eb
 # ╟─67d1b500-964e-4668-a7d0-ed93886446ca
-# ╟─3223b9be-c951-4bc9-91ab-714c3e938acb
-# ╟─6bd49078-416f-470e-b460-1398b7bb80d6
-# ╟─f83c3d26-c299-4839-95a3-6a5b096b0222
 # ╟─6078758e-b392-4bdb-a1e7-44b135ce900e
 # ╠═41e06e2a-b482-4e0f-8569-fee2ffd8aaaf
 # ╟─e7a4714f-133b-4e5c-8365-fabf97d1c436
@@ -2133,7 +2311,8 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╟─b308e270-6b40-4946-ac92-c705823f2c1e
 # ╟─e483b3d4-d01c-4a98-8e68-e8120a7d95a7
 # ╟─20c34526-c7c4-11eb-21fa-d706fd684a4c
-# ╟─3cb0d566-9bae-4e1f-87e8-542a3f2d3195
+# ╟─3f96abdf-fb5f-4d79-a288-e20b8c1f55d1
+# ╟─5d51231a-8bf0-4414-9a39-cea264df84f2
 # ╠═3b0fd2b5-5c6d-4d56-9e48-cda1493b4c72
 # ╟─e10e0be8-b26e-4719-92dc-8ca46af0b4b5
 # ╠═00342a51-36d8-4fdd-aab7-ee02e2122c49
@@ -2161,26 +2340,13 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╟─02b7e1b4-4622-4e68-966e-ff79817557d1
 # ╟─364fd613-0ebd-4b45-a3fd-f9baa8c487e3
 # ╟─75d8283a-b331-4648-84a8-489e168e33f9
+# ╠═288331c3-2dfb-4941-985f-554be409c0ab
+# ╠═12a30359-d6ff-4113-bab5-b198e908cf1a
+# ╠═23ea88b4-6b89-462a-92da-0e8bdf5c73b5
 # ╟─4bfdabd6-b7ff-40fb-b567-52910acb5a07
 # ╟─2603147b-e7a2-4cae-b88f-2cfebe16bacb
 # ╟─12d49e2e-cc6e-48d6-b11a-e7c311453bfc
 # ╟─10312dc7-e861-4c89-b2fd-672cfe8850bf
-# ╟─9d92db53-6930-4830-b40c-95220158248a
-# ╠═b5b6d19e-bd9b-4956-a400-bd87f1c54e82
-# ╠═1c2a32bb-c9e2-48a6-945a-d36ca5802f59
-# ╠═e2b8b587-8a65-457a-97e7-60eb34d804d1
-# ╠═cbda1e70-bcd5-4e0b-916b-9e4b90a0e0a9
-# ╠═b5a26ad8-781e-4309-9820-16c040fe56b5
-# ╟─fc686191-05e2-418c-a450-19ef98729cfe
-# ╟─2dad3acd-332c-46b9-8f84-21c076bdef41
-# ╟─124a9ecd-0bda-4823-9507-92efcf449d9c
-# ╟─6819498c-7a46-48fa-9eec-38341dca72f9
-# ╟─a674bde5-70e1-4d21-aedf-8977f8039c36
-# ╟─bf696784-23d4-42b2-8ee1-bfec11ff8d78
-# ╠═a7810352-7967-460d-abd7-361a324c20a9
-# ╠═9193fcbb-ec4f-41b4-8fca-be8e183dea31
-# ╠═a56445b5-e530-4035-9ac6-a2d196a6276a
-# ╠═3fadf1d4-8fa2-4c02-aa21-b7969b465536
 # ╟─14d8ff9b-c9b2-43aa-a3f5-4d85b56a16bd
 # ╟─03f58f2a-24b6-4235-9102-71a19b9679ac
 # ╠═22a5853e-4f9a-4da0-bc03-84a6b0061cfe
@@ -2191,11 +2357,41 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╠═4f993061-c6c3-4acb-aef3-8453e7b83997
 # ╠═6e5cf9bb-7cab-4da1-8831-541e0ee3bde8
 # ╠═320e4114-f0da-4106-90ab-a9f7b0ef0099
+# ╟─2d944e8d-e19d-48be-ab7f-c3e54e9f43ef
+# ╟─4f53fa8e-ea9b-461f-8199-7bbe2a3ef544
+# ╟─56ea4f5f-ea88-46d6-beed-b9a7afed315d
+# ╟─124a9ecd-0bda-4823-9507-92efcf449d9c
+# ╟─6819498c-7a46-48fa-9eec-38341dca72f9
+# ╟─400f79cf-9260-4195-9582-0e8c486ddb5a
+# ╟─2dad3acd-332c-46b9-8f84-21c076bdef41
+# ╟─a674bde5-70e1-4d21-aedf-8977f8039c36
+# ╟─bf696784-23d4-42b2-8ee1-bfec11ff8d78
+# ╠═a7810352-7967-460d-abd7-361a324c20a9
+# ╠═9193fcbb-ec4f-41b4-8fca-be8e183dea31
+# ╠═a56445b5-e530-4035-9ac6-a2d196a6276a
+# ╠═3fadf1d4-8fa2-4c02-aa21-b7969b465536
+# ╠═12e933ca-13f3-414c-926a-f1bb1bbe66cf
 # ╟─4403c183-5eeb-4fd0-87a4-4ad29e1f4dc2
 # ╠═4c3f9b91-4f27-4fb8-a9db-1ddbfd62dbdd
 # ╠═af71e2d7-a600-46fd-9a46-1b9d4607f06d
 # ╟─1d3c7324-6828-47aa-b30e-bcac0e052213
 # ╠═2993fe1f-042b-4c85-85b8-bcc7ed449a54
+# ╟─048d482e-3e5b-496f-95d7-17589a5f6f11
+# ╟─8b564e7d-e321-4d72-8bd2-7b540a317595
+# ╟─bcf29051-7db8-47e7-8809-2dbbf0446596
+# ╟─6b01e75a-615f-4717-9ba6-5b1cf5504a1f
+# ╟─0529896a-697b-430c-b8ea-9b9352d98387
+# ╟─4fcf0fea-2c25-4e61-8aea-0b6c70367afa
+# ╟─2c052962-e7aa-45d1-9623-16975a4a761d
+# ╟─dcec701e-f7fc-4673-a409-907af436fe6c
+# ╟─626907b3-78d6-4458-a45f-389a7ed0d84a
+# ╟─07b65031-ad36-4a74-b30f-d05df3222521
+# ╟─660ee09d-d8a9-4188-bbd7-867b6dc9916f
+# ╟─a54d5fc4-643c-47d2-be97-4626a060c9b4
+# ╟─8b556fbe-275f-4e7b-94a0-7434ce81ad8b
+# ╟─8e9c55f6-8175-4cb4-8798-91107c4d16ee
+# ╠═873ef2c2-653e-425e-9732-b1ed19f7a0b7
+# ╠═65c2a513-a965-4a05-82b6-5b3bfe6a74cc
 # ╟─7e4f28ec-86a0-430d-ad38-ba04dd4443c3
 # ╟─46d6ddc6-791c-41aa-aa7a-83e6e45a6411
 # ╟─5060f5bb-8430-42aa-b61d-c88249edb323
@@ -2212,6 +2408,7 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╠═12734842-d66f-4bfc-a9ad-01adeb2450e0
 # ╟─c3b730a4-d5b4-471e-bd06-30ace6e8b8fe
 # ╟─9123e669-19c7-47c1-a924-0c618b4a9c1f
+# ╟─83d0c5fc-9cb7-4e37-bfdb-ed630b94d9b4
 # ╟─8489404b-2420-4f09-bc63-e8ef39eebcb0
 # ╟─98f42f60-7870-4813-b0c1-728285c25f01
 # ╟─c3c63865-f538-4d93-bef3-6b9c69cb177f
@@ -2234,7 +2431,6 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╟─85447c61-764d-473a-8d1d-1f9a5bcdb095
 # ╟─336f2403-a063-413c-bb21-ab1151d247cd
 # ╟─ae62ab32-864f-4a6b-b5fd-519cb5c551a5
-# ╠═7288e081-5cbc-4ad6-ae20-3e65f0194d98
 # ╟─972d889c-c48c-470a-b710-aba9ecaacdaa
 # ╟─54b3a283-7d42-431f-9ecb-48f37198409a
 # ╠═590f56f7-5654-4493-9103-02a0fce6e945
