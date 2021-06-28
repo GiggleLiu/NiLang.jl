@@ -132,6 +132,7 @@ for (OP, F, f) in [(:(PlusEq{typeof(identity)}), :(PlusEq(identity)), :+), (:(Mi
         end
     end
     @eval (f::$OP)(x::T, y::T) where T<:Tuple = invoke(f, Tuple{T,T} where T, x, y)
+    @eval (f::$OP)(x::T, y::T) where T<:Real = $f(x, y), y
 end
 
 for F2 in [:SWAP, :HADAMARD, :((inf::PlusEq)), :((inf::MinusEq)), :((inf::XorEq))]
@@ -235,4 +236,13 @@ end
 
 @i @inline function COPYPOP!(st, x)
     @invcheckoff st[end] → x
+end
+
+# accumulation on arrays: initially for Bennett algorithm
+# TODO: also define it for composite types. or maybe a macro for it.
+@i function :(+=)(identity)(target::AbstractArray, source::AbstractArray)
+    @safe @assert length(target) == length(source)
+    @inbounds for i=1:length(target)
+        target[i] += source[i]
+    end
 end
