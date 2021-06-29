@@ -773,8 +773,8 @@ A program: ``\vec p \mapsto \vec q``, containing the following forward/backward 
 
 ```math
 \begin{cases}
-\vec y \mapsto f(\vec x) \\
-\vec x \mapsto f^{-1}(\vec y)
+\vec y = f(\vec x) \\
+\vec x = f^{-1}(\vec y)
 \end{cases}
 ```
 "
@@ -789,7 +789,7 @@ let
 ```
 
 
-forward diff: ``(\vec x, \frac{d\vec x}{dp_i}) \mapsto (y, \frac{d\vec y}{dp_i})``
+ForwardDiff: ``(\vec x, \frac{d\vec x}{dp_i}) \mapsto (y, \frac{d\vec y}{dp_i})``
 """
 
 	bd = md"""
@@ -798,7 +798,7 @@ forward diff: ``(\vec x, \frac{d\vec x}{dp_i}) \mapsto (y, \frac{d\vec y}{dp_i})
     \frac{d q_j}{d \vec x} &\mathrel{+}= \frac{\partial q_j}{\partial \vec y}\underbrace{\frac{d \vec y}{d \vec x}}_{\text{local jacobian}}
 \end{align*}
 ```
-reverse diff: ``(\vec y, \frac{d\mathcal{L}}{d\vec y}) \mapsto (\vec x, \frac{d\mathcal{L}}{d\vec x})``
+NiLang: ``(\vec y, \frac{d\mathcal{L}}{d\vec y}) \mapsto (\vec x, \frac{d\mathcal{L}}{d\vec x})``
 """
 	leftright(fd, bd)
 end
@@ -850,6 +850,9 @@ NiLang.AD.gradient(real_of_clog, (0.0, 0.0im, 2+3.0im); iloss=1)
 
 # ╔═╡ 048d482e-3e5b-496f-95d7-17589a5f6f11
 md"## Overheads matters!"
+
+# ╔═╡ ea907d51-d4a9-48ca-90a5-bd91309ccfad
+md"Imagine we have a very long linear program"
 
 # ╔═╡ 8b564e7d-e321-4d72-8bd2-7b540a317595
 md"Case 1: Regular forward computing"
@@ -912,6 +915,9 @@ TikzPicture(L"""
 """
 , options="scale=2.0", preamble="")
 
+# ╔═╡ e39103d6-c453-4297-b7f9-97bd3e4c4ac7
+md"## Checkpointing method"
+
 # ╔═╡ dcec701e-f7fc-4673-a409-907af436fe6c
 md"Case 3: Forward computing in reverse mode AD with checkpointing"
 
@@ -964,7 +970,8 @@ TikzPicture(L"""
 , options="scale=2.0", preamble="")
 
 # ╔═╡ a54d5fc4-643c-47d2-be97-4626a060c9b4
-md"Optimal checkpointing is recursive, Griewank (1992)"
+md"Optimal checkpointing is recursive, Griewank (1992). 
+Julia Implementation: [https://github.com/GiggleLiu/TreeverseAlgorithm.jl](https://github.com/GiggleLiu/TreeverseAlgorithm.jl)"
 
 # ╔═╡ 8b556fbe-275f-4e7b-94a0-7434ce81ad8b
 md"Time complexity is ``O(T\log(T))``"
@@ -972,21 +979,36 @@ md"Time complexity is ``O(T\log(T))``"
 # ╔═╡ 8e9c55f6-8175-4cb4-8798-91107c4d16ee
 md"Space complexity is ``O(S\log(T))``"
 
-# ╔═╡ 65c2a513-a965-4a05-82b6-5b3bfe6a74cc
+# ╔═╡ 972d889c-c48c-470a-b710-aba9ecaacdaa
+md"nstep = $(@bind treeverse_nstep Slider(2:20000; show_value=true, default=10000))"
+
+# ╔═╡ 54b3a283-7d42-431f-9ecb-48f37198409a
+md"number of checkpoints = $(@bind treeverse_δ Slider(2:100; show_value=true, default=2))"
+
+# ╔═╡ 590f56f7-5654-4493-9103-02a0fce6e945
 let
-	treeverse_pebblegame(20, 5; scale=0.3)[1]
+	logger = TreeverseLog()
+	treeverse(identity, (x,gy)->0, 0; δ=treeverse_δ, N=treeverse_nstep, logger=logger)
+	logger
 end
 
 # ╔═╡ 7e4f28ec-86a0-430d-ad38-ba04dd4443c3
-md"## Imagine we have a very long linear program"
+md"## Time and space exchange in reversible programming"
+
+# ╔═╡ af611ace-3bf9-45dc-a57f-f5572d4124d1
+md"forward computing"
 
 # ╔═╡ 46d6ddc6-791c-41aa-aa7a-83e6e45a6411
 TikzPicture(L"""
 \def\r{0.15};
 \def\n{10};
-\foreach \x in {1,...,\n}{
+\foreach \x in {1,4,7,10}{
 	\fill[fill=black] (\x, 0) circle [radius=\r];
 	\node[white] at (\x, 0) {$s_{\x}$};
+}
+\foreach \x in {2,3,5,6,8,9}{
+	\draw (\x, 0) circle [radius=\r];
+	\node[black] at (\x, 0) {$s_{\x}$};
 }
 \fill[fill=white] (\n+0.5, 0) circle [radius=\r];
 \foreach \x/\t in {1/1,2/2,3/3,4/6,5/7,6/8,7/11,8/12,9/13}{
@@ -994,8 +1016,35 @@ TikzPicture(L"""
 	\node[black] at (\x+0.5, 0.4) {\t};
 	}
 \foreach \x/\t in {1/5,2/4,4/10,5/9,7/15,8/14}{
-	\draw [red, thick, <-] (\x+\r, -\r) .. controls (\x+0.5, -0.3) .. (\x+1-\r, -\r);
+	\draw [black, thick, <-] (\x+\r, -\r) .. controls (\x+0.5, -0.3) .. (\x+1-\r, -\r);
 	\node[black] at (\x+0.5, -0.4) {\t};
+}
+"""
+, options="scale=2.0", preamble="")
+
+# ╔═╡ a8e5abfa-baea-480e-a5d7-58259d684a41
+md"backward computing"
+
+# ╔═╡ a95abece-f8c1-495e-af35-779b0fd068a0
+TikzPicture(L"""
+\def\r{0.15};
+\def\n{10};
+\foreach \x in {1,4,7,10}{
+	\fill[fill=black] (\x, 0) circle [radius=\r];
+	\node[white] at (\x, 0) {$s_{\x}$};
+}
+\foreach \x in {2,3,5,6,8,9}{
+	\draw (\x, 0) circle [radius=\r];
+	\node[black] at (\x, 0) {$s_{\x}$};
+}
+\fill[fill=white] (\n+0.5, 0) circle [radius=\r];
+\foreach[evaluate={\tt=int(16-\t)}] \x/\t in {1/1,2/2,3/3,4/6,5/7,6/8,7/11,8/12,9/13}{
+	\draw [black, thick, <-] (\x+\r, \r) .. controls (\x+0.5, 0.3) .. (\x+1-\r, \r);
+	\node[black] at (\x+0.5, 0.4) {\tt};
+	}
+\foreach[evaluate={\tt=int(16-\t)}] \x/\t in {1/5,2/4,4/10,5/9,7/15,8/14}{
+	\draw [black, thick, ->] (\x+\r, -\r) .. controls (\x+0.5, -0.3) .. (\x+1-\r, -\r);
+	\node[black] at (\x+0.5, -0.4) {\tt};
 }
 """
 , options="scale=2.0", preamble="")
@@ -1026,7 +1075,7 @@ TikzPicture(L"""
 # ╔═╡ bccadcb5-6d9f-4a70-b7c4-74e0e3d5f8c8
 TikzPicture(L"""
 \def\y{0}
-\node at (4, \y-1) {put rule};
+\node at (4, \y-1) {put rule (if and only if the previous grid is occupied)};
 \foreach \x in {0,...,16}
 	\draw (0.5*\x-0.25, 0.5*\y-0.25) rectangle (0.5*\x+0.25, 0.5*\y+0.25);
 \fill (0, 0)  ellipse (0.2 and 0.15);
@@ -1042,7 +1091,7 @@ TikzPicture(L"""
 # ╔═╡ b308ecb0-070e-4ad8-8009-dc60e75bbe01
 TikzPicture(L"""
 \def\y{0}
-\node at (4, \y-1) {remove rule};
+\node at (4, \y-1) {remove rule (if and only if the previous grid is occupied)};
 \foreach \x in {0,...,16}
 	\draw (0.5*\x-0.25, 0.5*\y-0.25) rectangle (0.5*\x+0.25, 0.5*\y+0.25);
 \fill (0, 0)  ellipse (0.2 and 0.15);
@@ -1055,90 +1104,6 @@ TikzPicture(L"""
 \draw[->,thick] (2.5, \y+0.3) .. controls (2.8, \y+1) and (8.0, \y+1) .. (10, 0.5);
 """, options="scale=1.0")
 
-# ╔═╡ dabb4656-4aed-4168-8659-c0472528c41d
-md"""
-## Optimal time
-"""
-
-# ╔═╡ 0367be06-4185-4add-a04b-f696c5a43638
-TikzPicture(L"""
-\foreach[evaluate={\j=int(16-\y)}] \y in {0,...,16}{
-	\node at (-1, 0.7*\y) {step \j};
-	\foreach \x in {0,...,16}{
-		\draw (0.5*\x-0.25, 0.7*\y-0.25) rectangle (0.5*\x+0.25, 0.7*\y+0.25);
-	}
-	\foreach \x in {0,...,\j}{
-		\fill (0.5*\x, 0.7*\y)  ellipse (0.2 and 0.15);
-	}
-}
-""", options="scale=1.0")
-
-# ╔═╡ c79e7651-975b-407c-8c8c-d0c5653ec570
-md"
-Space complexity: ``O(TS)``
-
-Time complexity: ``O(T)``
-"
-
-# ╔═╡ 3fed55d7-dbed-4fc9-8410-2633d5200db6
-md"""
-## Limited space
-"""
-
-# ╔═╡ 663180d2-8fe1-4996-a194-d38120ae05fd
-md"The recursive Bennett's time-space tradeoff"
-
-# ╔═╡ 39884e8a-bc83-4ff4-85bc-cfaccb4674f2
-html"""
-<img src="https://user-images.githubusercontent.com/6257240/123340553-5cef8880-d51a-11eb-98f4-d402fa6b6532.png" width=500/>
-"""
-
-# ╔═╡ c24e7391-a187-4a7e-aab7-93027f7db965
-md"The space optimal solution for 16 grids requires recursive Bennett's algorithm"
-
-# ╔═╡ 12734842-d66f-4bfc-a9ad-01adeb2450e0
-# stepfunc: step function
-# state: state dictionary, initial value should contain entry `state[base]`
-# k: compute `k` chunks forward and `k-1` chunks backward
-# base: starting point
-# len: number of steps to compute
-@i function bennett_alg!(stepfunc, state::Dict{Int,T}, k::Int, base, len, args...; kwargs...) where T
-    if len == 1  		# lowest level
-        state[base+1] ← _zero(state[base])
-        stepfunc(state[base+1], state[base], args...; kwargs...)
-    else
-		@safe @assert len % k == 0
-        @routine begin  # compute block size
-            chunksize ← 0
-			start ← 0
-			chunksize += len ÷ k
-			start += base
-			for j=1:k-1
-				bennett_alg!(stepfunc, state, k, start, chunksize, args...; kwargs...)
-				start += chunksize
-			end
-		end
-		bennett_alg!(stepfunc, state, k, start, chunksize, args...; kwargs...)
-        ~@routine
-    end
-end
-
-# ╔═╡ c3b730a4-d5b4-471e-bd06-30ace6e8b8fe
-let
-	nodes_list = [[0], [0,1], [0,1,2], [0,2], [0,2,3], [0,2,3,4], [0,2,4], [0,1,2,4], [0,1,4], [0,4], [0,4,5], [0,4,5,6], [0,4,6], [0,4,6,7], [0,4,6,7,8], [0,4,6,8], [0,4,5,6,8], [0,4,5,8], [0,4,8],  [0,1,4,8], [0,1,2,4,8], [0,2,4,8], [0,2,3,4,8], [0,2,3,8], [0,2,8], [0,1,2,8], [0,1,8], [0,8],[0,8,9], [0,8,9,10], [0,8,10], [0,8,10,11], [0,8,10,11,12], [0,8,10,12], [0,8,9,10,12], [0,8,9,12], [0,8,12], [0,8,12,13], [0,8,12,13,14], [0,8,12,14], [0,8,12,14,15], [0,8,12,14,15,16]]
-	s = join([raw"""
-	\def\y{"""*string(j-1)*raw"""}
-	\node at (-1, -0.7*\y) {step \y};
-	\foreach \x in {0,...,16}{
-		\draw (0.5*\x-0.25, -0.7*\y-0.25) rectangle (0.5*\x+0.25, -0.7*\y+0.25);
-	}
-	\foreach \x in {"""*join(nodes, ",")*raw"""}{
-		\fill (0.5*\x, -0.7*\y)  ellipse (0.2 and 0.15);
-	}
-""" for (j, nodes) in enumerate(nodes_list)], "\n")
-	TikzPicture(LaTeXString(s), options="scale=1.0")
-end
-
 # ╔═╡ 9123e669-19c7-47c1-a924-0c618b4a9c1f
 md"
 Space complexity: ``O(\log(T)S)``
@@ -1148,139 +1113,14 @@ Time complexity: ``O(T^{1+\epsilon})``
 
 # ╔═╡ 83d0c5fc-9cb7-4e37-bfdb-ed630b94d9b4
 md"
-This tradeoff scheme is probably optimal for a reversible program.
-
-Reversible Simulation of Irreversible Computation by Pebble Games (1997), 
-
-Ming Li (University of Waterloo), John Tromp (CWI), Paul Vitanyi (CWI and University of Amsterdam)
+This tradeoff scheme is probably optimal for a reversible program. (Li 1997)
 "
-
-# ╔═╡ 8489404b-2420-4f09-bc63-e8ef39eebcb0
-md"## When is this algorithm useful?"
-
-# ╔═╡ 98f42f60-7870-4813-b0c1-728285c25f01
-md"## Finding maximum, the reversible programming implementation"
-
-# ╔═╡ c3c63865-f538-4d93-bef3-6b9c69cb177f
-md"The naive implementation with linear space overhead"
-
-# ╔═╡ 66225c05-165e-4051-bb5e-4cfba579fd5b
-@i function i_find_maximum(m, y::AbstractVector, x::AbstractVector) where T
-	@safe @assert !isempty(x) && length(y) == length(x)   # error handling
-	y[1] += x[1]
-	for i=2:length(x)
-		if x[i] > y[i-1]
-			y[i] += x[i]
-		else
-			y[i] += y[i-1]
-		end
-	end
-	m += y[end]
-end
-
-# ╔═╡ 14291e8d-001f-4e26-b094-addb970cf530
-x = randn(17)
-
-# ╔═╡ bf670e51-06f8-4094-949c-ca2d02fd0d01
-find_maximum(x)
-
-# ╔═╡ 416e53e4-6123-430f-b433-4334b7e85298
-i_find_maximum(0.0, zero(x), x)
-
-# ╔═╡ edd5f8df-9abd-4254-abf6-33ae31d88a8d
-struct FindMaxState{T}
-	m::T
-	step::Int
-end
-
-# ╔═╡ c0ff9103-2aa8-45fd-bea5-1903c53196de
-let
-	x, y = FindMaxState(5.0, 1), FindMaxState(2.0, 3)
-	@instr x += y
-	x, y
-end
-
-# ╔═╡ e17e70cb-2d82-4a08-9f6e-e50dcaa325e3
-@i function i_find_maximum_step(t, s, x)
-	t.step += s.step + 1
-	if x[t.step] > s.m
-		t.m += x[t.step]  # everything is mutable in NiLang
-	else
-		t.m += s.m
-	end
-end
-
-# ╔═╡ 357fd442-6e6e-4b14-b2d0-efd3fa775d0b
-bennett_alg!(i_find_maximum_step, Dict(0=>FindMaxState(x[1], 1)), 2, 0, length(x)-1, x)[2]
 
 # ╔═╡ 3d2feca5-43d3-4a46-ba1c-849c5ceeb676
 md"nstep = $(@bind nstep Slider(2:10000; show_value=true, default=100))"
 
 # ╔═╡ 7ca616d1-caed-40cf-b768-b07af81a654d
 md"k = $(@bind bennett_k Slider(2:100; show_value=true, default=10))"
-
-# ╔═╡ ddc662d7-6901-4885-9d2c-1876a2c9d2ff
-let
-	Random.seed!(3)
-	x = randn(nstep)
-	logger = NiLang.BennettLog()
-	output = NiLang.bennett(i_find_maximum_step, FindMaxState(0.0, 0), FindMaxState(x[1], 1), x; k=bennett_k, N=length(x)-1, logger=logger)[2]
-	Text("output = $(output.m)\n\n$logger")
-end
-
-# ╔═╡ d2001eb2-45cb-4f07-aa99-dd84996359b7
-md"## The connection to automatic differentiation"
-
-# ╔═╡ 1bca53ef-3438-4db5-9900-9fee71936a62
-@i function loss(result, state, x)
-	nstep ← length(x)-1
-	bennett_alg!((@skip! i_find_maximum_step), state, 2, 0, nstep, x)
-	result += state[nstep].m
-	nstep → length(x)-1
-end
-
-# ╔═╡ 50f7070d-9f6f-4025-9be3-13812c3000eb
-let
-	x = [1.0, 3.0, 2.0, 1.3, -1.0]
-	NiLang.gradient(loss, (0.0, Dict(0=>FindMaxState(x[1], 1)), x); iloss=1)
-end
-
-# ╔═╡ fa3b6d6a-a55d-4097-8ad2-7dafb5f01d8c
-md"""
-* put rule: Only if there exists a pebble in grid $i$, you can move a pebble from your own pool to the grid $i+1$,
-* take rule: you can take a pebble from the board any time,
-* doodle rule: you can doodle grid $i$ only it when this grid has a pebble in it and grid $i+1$ is doodled,
-* end rule: doodle all grids.
-"""
-
-# ╔═╡ 85447c61-764d-473a-8d1d-1f9a5bcdb095
-md"""Griewank, Andreas
-
-**Achieving logarithmic growth of temporal and spatial complexity in reverse automatic differentiation**
-
-(1992)
-"""
-
-# ╔═╡ 336f2403-a063-413c-bb21-ab1151d247cd
-md"""Julia Implementation: [https://github.com/GiggleLiu/TreeverseAlgorithm.jl](https://github.com/GiggleLiu/TreeverseAlgorithm.jl)"""
-
-# ╔═╡ ae62ab32-864f-4a6b-b5fd-519cb5c551a5
-html"""
-<img src="https://user-images.githubusercontent.com/6257240/122647718-988deb00-d0f3-11eb-8f04-40eda8ce59b3.png" width=300/>
-"""
-
-# ╔═╡ 972d889c-c48c-470a-b710-aba9ecaacdaa
-md"nstep = $(@bind treeverse_nstep Slider(2:10000; show_value=true, default=100))"
-
-# ╔═╡ 54b3a283-7d42-431f-9ecb-48f37198409a
-md"δ = $(@bind treeverse_δ Slider(2:100; show_value=true, default=10))"
-
-# ╔═╡ 590f56f7-5654-4493-9103-02a0fce6e945
-let
-	logger = TreeverseLog()
-	treeverse(identity, (x,gy)->0, 0; δ=treeverse_δ, N=treeverse_nstep, logger=logger)
-	logger
-end
 
 # ╔═╡ 11964529-8e88-4743-a725-57fc5c525649
 html"""
@@ -1355,30 +1195,6 @@ $elements\\end{matrix}\\right)
 \\end{align}
 ```
 """)
-end
-
-# ╔═╡ 9adc1d1b-4325-4ec9-83f5-64f16a81e5d3
-let
-	x = [2.0,2,3.0]
-	y = copy(x)
-	r = LinearAlgebra.reflector!(y)
-	LinearAlgebra.reflectorApply!(y, r, reshape(x, :, 1))
-end
-
-# ╔═╡ 01338a32-cde4-4d85-b38a-c5fdb0a522b0
-let
-	x = [2.0,2,3.0]
-	y = [x[1]-norm(x), x[2:end]...]
-	x - 2/(norm(y))^2 * y * (y'*x)
-end
-
-# ╔═╡ e25947d0-55a1-4b28-a3da-b675045ca114
-norm([2,2,3])
-
-# ╔═╡ a043784a-b1e1-4727-840f-1a8e0d845366
-let
-	x = [2,2.0,3.0]
-	[x[1]-norm(x), x[2:end]...]
 end
 
 # ╔═╡ dced36eb-3b84-4d08-8268-0ffb831e39b5
@@ -1537,6 +1353,243 @@ end
     end
 end
 
+# ╔═╡ bee4ab06-4c60-4bec-89d0-b3c9a512f7a6
+md"## Comparing with manual AD
+
+"
+
+# ╔═╡ 717f51fb-bd0a-4bb4-a5fc-1f1cf5d56ed8
+html"""
+<ul>
+<li style="color:red">slower,</li>
+<li style="color:red">an extra space overhead of the size of input matrix,</li>
+<li style="color:green">stabler, e.g. can handle rank deficient matrices</li>
+<li style="color:green">works consistently for complex numbers.</li>
+</ul>
+"""
+
+# ╔═╡ db6b6481-7e67-4418-b907-13b38c77bac7
+md"## Performance"
+
+# ╔═╡ a0be4807-52ed-4626-8009-97a79e36e2f1
+let  # Note: approximately 2x slower than the BLAS version
+	Random.seed!(3)
+	A = randn(ComplexF64, 200, 200)
+	@benchmark LinearAlgebra.qrfactPivotedUnblocked!(copy($A))
+end
+
+# ╔═╡ 52dec342-d3de-4a88-8acb-0aa186bcc086
+let
+	Random.seed!(3)
+	A = randn(ComplexF64, 200, 200)
+	@benchmark qr_pivoted!(alloc_qr($A), copy($A))
+end
+
+# ╔═╡ 280c9363-9b49-44f1-a240-b7f205ffc56b
+@benchmark let
+	res = alloc_qr(A)
+	res, A = qr_pivoted!(res, A)
+	(~qr_pivoted!)(GVar(res), GVar(A))
+end setup=(Random.seed!(3); A = randn(ComplexF64, 200, 200))
+
+# ╔═╡ 0b3735c2-695c-4225-843e-16ca17aac0eb
+md"""## Take home message
+
+1. Comparing to irreversible computing, reversible computing is more natural, but suffering from polynomial time overhead and logarithmic space overhead.
+2. It is easy to balance time and space in a reversible programming language with Bennett's time-space tradeoff strategy.
+3. Reversible embedded domain specific language NiLang.jl (GiggleLiu and Taine Zhao):
+$(html"<div align=center><img  src='https://github.com/GiggleLiu/NiLang.jl/raw/master/docs/src/asset/logo3.png' width=300/></div>")
+4. It is not always more reliable to differentiate a program by deriving the backward rule manually.
+
+5. TODOs
+    - port `LoopVectorization` to NiLang
+"""
+
+# ╔═╡ 54d0c0d7-aade-4004-bc7f-5fd09c000ae0
+md"""
+## Thanks
+
+* Taine Zhao
+* Xun Gao
+"""
+
+# ╔═╡ d7942b37-f821-494a-8f18-5f267aa3457a
+md"""
+##  References
+* Reeb, David, and Michael M. Wolf. "An improved Landauer principle with finite-size corrections." (2014).
+* Athas, William C., and L. J. Svensson. "Reversible logic issues in adiabatic CMOS." Proceedings Workshop on Physics and Computation. (1994).
+* Takeuchi, N., Y. Yamanashi, and N. Yoshikawa. "Reversible logic gate using adiabatic superconducting devices." (2014)
+* Griewank, Andreas. "Achieving logarithmic growth of temporal and spatial complexity in reverse automatic differentiation." Optimization Methods and software 1.1 (1992): 35-54.
+* Ming Li, John Tromp, Paul Vitanyi. "Reversible Simulation of Irreversible Computation by Pebble Games" (1997)
+"""
+
+# ╔═╡ c3b730a4-d5b4-471e-bd06-30ace6e8b8fe
+let
+	nodes_list = [[0], [0,1], [0,1,2], [0,2], [0,2,3], [0,2,3,4], [0,2,4], [0,1,2,4], [0,1,4], [0,4], [0,4,5], [0,4,5,6], [0,4,6], [0,4,6,7], [0,4,6,7,8], [0,4,6,8], [0,4,5,6,8], [0,4,5,8], [0,4,8],  [0,1,4,8], [0,1,2,4,8], [0,2,4,8], [0,2,3,4,8], [0,2,3,8], [0,2,8], [0,1,2,8], [0,1,8], [0,8],[0,8,9], [0,8,9,10], [0,8,10], [0,8,10,11], [0,8,10,11,12], [0,8,10,12], [0,8,9,10,12], [0,8,9,12], [0,8,12], [0,8,12,13], [0,8,12,13,14], [0,8,12,14], [0,8,12,14,15], [0,8,12,14,15,16]]
+	s = join([raw"""
+	\def\y{"""*string(j-1)*raw"""}
+	\node at (-1, -0.7*\y) {step \y};
+	\foreach \x in {0,...,16}{
+		\draw (0.5*\x-0.25, -0.7*\y-0.25) rectangle (0.5*\x+0.25, -0.7*\y+0.25);
+	}
+	\foreach \x in {"""*join(nodes, ",")*raw"""}{
+		\fill (0.5*\x, -0.7*\y)  ellipse (0.2 and 0.15);
+	}
+""" for (j, nodes) in enumerate(nodes_list)], "\n")
+	TikzPicture(LaTeXString(s), options="scale=1.0")
+end
+
+# ╔═╡ 98f42f60-7870-4813-b0c1-728285c25f01
+md"## Finding maximum, the reversible programming implementation"
+
+# ╔═╡ c3c63865-f538-4d93-bef3-6b9c69cb177f
+md"The naive implementation with linear space overhead"
+
+# ╔═╡ 66225c05-165e-4051-bb5e-4cfba579fd5b
+@i function i_find_maximum(m, y::AbstractVector, x::AbstractVector) where T
+	@safe @assert !isempty(x) && length(y) == length(x)   # error handling
+	y[1] += x[1]
+	for i=2:length(x)
+		if x[i] > y[i-1]
+			y[i] += x[i]
+		else
+			y[i] += y[i-1]
+		end
+	end
+	m += y[end]
+end
+
+# ╔═╡ 14291e8d-001f-4e26-b094-addb970cf530
+x = randn(17)
+
+# ╔═╡ bf670e51-06f8-4094-949c-ca2d02fd0d01
+find_maximum(x)
+
+# ╔═╡ 416e53e4-6123-430f-b433-4334b7e85298
+i_find_maximum(0.0, zero(x), x)
+
+# ╔═╡ edd5f8df-9abd-4254-abf6-33ae31d88a8d
+struct FindMaxState{T}
+	m::T
+	step::Int
+end
+
+# ╔═╡ c0ff9103-2aa8-45fd-bea5-1903c53196de
+let
+	x, y = FindMaxState(5.0, 1), FindMaxState(2.0, 3)
+	@instr x += y
+	x, y
+end
+
+# ╔═╡ e17e70cb-2d82-4a08-9f6e-e50dcaa325e3
+@i function i_find_maximum_step(t, s, x)
+	t.step += s.step + 1
+	if x[t.step] > s.m
+		t.m += x[t.step]  # everything is mutable in NiLang
+	else
+		t.m += s.m
+	end
+end
+
+# ╔═╡ ddc662d7-6901-4885-9d2c-1876a2c9d2ff
+let
+	Random.seed!(3)
+	x = randn(nstep)
+	logger = NiLang.BennettLog()
+	output = NiLang.bennett(i_find_maximum_step, FindMaxState(0.0, 0), FindMaxState(x[1], 1), x; k=bennett_k, N=length(x)-1, logger=logger)[2]
+	Text("output = $(output.m)\n\n$logger")
+end
+
+# ╔═╡ d2001eb2-45cb-4f07-aa99-dd84996359b7
+md"## The connection to automatic differentiation"
+
+# ╔═╡ fa3b6d6a-a55d-4097-8ad2-7dafb5f01d8c
+md"""
+* put rule: Only if there exists a pebble in grid $i$, you can move a pebble from your own pool to the grid $i+1$,
+* take rule: you can take a pebble from the board any time,
+* doodle rule: you can doodle grid $i$ only it when this grid has a pebble in it and grid $i+1$ is doodled,
+* end rule: doodle all grids.
+"""
+
+# ╔═╡ dabb4656-4aed-4168-8659-c0472528c41d
+md"""
+## Optimal time
+"""
+
+# ╔═╡ 0367be06-4185-4add-a04b-f696c5a43638
+TikzPicture(L"""
+\foreach[evaluate={\j=int(16-\y)}] \y in {0,...,16}{
+	\node at (-1, 0.7*\y) {step \j};
+	\foreach \x in {0,...,16}{
+		\draw (0.5*\x-0.25, 0.7*\y-0.25) rectangle (0.5*\x+0.25, 0.7*\y+0.25);
+	}
+	\foreach \x in {0,...,\j}{
+		\fill (0.5*\x, 0.7*\y)  ellipse (0.2 and 0.15);
+	}
+}
+""", options="scale=1.0")
+
+# ╔═╡ c79e7651-975b-407c-8c8c-d0c5653ec570
+md"
+Space complexity: ``O(TS)``
+
+Time complexity: ``O(T)``
+"
+
+# ╔═╡ 3fed55d7-dbed-4fc9-8410-2633d5200db6
+md"""
+## Limited space
+"""
+
+# ╔═╡ 663180d2-8fe1-4996-a194-d38120ae05fd
+md"The recursive Bennett's time-space tradeoff"
+
+# ╔═╡ 39884e8a-bc83-4ff4-85bc-cfaccb4674f2
+html"""
+<img src="https://user-images.githubusercontent.com/6257240/123340553-5cef8880-d51a-11eb-98f4-d402fa6b6532.png" width=500/>
+"""
+
+# ╔═╡ c24e7391-a187-4a7e-aab7-93027f7db965
+md"The space optimal solution for 16 grids requires recursive Bennett's algorithm"
+
+# ╔═╡ 12734842-d66f-4bfc-a9ad-01adeb2450e0
+# stepfunc: step function
+# state: state dictionary, initial value should contain entry `state[base]`
+# k: compute `k` chunks forward and `k-1` chunks backward
+# base: starting point
+# len: number of steps to compute
+@i function bennett_alg!(stepfunc, state::Dict{Int,T}, k::Int, base, len, args...; kwargs...) where T
+    if len == 1  		# lowest level
+        state[base+1] ← _zero(state[base])
+        stepfunc(state[base+1], state[base], args...; kwargs...)
+    else
+		@safe @assert len % k == 0
+        @routine begin  # compute block size
+            chunksize ← 0
+			start ← 0
+			chunksize += len ÷ k
+			start += base
+			for j=1:k-1
+				bennett_alg!(stepfunc, state, k, start, chunksize, args...; kwargs...)
+				start += chunksize
+			end
+		end
+		bennett_alg!(stepfunc, state, k, start, chunksize, args...; kwargs...)
+        ~@routine
+    end
+end
+
+# ╔═╡ 357fd442-6e6e-4b14-b2d0-efd3fa775d0b
+bennett_alg!(i_find_maximum_step, Dict(0=>FindMaxState(x[1], 1)), 2, 0, length(x)-1, x)[2]
+
+# ╔═╡ 1bca53ef-3438-4db5-9900-9fee71936a62
+@i function loss(result, state, x)
+	nstep ← length(x)-1
+	bennett_alg!((@skip! i_find_maximum_step), state, 2, 0, nstep, x)
+	result += state[nstep].m
+	nstep → length(x)-1
+end
+
 # ╔═╡ 4e273d1f-a00e-49ca-9f8d-a0f6930550fb
 let
 	@testset "qr pivoted gradient" begin
@@ -1582,67 +1635,25 @@ let
 	end
 end
 
-# ╔═╡ db6b6481-7e67-4418-b907-13b38c77bac7
-md"## Performance"
-
-# ╔═╡ a0be4807-52ed-4626-8009-97a79e36e2f1
+# ╔═╡ 50f7070d-9f6f-4025-9be3-13812c3000eb
 let
-	Random.seed!(3)
-	A = randn(ComplexF64, 200, 200)
-	@benchmark LinearAlgebra.qrfactPivotedUnblocked!(copy($A))
+	x = [1.0, 3.0, 2.0, 1.3, -1.0]
+	NiLang.gradient(loss, (0.0, Dict(0=>FindMaxState(x[1], 1)), x); iloss=1)
 end
-
-# ╔═╡ 52dec342-d3de-4a88-8acb-0aa186bcc086
-let
-	Random.seed!(3)
-	A = randn(ComplexF64, 200, 200)
-	@benchmark qr_pivoted!(alloc_qr($A), copy($A))
-end
-
-# ╔═╡ 359e0525-4e1e-4aff-bb5a-08916c2bb27a
-let
-	Random.seed!(3)
-	A = randn(ComplexF64, 200, 200)
-	@benchmark qr($A, Val(true))
-end
-
-# ╔═╡ a1b87bcf-2c8b-4726-9bb3-63840cda2851
-md"""
-## Reliability, scalar level or tensor level
-"""
-
-# ╔═╡ 0b3735c2-695c-4225-843e-16ca17aac0eb
-md"""## Take home message
-
-1. Comparing to irreversible computing, reversible computing is more natural, but suffering from polynomial time overhead and logarithmic space overhead.
-2. It is easy to balance time and space in a reversible programming language with Bennett's time-space tradeoff strategy. It is also possible to backtrace a linear program in the irreversible setup using Treeverse algorithm (it is more efficient).
-3. Reversible embedded domain specific language NiLang.jl (GiggleLiu and Taine Zhao):
-$(html"<div align=center><img  src='https://github.com/GiggleLiu/NiLang.jl/raw/master/docs/src/asset/logo3.png' width=300/></div>")
-4. It is not always more reliable to differentiate a program by deriving the backward rule manually.
-
-5. TODOs
-    - port `LoopVectorization` to NiLang
-"""
-
-# ╔═╡ 54d0c0d7-aade-4004-bc7f-5fd09c000ae0
-md"""
-## Thanks
-
-* Taine Zhao
-* Xun Gao
-"""
-
-# ╔═╡ d7942b37-f821-494a-8f18-5f267aa3457a
-md"""
-##  References
-* Reeb, David, and Michael M. Wolf. "An improved Landauer principle with finite-size corrections." (2014).
-* Athas, William C., and L. J. Svensson. "Reversible logic issues in adiabatic CMOS." Proceedings Workshop on Physics and Computation. (1994).
-* Takeuchi, N., Y. Yamanashi, and N. Yoshikawa. "Reversible logic gate using adiabatic superconducting devices." (2014)
-* Griewank, Andreas. "Achieving logarithmic growth of temporal and spatial complexity in reverse automatic differentiation." Optimization Methods and software 1.1 (1992): 35-54.
-"""
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
+[compat]
+BenchmarkTools = "~1.0.0"
+Compose = "~0.9.2"
+ForwardDiff = "~0.10.18"
+NiLang = "~0.9.1"
+PlutoUI = "~0.7.9"
+Revise = "~3.1.17"
+TikzPictures = "~3.3.3"
+TreeverseAlgorithm = "~0.1.0"
+Viznet = "~0.3.3"
+
 [deps]
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 Compose = "a81c6b42-2e10-5240-aca2-a61377ecd94b"
@@ -1656,17 +1667,6 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 TikzPictures = "37f6aa50-8035-52d0-81c2-5a1d08754b2d"
 TreeverseAlgorithm = "e1c63c57-2fea-45bf-a8bf-df3ea6afb545"
 Viznet = "52a3aca4-6234-47fd-b74a-806bdf78ede9"
-
-[compat]
-BenchmarkTools = "~1.0.0"
-Compose = "~0.9.2"
-ForwardDiff = "~0.10.18"
-NiLang = "~0.9.0"
-PlutoUI = "~0.7.9"
-Revise = "~3.1.17"
-TikzPictures = "~3.3.3"
-TreeverseAlgorithm = "~0.1.0"
-Viznet = "~0.3.3"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
@@ -2019,9 +2019,9 @@ uuid = "ca575930-c2e3-43a9-ace4-1e988b2c1908"
 
 [[NiLang]]
 deps = ["FixedPointNumbers", "LinearAlgebra", "LogarithmicNumbers", "MatchCore", "NiLangCore", "Reexport", "SparseArrays", "TupleTools"]
-git-tree-sha1 = "b2aa5d03857cb2ca6450e8e662a5aafbe6d3bac4"
+git-tree-sha1 = "3fe439482d8c08a15f929ae7278a6c7f737672d5"
 uuid = "ab4ef3a6-0b42-11ea-31f6-e34652774712"
-version = "0.9.0"
+version = "0.9.1"
 
 [[NiLangCore]]
 deps = ["MatchCore", "TupleTools"]
@@ -2377,12 +2377,14 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╟─1d3c7324-6828-47aa-b30e-bcac0e052213
 # ╠═2993fe1f-042b-4c85-85b8-bcc7ed449a54
 # ╟─048d482e-3e5b-496f-95d7-17589a5f6f11
+# ╟─ea907d51-d4a9-48ca-90a5-bd91309ccfad
 # ╟─8b564e7d-e321-4d72-8bd2-7b540a317595
 # ╟─bcf29051-7db8-47e7-8809-2dbbf0446596
 # ╟─6b01e75a-615f-4717-9ba6-5b1cf5504a1f
 # ╟─0529896a-697b-430c-b8ea-9b9352d98387
 # ╟─4fcf0fea-2c25-4e61-8aea-0b6c70367afa
 # ╟─2c052962-e7aa-45d1-9623-16975a4a761d
+# ╟─e39103d6-c453-4297-b7f9-97bd3e4c4ac7
 # ╟─dcec701e-f7fc-4673-a409-907af436fe6c
 # ╟─626907b3-78d6-4458-a45f-389a7ed0d84a
 # ╟─07b65031-ad36-4a74-b30f-d05df3222521
@@ -2391,49 +2393,24 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╟─8b556fbe-275f-4e7b-94a0-7434ce81ad8b
 # ╟─8e9c55f6-8175-4cb4-8798-91107c4d16ee
 # ╠═873ef2c2-653e-425e-9732-b1ed19f7a0b7
-# ╠═65c2a513-a965-4a05-82b6-5b3bfe6a74cc
+# ╟─972d889c-c48c-470a-b710-aba9ecaacdaa
+# ╟─54b3a283-7d42-431f-9ecb-48f37198409a
+# ╠═590f56f7-5654-4493-9103-02a0fce6e945
 # ╟─7e4f28ec-86a0-430d-ad38-ba04dd4443c3
+# ╟─af611ace-3bf9-45dc-a57f-f5572d4124d1
 # ╟─46d6ddc6-791c-41aa-aa7a-83e6e45a6411
+# ╟─a8e5abfa-baea-480e-a5d7-58259d684a41
+# ╟─a95abece-f8c1-495e-af35-779b0fd068a0
 # ╟─5060f5bb-8430-42aa-b61d-c88249edb323
 # ╟─c62a9f94-457f-496b-bee0-bb0db02aca5d
 # ╟─bccadcb5-6d9f-4a70-b7c4-74e0e3d5f8c8
 # ╟─b308ecb0-070e-4ad8-8009-dc60e75bbe01
-# ╟─dabb4656-4aed-4168-8659-c0472528c41d
-# ╟─0367be06-4185-4add-a04b-f696c5a43638
-# ╟─c79e7651-975b-407c-8c8c-d0c5653ec570
-# ╟─3fed55d7-dbed-4fc9-8410-2633d5200db6
-# ╟─663180d2-8fe1-4996-a194-d38120ae05fd
-# ╟─39884e8a-bc83-4ff4-85bc-cfaccb4674f2
-# ╟─c24e7391-a187-4a7e-aab7-93027f7db965
-# ╠═12734842-d66f-4bfc-a9ad-01adeb2450e0
-# ╟─c3b730a4-d5b4-471e-bd06-30ace6e8b8fe
 # ╟─9123e669-19c7-47c1-a924-0c618b4a9c1f
 # ╟─83d0c5fc-9cb7-4e37-bfdb-ed630b94d9b4
-# ╟─8489404b-2420-4f09-bc63-e8ef39eebcb0
-# ╟─98f42f60-7870-4813-b0c1-728285c25f01
-# ╟─c3c63865-f538-4d93-bef3-6b9c69cb177f
-# ╠═66225c05-165e-4051-bb5e-4cfba579fd5b
-# ╠═14291e8d-001f-4e26-b094-addb970cf530
-# ╠═bf670e51-06f8-4094-949c-ca2d02fd0d01
-# ╠═416e53e4-6123-430f-b433-4334b7e85298
-# ╠═edd5f8df-9abd-4254-abf6-33ae31d88a8d
-# ╠═c0ff9103-2aa8-45fd-bea5-1903c53196de
-# ╠═e17e70cb-2d82-4a08-9f6e-e50dcaa325e3
-# ╠═357fd442-6e6e-4b14-b2d0-efd3fa775d0b
 # ╠═c6bd40af-50ed-4cee-8043-60b2bac05058
 # ╟─3d2feca5-43d3-4a46-ba1c-849c5ceeb676
 # ╟─7ca616d1-caed-40cf-b768-b07af81a654d
-# ╟─ddc662d7-6901-4885-9d2c-1876a2c9d2ff
-# ╟─d2001eb2-45cb-4f07-aa99-dd84996359b7
-# ╠═1bca53ef-3438-4db5-9900-9fee71936a62
-# ╠═50f7070d-9f6f-4025-9be3-13812c3000eb
-# ╟─fa3b6d6a-a55d-4097-8ad2-7dafb5f01d8c
-# ╟─85447c61-764d-473a-8d1d-1f9a5bcdb095
-# ╟─336f2403-a063-413c-bb21-ab1151d247cd
-# ╟─ae62ab32-864f-4a6b-b5fd-519cb5c551a5
-# ╟─972d889c-c48c-470a-b710-aba9ecaacdaa
-# ╟─54b3a283-7d42-431f-9ecb-48f37198409a
-# ╠═590f56f7-5654-4493-9103-02a0fce6e945
+# ╠═ddc662d7-6901-4885-9d2c-1876a2c9d2ff
 # ╟─11964529-8e88-4743-a725-57fc5c525649
 # ╟─45448141-214d-4e08-978e-5d1d25f763cd
 # ╟─dfe3cc09-6e27-4166-9a4e-2dd22f1e08a2
@@ -2443,10 +2420,6 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╟─33a0bda1-c943-4792-bc3d-fbf1adf16d0a
 # ╟─a2e81e79-3f85-4eef-8639-f455f9165a25
 # ╟─0a04c470-8f5a-4b56-b2e2-5b32e3b944f3
-# ╠═9adc1d1b-4325-4ec9-83f5-64f16a81e5d3
-# ╠═01338a32-cde4-4d85-b38a-c5fdb0a522b0
-# ╠═e25947d0-55a1-4b28-a3da-b675045ca114
-# ╠═a043784a-b1e1-4727-840f-1a8e0d845366
 # ╟─dced36eb-3b84-4d08-8268-0ffb831e39b5
 # ╠═141e21c0-1bdf-4e6b-b76d-129567a1180f
 # ╠═0dc268fa-2b71-4915-b73b-3f1de9fbc157
@@ -2459,14 +2432,38 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╠═ac35b26c-0585-4d2a-8fbf-bda9b141d6af
 # ╠═f8616bf4-02e6-4d66-a0f6-d35db701e82c
 # ╠═4e273d1f-a00e-49ca-9f8d-a0f6930550fb
+# ╟─bee4ab06-4c60-4bec-89d0-b3c9a512f7a6
+# ╟─717f51fb-bd0a-4bb4-a5fc-1f1cf5d56ed8
 # ╟─db6b6481-7e67-4418-b907-13b38c77bac7
 # ╠═d4726239-81af-4792-8472-c680508449c6
 # ╠═a0be4807-52ed-4626-8009-97a79e36e2f1
 # ╠═52dec342-d3de-4a88-8acb-0aa186bcc086
-# ╠═359e0525-4e1e-4aff-bb5a-08916c2bb27a
-# ╟─a1b87bcf-2c8b-4726-9bb3-63840cda2851
+# ╠═280c9363-9b49-44f1-a240-b7f205ffc56b
 # ╟─0b3735c2-695c-4225-843e-16ca17aac0eb
 # ╟─54d0c0d7-aade-4004-bc7f-5fd09c000ae0
 # ╟─d7942b37-f821-494a-8f18-5f267aa3457a
+# ╟─c3b730a4-d5b4-471e-bd06-30ace6e8b8fe
+# ╟─98f42f60-7870-4813-b0c1-728285c25f01
+# ╟─c3c63865-f538-4d93-bef3-6b9c69cb177f
+# ╠═66225c05-165e-4051-bb5e-4cfba579fd5b
+# ╠═14291e8d-001f-4e26-b094-addb970cf530
+# ╠═bf670e51-06f8-4094-949c-ca2d02fd0d01
+# ╠═416e53e4-6123-430f-b433-4334b7e85298
+# ╠═edd5f8df-9abd-4254-abf6-33ae31d88a8d
+# ╠═c0ff9103-2aa8-45fd-bea5-1903c53196de
+# ╠═e17e70cb-2d82-4a08-9f6e-e50dcaa325e3
+# ╠═357fd442-6e6e-4b14-b2d0-efd3fa775d0b
+# ╟─d2001eb2-45cb-4f07-aa99-dd84996359b7
+# ╠═1bca53ef-3438-4db5-9900-9fee71936a62
+# ╠═50f7070d-9f6f-4025-9be3-13812c3000eb
+# ╟─fa3b6d6a-a55d-4097-8ad2-7dafb5f01d8c
+# ╟─dabb4656-4aed-4168-8659-c0472528c41d
+# ╟─0367be06-4185-4add-a04b-f696c5a43638
+# ╟─c79e7651-975b-407c-8c8c-d0c5653ec570
+# ╟─3fed55d7-dbed-4fc9-8410-2633d5200db6
+# ╟─663180d2-8fe1-4996-a194-d38120ae05fd
+# ╟─39884e8a-bc83-4ff4-85bc-cfaccb4674f2
+# ╟─c24e7391-a187-4a7e-aab7-93027f7db965
+# ╠═12734842-d66f-4bfc-a9ad-01adeb2450e0
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
