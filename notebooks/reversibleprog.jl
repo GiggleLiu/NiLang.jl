@@ -57,11 +57,11 @@ using ForwardDiff: Dual
 # ╔═╡ a56445b5-e530-4035-9ac6-a2d196a6276a
 using NiLang.AD: GVar
 
-# ╔═╡ 873ef2c2-653e-425e-9732-b1ed19f7a0b7
-using TreeverseAlgorithm
-
 # ╔═╡ c6bd40af-50ed-4cee-8043-60b2bac05058
 using NiLang: bennett
+
+# ╔═╡ 873ef2c2-653e-425e-9732-b1ed19f7a0b7
+using TreeverseAlgorithm
 
 # ╔═╡ 141e21c0-1bdf-4e6b-b76d-129567a1180f
 using LinearAlgebra
@@ -125,7 +125,7 @@ html"""A postdoc in Mikhail Lukin's group, department of physics <br><br>
 md"# Table of contents
 1. An introduction to reversible computing
 2. A reversible eDSL NiLang
-3. Reversible computing in automatic differentiation
+3. Automatic differentiating a reversible computing language
 "
 
 # ╔═╡ 34a6b7f4-7d72-485d-86dc-f4b1ba6174eb
@@ -140,6 +140,9 @@ let
 <img src="https://www.ux1.eiu.edu/~cfadd/1360/29MagFlds/Images/Fig29.26.jpg" height=210/>"""
 	leftright(updown(img2, html"<div align='center'>electromagnetic force</div>"), updown(img1, html"<div align='center'>friction</div>"))
 end
+
+# ╔═╡ 673992ed-6963-400a-a69b-d65d26c4f443
+md"Both can be explained by reversible quantum dynamics."
 
 # ╔═╡ 6078758e-b392-4bdb-a1e7-44b135ce900e
 md"""
@@ -156,115 +159,36 @@ function find_maximum(x::AbstractVector)
 	return m              # function return
 end
 
-# ╔═╡ e7a4714f-133b-4e5c-8365-fabf97d1c436
-md"A return statement is a type of goto statement."
-
-# ╔═╡ dbf76be8-9583-4fea-8a1f-56a8b47062e7
+# ╔═╡ dcf53d46-e259-4101-8530-9621094ee586
 TikzPicture(L"""
 \draw [black, thick,->] (0, 0) -- (1, 0);
 \draw [black, thick,->,dashed] (1, 0) .. controls (1.5, 0.5) .. (2, 0);
 \node at (1.5, 0.5) {goto $\ldots$};
 \draw [black, thick,->] (2, 0) -- (3, 0);
-	
+       
 \def\x{4};
 \draw [black, thick,<-] (\x, 0) -- (\x+1, 0);
 \draw [black, thick,<-,dashed] (\x+1, 0) .. controls (\x+1.5, 0.5) .. (\x+2, 0);
 \draw [black, thick,<-,dashed] (\x+1, 0) -- (\x+2, 0);
 \node at (\x+1.5, 0.5) {comefrom?};
 \draw [black, thick,<-] (\x+2, 0) -- (\x+3, 0);
-	
+       
 \node at (1.5, -0.2) {call};
 \node at (\x+1.5, -0.2) {uncall};
 """, options="scale=2.0", preamble="")
 
-# ╔═╡ 7fc1220c-e8a2-4dce-9877-7c20d7dc59cf
-md"[The comefrom statement](https://en.wikipedia.org/wiki/COMEFROM)"
-
-# ╔═╡ d7421492-7391-43ed-8e9b-db168c0d9cb9
-md"## Information erasure"
-
-# ╔═╡ b316a69b-250a-4624-bd6f-e2006cd1ad6d
+# ╔═╡ 6a88d26c-c895-4852-ab4f-37297b848731
 md"""
-```math
-\begin{align}
-(m = \max(m, b)) :=
-\begin{cases}(m, b) \rightarrow (m, b), & m \geq b, \\ \color{red}{(m, b) \rightarrow (b, b)}, & m < b \end{cases}
-\end{align}
+* **Information**: the uncertainty, quantified of *information entropy*.
+* **Information erasure**: make the system more certain, e.g.
+```julia
+m = max(m, x[i])
 ```
-"""
-
-# ╔═╡ 697a9369-ea4c-49cf-aea9-0396f77bc4c8
-TikzPicture(L"""
-\node at (3.5, 2.0) {Inputs};
-\node at (10.25, 2.0) {Outputs};
-	
-\node at (3.5, -0.5) {$N = 2^{64} \times 2^{64}$};
-\node at (10.25, -0.5) {$N = 2^{64}$};
-
-\foreach \x in {1,2,3,5,6}{
-	\draw (\x*0.9, 0) rectangle (\x*0.9+0.5, 0.5);
-	\ifnum \x < 4
-		\node at (\x*0.9+0.25, 0.25) {$m_{\x}$};
-	\fi
-}
-\node at (4*0.9+0.25, 0.25) {$\ldots$};
-\node at (5*0.9+0.25, 0.25) {$m_{63}$};
-\node at (6*0.9+0.25, 0.25) {$m_{64}$};
-	
-\def\y{1};
-\foreach \x in {1,2,3,5,6}{
-	\draw (\x*0.9, \y) rectangle (\x*0.9+0.5, \y+0.5);
-	\ifnum \x < 4
-		\node at (\x*0.9+0.25, \y+0.25) {$b_{\x}$};
-	\fi
-}
-\node at (4*0.9+0.25, \y+0.25) {$\ldots$};
-\node at (5*0.9+0.25, \y+0.25) {$b_{63}$};
-\node at (6*0.9+0.25, \y+0.25) {$b_{64}$};
-
-\draw [black, thick,->] (6.5, 0.75) -- (7.5, 0.75);
-\node at (7.0, 1.0) {case $m < b$};
-	
-\def\y{0};
-\def\d{7};
-\foreach \x in {1,2,3,5,6}{
-	\draw (\d+\x*0.9, \y) rectangle (\d+\x*0.9+0.5, \y+0.5);
-	\ifnum \x < 4
-		\node at (\d+\x*0.9+0.25, \y+0.25) {$b_{\x}$};
-	\fi
-}
-\node at (\d+4*0.9+0.25, \y+0.25) {$\ldots$};
-\node at (\d+5*0.9+0.25, \y+0.25) {$b_{63}$};
-\node at (\d+6*0.9+0.25, \y+0.25) {$b_{64}$};
-	
-\def\y{1};
-\foreach \x in {1,2,3,5,6}{
-	\draw (\d+\x*0.9, \y) rectangle (\d+\x*0.9+0.5, \y+0.5);
-	\ifnum \x < 4
-		\node at (\d+\x*0.9+0.25, \y+0.25) {$b_{\x}$};
-	\fi
-}
-\node at (\d+4*0.9+0.25, \y+0.25) {$\ldots$};
-\node at (\d+5*0.9+0.25, \y+0.25) {$b_{63}$};
-\node at (\d+6*0.9+0.25, \y+0.25) {$b_{64}$};
-""", options="scale=2.0", preamble="")
-
-# ╔═╡ d88f9340-542b-4d58-97c5-99cf327a0bdd
-md"""We use von Neumann entropy to quantify the amount of information.
-
-```math
-S = -\sum_{i=1}^N p_i \log(p_i)
-```
-"""
-
-# ╔═╡ 83d4e80e-e26d-4be5-9d1f-7f0974227786
-md"""
-When $m<b$, the mapping is $(m, b) \rightarrow (b, b)$. Let `m` and `b` be 64 bit integers.
-If all states have equal probability, their information entropies are $128\log 2$ and $64 \log 2$
+quantified by the decrease of information entropy.
 """
 
 # ╔═╡ f9675365-36aa-430c-b747-3bc4f602e6fb
-md"## Feynman's thought experiment"
+md"## Information erasure requires dissipating heat to the environment!"
 
 # ╔═╡ 46eb4ba9-dce6-4711-9c4d-3f16de6240de
 leftright(html"""
@@ -353,8 +277,9 @@ end
 # ╔═╡ e483b3d4-d01c-4a98-8e68-e8120a7d95a7
 md"# Summary
 * An isolated system is reversible,
-* Our program, with assign, error handling and goto statements are not reversible,
-* Energy lower bound to erase one bit information: ``kT \log 2`` (Landauer's principle),
+* Our programs are not reversible,
+    * Need a heatbath
+    * Dissipate heat to heat bath: ``kT \log 2``/bit (Landauer's principle),
 
 
 ![](https://user-images.githubusercontent.com/6257240/123520518-22ebc700-d67f-11eb-8af1-a452605cc1d8.png)
@@ -371,22 +296,17 @@ md"# A short introduction to the reversible programming"
 html"""<img src="https://github.com/GiggleLiu/NiLang.jl/raw/master/docs/src/asset/logo3.png"/>"""
 
 # ╔═╡ 5d51231a-8bf0-4414-9a39-cea264df84f2
-md"Initially by Jinguo Liu and Taine Zhao (The author of MLStyle)"
+md"Initially written by Jinguo Liu and Taine Zhao (The author of MLStyle)"
 
 # ╔═╡ e10e0be8-b26e-4719-92dc-8ca46af0b4b5
 md"## Feature 1. one function for two"
 
+# ╔═╡ b1a9946b-82b4-4954-8bb9-5df035eaefe4
+md"Example: an identity mapping ``(x, y) \mapsto (x,y)`` "
+
 # ╔═╡ 00342a51-36d8-4fdd-aab7-ee02e2122c49
 @i function f1(x1, x2)
-end
-
-# ╔═╡ 7d35fc4e-6eef-43b1-8941-866b265fe8d8
-md" $(@bind expand_f1 CheckBox()) macroexpand"
-
-# ╔═╡ 33e55aa3-5357-44b2-a439-2d9c18f41be1
-if expand_f1
-	macroexpand(NiLang, :(@i function f1(x1, x2)
-end)) |> NiLangCore.rmlines
+	# will return inputs automatically for you
 end
 
 # ╔═╡ 40c1c48d-0e5a-4a47-b7e4-8f7666281249
@@ -399,7 +319,15 @@ f1(2, 3)
 md"## Feature 2. every instruction is reversible, every object is ''mutable''"
 
 # ╔═╡ 93238608-3b86-49f1-ad60-9360e12cff1c
-md"Most instructions are in the form `y += f(x)`,  `y -= f(x)` and  `y ⊻= f(x)`, but there are also instructions like `SWAP`, `ROT`. Check NiLang documentations for details."
+md"General design patterns
+* `y += f(x)`
+* `y -= f(x)`
+* `y ⊻= f(x)`
+
+There are also instructions like `SWAP`, `ROT`."
+
+# ╔═╡ f657c3fb-e140-4c76-8065-54f1cb6d05eb
+md"Example: mutating fields of complex numbers"
 
 # ╔═╡ 629a2549-745c-48a2-9bbc-a8f5fb046d11
 @i function f2(x1::Complex, x2::Complex)
@@ -478,6 +406,9 @@ TikzPicture(L"""
     norm/.style={->, draw, black},
     it/.style={font={\sffamily\small\itshape}}", preamble=raw"\usetikzlibrary{shapes.geometric,arrows.meta,chains,positioning,quotes}")
 
+# ╔═╡ 355ba831-6be0-456a-8f94-36acd2365f17
+md"Example: obtaining the absolute value ``x \mapsto |x|``"
+
 # ╔═╡ 003c3e68-600e-4688-832b-5e061572b128
 @i function abs_incorrect(x)
 	if x < 0
@@ -494,19 +425,6 @@ abs_incorrect(-3)
 		NEG(x)
 		sgn ⊻= true
 	end
-end
-
-# ╔═╡ 03d4c43b-b3dd-4294-abb0-822a74000a92
-md" $(@bind expand_ifcorrect CheckBox()) macroexpand"
-
-# ╔═╡ 367b6f70-3b24-42db-8b44-0e2a39ab1380
-if expand_ifcorrect
-	macroexpand(NiLang, :(@i function abs_correct(x, sgn)
-	if (x < 0, sgn)
-		NEG(x)
-		sgn ⊻= true
-	end
-			end)) |> NiLangCore.rmlines
 end
 
 # ╔═╡ e6fd3c2d-cadd-40d7-a575-b1e68c45ee13
@@ -557,6 +475,9 @@ TikzPicture(L"""
     test/.style={base, diamond, text centered, aspect=2.6,inner sep=-0ex},
     norm/.style={->, draw, black},
     it/.style={font={\sffamily\small\itshape}}", preamble=raw"\usetikzlibrary{shapes.geometric,arrows.meta,chains,positioning,quotes}")
+
+# ╔═╡ 2207c2fb-4a52-4766-8dd3-03872744aa74
+md"example: computing Fibonacci numbers"
 
 # ╔═╡ 288331c3-2dfb-4941-985f-554be409c0ab
 @i function fib(y, n)
@@ -630,10 +551,6 @@ dict[key] → variable
 ```
 ", md"asserting the value of an existing key, and delete it."))
 )
-"""
-
-# ╔═╡ 14d8ff9b-c9b2-43aa-a3f5-4d85b56a16bd
-md"""## Feature 5: Time space tradeoff
 """
 
 # ╔═╡ 03f58f2a-24b6-4235-9102-71a19b9679ac
@@ -849,208 +766,115 @@ md"A shortcut"
 NiLang.AD.gradient(real_of_clog, (0.0, 0.0im, 2+3.0im); iloss=1)
 
 # ╔═╡ 048d482e-3e5b-496f-95d7-17589a5f6f11
-md"## Overheads matters!"
+md"# Overheads matters!"
+
+# ╔═╡ e22bbe66-56f5-40be-b464-1f8651e6a6ac
+md"""
+* Case 1: Intrinsically irreversible linear program,
+* Case 2: A linear algebra function: QR decomposition
+"""
+
+# ╔═╡ 28767d73-47a8-4f4b-b3dd-146c4ae3e038
+md"## Case 1: differentiating a linear program"
 
 # ╔═╡ ea907d51-d4a9-48ca-90a5-bd91309ccfad
-md"Imagine we have a very long linear program"
+md"Imagine we have a very long linear program that intrinsically irreversible"
 
-# ╔═╡ 8b564e7d-e321-4d72-8bd2-7b540a317595
-md"Case 1: Regular forward computing"
-
-# ╔═╡ bcf29051-7db8-47e7-8809-2dbbf0446596
+# ╔═╡ 3aa99be5-6747-4163-9bb6-ed8cd5ce19f6
 TikzPicture(L"""
 \def\r{0.15};
 \def\n{10};
 \foreach \x in {\n}{
-	\fill[fill=black] (\x, 0) circle [radius=\r];
-	\node[white] at (\x, 0) {$s_{\x}$};
+       \fill[fill=black] (\x, 0) circle [radius=\r];
+       \node[white] at (\x, 0) {$s_{\x}$};
 }
 \foreach \x in {1,...,9}{
-	\draw (\x, 0) circle [radius=\r];
-	\node[black] at (\x, 0) {$s_{\x}$};
+       \draw (\x, 0) circle [radius=\r];
+       \node[black] at (\x, 0) {$s_{\x}$};
 }
 \fill[fill=white] (\n+0.5, 0) circle [radius=\r];
 \foreach \x/\t in {1/1,2/2,3/3,4/4,5/5,6/6,7/7,8/8,9/9}{
-	\draw [black, thick, ->] (\x+\r, \r) .. controls (\x+0.5, 0.3) .. (\x+1-\r, \r);
-	\node[black] at (\x+0.5, 0.4) {\t};
-	}
+       \draw [black, thick, ->] (\x+\r, \r) .. controls (\x+0.5, 0.3) .. (\x+1-\r, \r);
+       \node[black] at (\x+0.5, 0.4) {\t};
+       }
 """
 , options="scale=2.0", preamble="")
 
-# ╔═╡ 6b01e75a-615f-4717-9ba6-5b1cf5504a1f
-md"Case 2: Forward computing in reverse mode AD without checkpointing"
 
-# ╔═╡ 0529896a-697b-430c-b8ea-9b9352d98387
+# ╔═╡ 2f0263f5-2ace-4d4b-8d71-cee26c03122e
+md"The accumulative version"
+
+# ╔═╡ 03a21468-c2fe-4df7-ae8a-38b28a0efe2f
 TikzPicture(L"""
 \def\r{0.15};
 \def\n{10};
 \foreach \x in {1,...,\n}{
-	\fill[fill=black] (\x, 0) circle [radius=\r];
-	\node[white] at (\x, 0) {$s_{\x}$};
+       \fill[fill=black] (\x, 0) circle [radius=\r];
+       \node[white] at (\x, 0) {$s_{\x}$};
 }
 \fill[fill=white] (\n+0.5, 0) circle [radius=\r];
 \foreach \x/\t in {1/1,2/2,3/3,4/4,5/5,6/6,7/7,8/8,9/9}{
-	\draw [black, thick, ->] (\x+\r, \r) .. controls (\x+0.5, 0.3) .. (\x+1-\r, \r);
-	\node[black] at (\x+0.5, 0.4) {\t};
-	}
+       \draw [black, thick, ->] (\x+\r, \r) .. controls (\x+0.5, 0.3) .. (\x+1-\r, \r);
+       \node[black] at (\x+0.5, 0.4) {\t};
+       }
 """
 , options="scale=2.0", preamble="")
 
-# ╔═╡ 4fcf0fea-2c25-4e61-8aea-0b6c70367afa
-md"backward pass"
 
-# ╔═╡ 2c052962-e7aa-45d1-9623-16975a4a761d
-TikzPicture(L"""
-\def\r{0.15};
-\def\n{10};
-\foreach \x in {1,...,\n}{
-	\fill[fill=black] (\x, 0) circle [radius=\r];
-	\node[white] at (\x, 0) {$s_{\x}$};
-}
-\fill[fill=white] (\n+0.5, 0) circle [radius=\r];
-\foreach[evaluate={\t=int(\n-\x)}] \x in {1,...,9}{
-	\draw [red, thick, <-] (\x+\r, -\r) .. controls (\x+0.5, -0.3) .. (\x+1-\r, -\r);
-	\node[red] at (\x+0.5, -0.4) {\t};
-	}
-"""
-, options="scale=2.0", preamble="")
+# ╔═╡ f326d8e5-7117-4eed-b30d-0f64e5974426
+md"With uncomputing"
 
-# ╔═╡ e39103d6-c453-4297-b7f9-97bd3e4c4ac7
-md"## Checkpointing method"
-
-# ╔═╡ dcec701e-f7fc-4673-a409-907af436fe6c
-md"Case 3: Forward computing in reverse mode AD with checkpointing"
-
-# ╔═╡ 626907b3-78d6-4458-a45f-389a7ed0d84a
+# ╔═╡ b9af3db6-5725-4190-b96c-f3fa41f07c93
 TikzPicture(L"""
 \def\r{0.15};
 \def\n{10};
 \foreach \x in {1,4,7,10}{
-	\fill[fill=black] (\x, 0) circle [radius=\r];
-	\node[white] at (\x, 0) {$s_{\x}$};
+       \fill[fill=black] (\x, 0) circle [radius=\r];
+       \node[white] at (\x, 0) {$s_{\x}$};
 }
 \foreach \x in {2,3,5,6,8,9}{
-	\draw (\x, 0) circle [radius=\r];
-	\node[black] at (\x, 0) {$s_{\x}$};
-}
-\fill[fill=white] (\n+0.5, 0) circle [radius=\r];
-\foreach \x/\t in {1/1,2/2,3/3,4/4,5/5,6/6,7/7,8/8,9/9}{
-	\draw [black, thick, ->] (\x+\r, \r) .. controls (\x+0.5, 0.3) .. (\x+1-\r, \r);
-	\node[black] at (\x+0.5, 0.4) {\t};
-	}
-"""
-, options="scale=2.0", preamble="")
-
-# ╔═╡ 07b65031-ad36-4a74-b30f-d05df3222521
-md"backward pass"
-
-# ╔═╡ 660ee09d-d8a9-4188-bbd7-867b6dc9916f
-TikzPicture(L"""
-\def\r{0.15};
-\def\n{10};
-\foreach \x in {1,4,7,10}{
-	\fill[fill=black] (\x, 0) circle [radius=\r];
-	\node[white] at (\x, 0) {$s_{\x}$};
-}
-\foreach \x in {2,3,5,6,8,9}{
-	\draw (\x, 0) circle [radius=\r];
-	\node[black] at (\x, 0) {$s_{\x}$};
-}
-\fill[fill=white] (\n+0.5, 0) circle [radius=\r];
-
-\foreach \x/\t in {7/1, 8/2}{
-	\draw [black, thick, ->] (\x+\r, \r) .. controls (\x+0.5, 0.3) .. (\x+1-\r, \r);
-	\node[black] at (\x+0.5, 0.4) {\t};
-	}
-\foreach \x/\t in {7/5,8/4,9/3}{
-	\draw [red, thick, <-] (\x+\r, -\r) .. controls (\x+0.5, -0.3) .. (\x+1-\r, -\r);
-	\node[red] at (\x+0.5, -0.4) {\t};
-	}
-"""
-, options="scale=2.0", preamble="")
-
-# ╔═╡ a54d5fc4-643c-47d2-be97-4626a060c9b4
-md"Optimal checkpointing is recursive, Griewank (1992). 
-Julia Implementation: [https://github.com/GiggleLiu/TreeverseAlgorithm.jl](https://github.com/GiggleLiu/TreeverseAlgorithm.jl)"
-
-# ╔═╡ 8b556fbe-275f-4e7b-94a0-7434ce81ad8b
-md"Time complexity is ``O(T\log(T))``"
-
-# ╔═╡ 8e9c55f6-8175-4cb4-8798-91107c4d16ee
-md"Space complexity is ``O(S\log(T))``"
-
-# ╔═╡ 972d889c-c48c-470a-b710-aba9ecaacdaa
-md"nstep = $(@bind treeverse_nstep Slider(2:20000; show_value=true, default=10000))"
-
-# ╔═╡ 54b3a283-7d42-431f-9ecb-48f37198409a
-md"number of checkpoints = $(@bind treeverse_δ Slider(2:100; show_value=true, default=2))"
-
-# ╔═╡ 590f56f7-5654-4493-9103-02a0fce6e945
-let
-	logger = TreeverseLog()
-	treeverse(identity, (x,gy)->0, 0; δ=treeverse_δ, N=treeverse_nstep, logger=logger)
-	logger
-end
-
-# ╔═╡ 7e4f28ec-86a0-430d-ad38-ba04dd4443c3
-md"## Time and space exchange in reversible programming"
-
-# ╔═╡ af611ace-3bf9-45dc-a57f-f5572d4124d1
-md"forward computing"
-
-# ╔═╡ 46d6ddc6-791c-41aa-aa7a-83e6e45a6411
-TikzPicture(L"""
-\def\r{0.15};
-\def\n{10};
-\foreach \x in {1,4,7,10}{
-	\fill[fill=black] (\x, 0) circle [radius=\r];
-	\node[white] at (\x, 0) {$s_{\x}$};
-}
-\foreach \x in {2,3,5,6,8,9}{
-	\draw (\x, 0) circle [radius=\r];
-	\node[black] at (\x, 0) {$s_{\x}$};
+       \draw (\x, 0) circle [radius=\r];
+       \node[black] at (\x, 0) {$s_{\x}$};
 }
 \fill[fill=white] (\n+0.5, 0) circle [radius=\r];
 \foreach \x/\t in {1/1,2/2,3/3,4/6,5/7,6/8,7/11,8/12,9/13}{
-	\draw [black, thick, ->] (\x+\r, \r) .. controls (\x+0.5, 0.3) .. (\x+1-\r, \r);
-	\node[black] at (\x+0.5, 0.4) {\t};
-	}
+       \draw [black, thick, ->] (\x+\r, \r) .. controls (\x+0.5, 0.3) .. (\x+1-\r, \r);
+       \node[black] at (\x+0.5, 0.4) {\t};
+       }
 \foreach \x/\t in {1/5,2/4,4/10,5/9,7/15,8/14}{
-	\draw [black, thick, <-] (\x+\r, -\r) .. controls (\x+0.5, -0.3) .. (\x+1-\r, -\r);
-	\node[black] at (\x+0.5, -0.4) {\t};
+       \draw [black, thick, <-] (\x+\r, -\r) .. controls (\x+0.5, -0.3) .. (\x+1-\r, -\r);
+       \node[black] at (\x+0.5, -0.4) {\t};
 }
 """
 , options="scale=2.0", preamble="")
 
-# ╔═╡ a8e5abfa-baea-480e-a5d7-58259d684a41
-md"backward computing"
+# ╔═╡ 47cf7e85-c49f-4618-9689-e0de789625f6
+md"With uncomputing: the coarser grain"
 
-# ╔═╡ a95abece-f8c1-495e-af35-779b0fd068a0
+# ╔═╡ 2fcf48fd-bedc-41d9-a433-68efd5dd0d20
 TikzPicture(L"""
 \def\r{0.15};
 \def\n{10};
 \foreach \x in {1,4,7,10}{
-	\fill[fill=black] (\x, 0) circle [radius=\r];
-	\node[white] at (\x, 0) {$s_{\x}$};
+       \fill[fill=black] (\x, 0) circle [radius=\r];
+       \node[white] at (\x, 0) {$s_{\x}$};
 }
-\foreach \x in {2,3,5,6,8,9}{
-	\draw (\x, 0) circle [radius=\r];
-	\node[black] at (\x, 0) {$s_{\x}$};
-}
+
 \fill[fill=white] (\n+0.5, 0) circle [radius=\r];
-\foreach[evaluate={\tt=int(16-\t)}] \x/\t in {1/1,2/2,3/3,4/6,5/7,6/8,7/11,8/12,9/13}{
-	\draw [black, thick, <-] (\x+\r, \r) .. controls (\x+0.5, 0.3) .. (\x+1-\r, \r);
-	\node[black] at (\x+0.5, 0.4) {\tt};
-	}
-\foreach[evaluate={\tt=int(16-\t)}] \x/\t in {1/5,2/4,4/10,5/9,7/15,8/14}{
-	\draw [black, thick, ->] (\x+\r, -\r) .. controls (\x+0.5, -0.3) .. (\x+1-\r, -\r);
-	\node[black] at (\x+0.5, -0.4) {\tt};
+\foreach \x in {1,4,7}{
+       \draw [black, thick, ->] (\x+\r, \r) .. controls (\x+1.5, 0.6) .. (\x+3-\r, \r);
+       }
+\foreach \x in {1,4}{
+       \draw [black, thick, <-] (\x+\r, -\r) .. controls (\x+1.5, -0.6) .. (\x+3-\r, -\r);
 }
 """
 , options="scale=2.0", preamble="")
 
 # ╔═╡ 5060f5bb-8430-42aa-b61d-c88249edb323
 md"## Pebble game"
+
+# ╔═╡ 55dd53ed-6420-4426-95ae-feb47bf50f22
+md"The optimal time-space tradeoff corresponds to the optimal solution to the pebble game."
 
 # ╔═╡ c62a9f94-457f-496b-bee0-bb0db02aca5d
 TikzPicture(L"""
@@ -1113,14 +937,37 @@ Time complexity: ``O(T^{1+\epsilon})``
 
 # ╔═╡ 83d0c5fc-9cb7-4e37-bfdb-ed630b94d9b4
 md"
-This tradeoff scheme is probably optimal for a reversible program. (Li 1997)
+The recursive Bennett's time-space tradeoff scheme is probably optimal for a reversible program. (Li 1997)
 "
 
 # ╔═╡ 3d2feca5-43d3-4a46-ba1c-849c5ceeb676
-md"nstep = $(@bind nstep Slider(2:10000; show_value=true, default=100))"
+md"nstep = $(@bind nstep Slider(2:20000; show_value=true, default=10000))"
 
 # ╔═╡ 7ca616d1-caed-40cf-b768-b07af81a654d
-md"k = $(@bind bennett_k Slider(2:100; show_value=true, default=10))"
+md"k = $(@bind bennett_k Slider(2:100; show_value=true, default=2))"
+
+# ╔═╡ a54d5fc4-643c-47d2-be97-4626a060c9b4
+md"Optimal checkpointing is recursive, Griewank (1992). 
+Julia Implementation: [https://github.com/GiggleLiu/TreeverseAlgorithm.jl](https://github.com/GiggleLiu/TreeverseAlgorithm.jl)"
+
+# ╔═╡ 8b556fbe-275f-4e7b-94a0-7434ce81ad8b
+md"Time complexity is ``O(T\log(T))``"
+
+# ╔═╡ 8e9c55f6-8175-4cb4-8798-91107c4d16ee
+md"Space complexity is ``O(S\log(T))``"
+
+# ╔═╡ 972d889c-c48c-470a-b710-aba9ecaacdaa
+md"nstep = $(@bind treeverse_nstep Slider(2:20000; show_value=true, default=10000))"
+
+# ╔═╡ 54b3a283-7d42-431f-9ecb-48f37198409a
+md"number of checkpoints = $(@bind treeverse_δ Slider(2:100; show_value=true, default=2))"
+
+# ╔═╡ 590f56f7-5654-4493-9103-02a0fce6e945
+let
+	logger = TreeverseLog()
+	treeverse(identity, (x,gy)->0, 0; δ=treeverse_δ, N=treeverse_nstep, logger=logger)
+	logger
+end
 
 # ╔═╡ 11964529-8e88-4743-a725-57fc5c525649
 html"""
@@ -1128,7 +975,7 @@ html"""
 """
 
 # ╔═╡ 45448141-214d-4e08-978e-5d1d25f763cd
-md"## A case study: differentiating QR decomposition"
+md"## Case 2: differentiating linear algebra functions"
 
 # ╔═╡ dfe3cc09-6e27-4166-9a4e-2dd22f1e08a2
 md"The definition of QR factorization
@@ -1170,7 +1017,7 @@ let
 end
 
 # ╔═╡ a2e81e79-3f85-4eef-8639-f455f9165a25
-md"Step $(@bind house_step NumberField(0:4))"
+md"Apply reflector, step $(@bind house_step NumberField(0:4))"
 
 # ╔═╡ 0a04c470-8f5a-4b56-b2e2-5b32e3b944f3
 let
@@ -1395,33 +1242,30 @@ end setup=(Random.seed!(3); A = randn(ComplexF64, 200, 200))
 # ╔═╡ 0b3735c2-695c-4225-843e-16ca17aac0eb
 md"""## Take home message
 
-1. Comparing to irreversible computing, reversible computing is more natural, but suffering from polynomial time overhead and logarithmic space overhead.
-2. It is easy to balance time and space in a reversible programming language with Bennett's time-space tradeoff strategy.
-3. Reversible embedded domain specific language NiLang.jl (GiggleLiu and Taine Zhao):
+1. Comparing to irreversible computing, reversible computing is more **energy efficient**.
+2. Reversible programming suffers from **polynomial time overhead and logarithmic space overhead** when differentiating a irreversible linear program. The overhead is much less when writting linear algebra functions.
+3. Reversible embedded domain specific language NiLang.jl:
 $(html"<div align=center><img  src='https://github.com/GiggleLiu/NiLang.jl/raw/master/docs/src/asset/logo3.png' width=300/></div>")
+2. It is easy to balance time and space when differentiating a program in a reversible programming language.
 4. It is not always more reliable to differentiate a program by deriving the backward rule manually.
 
 5. TODOs
-    - port `LoopVectorization` to NiLang
-"""
-
-# ╔═╡ 54d0c0d7-aade-4004-bc7f-5fd09c000ae0
-md"""
-## Thanks
-
-* Taine Zhao
-* Xun Gao
+    - Is it possible to port `LoopVectorization` to NiLang to write blas level reversible program?
+6. **How to find this notebook?** In NiLang's Github repo, file: `notebooks/reversibleprog.jl`
 """
 
 # ╔═╡ d7942b37-f821-494a-8f18-5f267aa3457a
 md"""
-##  References
+###  References
 * Reeb, David, and Michael M. Wolf. "An improved Landauer principle with finite-size corrections." (2014).
 * Athas, William C., and L. J. Svensson. "Reversible logic issues in adiabatic CMOS." Proceedings Workshop on Physics and Computation. (1994).
 * Takeuchi, N., Y. Yamanashi, and N. Yoshikawa. "Reversible logic gate using adiabatic superconducting devices." (2014)
 * Griewank, Andreas. "Achieving logarithmic growth of temporal and spatial complexity in reverse automatic differentiation." Optimization Methods and software 1.1 (1992): 35-54.
 * Ming Li, John Tromp, Paul Vitanyi. "Reversible Simulation of Irreversible Computation by Pebble Games" (1997)
 """
+
+# ╔═╡ 865f049f-54d0-4d21-860e-062262edcb58
+md"# Removed"
 
 # ╔═╡ c3b730a4-d5b4-471e-bd06-30ace6e8b8fe
 let
@@ -1643,17 +1487,6 @@ end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
-[compat]
-BenchmarkTools = "~1.0.0"
-Compose = "~0.9.2"
-ForwardDiff = "~0.10.18"
-NiLang = "~0.9.1"
-PlutoUI = "~0.7.9"
-Revise = "~3.1.17"
-TikzPictures = "~3.3.3"
-TreeverseAlgorithm = "~0.1.0"
-Viznet = "~0.3.3"
-
 [deps]
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 Compose = "a81c6b42-2e10-5240-aca2-a61377ecd94b"
@@ -1667,6 +1500,17 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 TikzPictures = "37f6aa50-8035-52d0-81c2-5a1d08754b2d"
 TreeverseAlgorithm = "e1c63c57-2fea-45bf-a8bf-df3ea6afb545"
 Viznet = "52a3aca4-6234-47fd-b74a-806bdf78ede9"
+
+[compat]
+BenchmarkTools = "~1.0.0"
+Compose = "~0.9.2"
+ForwardDiff = "~0.10.18"
+NiLang = "~0.9.1"
+PlutoUI = "~0.7.9"
+Revise = "~3.1.17"
+TikzPictures = "~3.3.3"
+TreeverseAlgorithm = "~0.1.0"
+Viznet = "~0.3.3"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
@@ -2288,16 +2132,11 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╟─15657e4b-848e-43ad-a99f-37143d11705e
 # ╟─34a6b7f4-7d72-485d-86dc-f4b1ba6174eb
 # ╟─67d1b500-964e-4668-a7d0-ed93886446ca
+# ╟─673992ed-6963-400a-a69b-d65d26c4f443
 # ╟─6078758e-b392-4bdb-a1e7-44b135ce900e
 # ╠═41e06e2a-b482-4e0f-8569-fee2ffd8aaaf
-# ╟─e7a4714f-133b-4e5c-8365-fabf97d1c436
-# ╟─dbf76be8-9583-4fea-8a1f-56a8b47062e7
-# ╟─7fc1220c-e8a2-4dce-9877-7c20d7dc59cf
-# ╟─d7421492-7391-43ed-8e9b-db168c0d9cb9
-# ╟─b316a69b-250a-4624-bd6f-e2006cd1ad6d
-# ╟─697a9369-ea4c-49cf-aea9-0396f77bc4c8
-# ╟─d88f9340-542b-4d58-97c5-99cf327a0bdd
-# ╟─83d4e80e-e26d-4be5-9d1f-7f0974227786
+# ╟─dcf53d46-e259-4101-8530-9621094ee586
+# ╟─6a88d26c-c895-4852-ab4f-37297b848731
 # ╟─f9675365-36aa-430c-b747-3bc4f602e6fb
 # ╟─46eb4ba9-dce6-4711-9c4d-3f16de6240de
 # ╟─046f7559-4af9-4982-b5c3-335add0911d7
@@ -2315,13 +2154,13 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╟─5d51231a-8bf0-4414-9a39-cea264df84f2
 # ╠═3b0fd2b5-5c6d-4d56-9e48-cda1493b4c72
 # ╟─e10e0be8-b26e-4719-92dc-8ca46af0b4b5
+# ╟─b1a9946b-82b4-4954-8bb9-5df035eaefe4
 # ╠═00342a51-36d8-4fdd-aab7-ee02e2122c49
-# ╟─7d35fc4e-6eef-43b1-8941-866b265fe8d8
-# ╟─33e55aa3-5357-44b2-a439-2d9c18f41be1
 # ╠═40c1c48d-0e5a-4a47-b7e4-8f7666281249
 # ╠═59df1f80-9be1-4b26-b263-ca0c7a0b9ab7
 # ╟─8320d326-c1ab-4807-befb-13dda3480bf5
 # ╟─93238608-3b86-49f1-ad60-9360e12cff1c
+# ╟─f657c3fb-e140-4c76-8065-54f1cb6d05eb
 # ╠═629a2549-745c-48a2-9bbc-a8f5fb046d11
 # ╟─640e0029-7931-4afd-bdf9-fed317efbd8e
 # ╟─6930345b-6e93-4b35-8d4f-91ad49141fa1
@@ -2331,15 +2170,15 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╟─4e479f48-42cd-476d-8604-08ecbb503a90
 # ╟─dc41e99a-f598-4bf6-9f76-ecdb04f5f40c
 # ╟─97e0bae1-69ac-4cbf-b9d9-6b38180edd78
+# ╟─355ba831-6be0-456a-8f94-36acd2365f17
 # ╠═003c3e68-600e-4688-832b-5e061572b128
 # ╠═1fb196f9-0f0a-42dc-b094-077cdf18d13d
 # ╠═aa9a679e-63bc-4951-b6f4-65316e212bc8
-# ╟─03d4c43b-b3dd-4294-abb0-822a74000a92
-# ╟─367b6f70-3b24-42db-8b44-0e2a39ab1380
 # ╠═e6fd3c2d-cadd-40d7-a575-b1e68c45ee13
 # ╟─02b7e1b4-4622-4e68-966e-ff79817557d1
 # ╟─364fd613-0ebd-4b45-a3fd-f9baa8c487e3
 # ╟─75d8283a-b331-4648-84a8-489e168e33f9
+# ╟─2207c2fb-4a52-4766-8dd3-03872744aa74
 # ╠═288331c3-2dfb-4941-985f-554be409c0ab
 # ╠═12a30359-d6ff-4113-bab5-b198e908cf1a
 # ╠═23ea88b4-6b89-462a-92da-0e8bdf5c73b5
@@ -2347,7 +2186,6 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╟─2603147b-e7a2-4cae-b88f-2cfebe16bacb
 # ╟─12d49e2e-cc6e-48d6-b11a-e7c311453bfc
 # ╟─10312dc7-e861-4c89-b2fd-672cfe8850bf
-# ╟─14d8ff9b-c9b2-43aa-a3f5-4d85b56a16bd
 # ╟─03f58f2a-24b6-4235-9102-71a19b9679ac
 # ╠═22a5853e-4f9a-4da0-bc03-84a6b0061cfe
 # ╠═1ecdc4d2-b3ca-4f5c-a454-0f0bc51b6ec2
@@ -2377,31 +2215,18 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╟─1d3c7324-6828-47aa-b30e-bcac0e052213
 # ╠═2993fe1f-042b-4c85-85b8-bcc7ed449a54
 # ╟─048d482e-3e5b-496f-95d7-17589a5f6f11
+# ╟─e22bbe66-56f5-40be-b464-1f8651e6a6ac
+# ╟─28767d73-47a8-4f4b-b3dd-146c4ae3e038
 # ╟─ea907d51-d4a9-48ca-90a5-bd91309ccfad
-# ╟─8b564e7d-e321-4d72-8bd2-7b540a317595
-# ╟─bcf29051-7db8-47e7-8809-2dbbf0446596
-# ╟─6b01e75a-615f-4717-9ba6-5b1cf5504a1f
-# ╟─0529896a-697b-430c-b8ea-9b9352d98387
-# ╟─4fcf0fea-2c25-4e61-8aea-0b6c70367afa
-# ╟─2c052962-e7aa-45d1-9623-16975a4a761d
-# ╟─e39103d6-c453-4297-b7f9-97bd3e4c4ac7
-# ╟─dcec701e-f7fc-4673-a409-907af436fe6c
-# ╟─626907b3-78d6-4458-a45f-389a7ed0d84a
-# ╟─07b65031-ad36-4a74-b30f-d05df3222521
-# ╟─660ee09d-d8a9-4188-bbd7-867b6dc9916f
-# ╟─a54d5fc4-643c-47d2-be97-4626a060c9b4
-# ╟─8b556fbe-275f-4e7b-94a0-7434ce81ad8b
-# ╟─8e9c55f6-8175-4cb4-8798-91107c4d16ee
-# ╠═873ef2c2-653e-425e-9732-b1ed19f7a0b7
-# ╟─972d889c-c48c-470a-b710-aba9ecaacdaa
-# ╟─54b3a283-7d42-431f-9ecb-48f37198409a
-# ╠═590f56f7-5654-4493-9103-02a0fce6e945
-# ╟─7e4f28ec-86a0-430d-ad38-ba04dd4443c3
-# ╟─af611ace-3bf9-45dc-a57f-f5572d4124d1
-# ╟─46d6ddc6-791c-41aa-aa7a-83e6e45a6411
-# ╟─a8e5abfa-baea-480e-a5d7-58259d684a41
-# ╟─a95abece-f8c1-495e-af35-779b0fd068a0
+# ╟─3aa99be5-6747-4163-9bb6-ed8cd5ce19f6
+# ╟─2f0263f5-2ace-4d4b-8d71-cee26c03122e
+# ╟─03a21468-c2fe-4df7-ae8a-38b28a0efe2f
+# ╟─f326d8e5-7117-4eed-b30d-0f64e5974426
+# ╟─b9af3db6-5725-4190-b96c-f3fa41f07c93
+# ╟─47cf7e85-c49f-4618-9689-e0de789625f6
+# ╟─2fcf48fd-bedc-41d9-a433-68efd5dd0d20
 # ╟─5060f5bb-8430-42aa-b61d-c88249edb323
+# ╟─55dd53ed-6420-4426-95ae-feb47bf50f22
 # ╟─c62a9f94-457f-496b-bee0-bb0db02aca5d
 # ╟─bccadcb5-6d9f-4a70-b7c4-74e0e3d5f8c8
 # ╟─b308ecb0-070e-4ad8-8009-dc60e75bbe01
@@ -2411,6 +2236,13 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╟─3d2feca5-43d3-4a46-ba1c-849c5ceeb676
 # ╟─7ca616d1-caed-40cf-b768-b07af81a654d
 # ╠═ddc662d7-6901-4885-9d2c-1876a2c9d2ff
+# ╟─a54d5fc4-643c-47d2-be97-4626a060c9b4
+# ╟─8b556fbe-275f-4e7b-94a0-7434ce81ad8b
+# ╟─8e9c55f6-8175-4cb4-8798-91107c4d16ee
+# ╠═873ef2c2-653e-425e-9732-b1ed19f7a0b7
+# ╟─972d889c-c48c-470a-b710-aba9ecaacdaa
+# ╟─54b3a283-7d42-431f-9ecb-48f37198409a
+# ╠═590f56f7-5654-4493-9103-02a0fce6e945
 # ╟─11964529-8e88-4743-a725-57fc5c525649
 # ╟─45448141-214d-4e08-978e-5d1d25f763cd
 # ╟─dfe3cc09-6e27-4166-9a4e-2dd22f1e08a2
@@ -2440,8 +2272,8 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╠═52dec342-d3de-4a88-8acb-0aa186bcc086
 # ╠═280c9363-9b49-44f1-a240-b7f205ffc56b
 # ╟─0b3735c2-695c-4225-843e-16ca17aac0eb
-# ╟─54d0c0d7-aade-4004-bc7f-5fd09c000ae0
 # ╟─d7942b37-f821-494a-8f18-5f267aa3457a
+# ╟─865f049f-54d0-4d21-860e-062262edcb58
 # ╟─c3b730a4-d5b4-471e-bd06-30ace6e8b8fe
 # ╟─98f42f60-7870-4813-b0c1-728285c25f01
 # ╟─c3c63865-f538-4d93-bef3-6b9c69cb177f
