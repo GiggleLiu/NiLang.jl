@@ -168,6 +168,36 @@ end
     ~@routine
 end
 
+for (OP, F) in [(:min, :<), (:max, :>)]
+@eval @i @inline function :(-=)($OP)(out!::GVar{T}, x::GVar, y::GVar) where T
+    if $F(x, y)
+        out!.x -= x.x
+        x.g += out!.g
+    else
+        out!.x -= y.x
+        y.g += out!.g
+    end
+end
+
+@eval @i @inline function :(-=)($OP)(out!::GVar{T}, x::GVar, y::Real) where T
+    if $F(x, y)
+        out!.x -= x.x
+        x.g += out!.g
+    else
+        out!.x -= y.x
+    end
+end
+
+@eval @i @inline function :(-=)($OP)(out!::GVar{T}, x::Real, y::GVar) where T
+    if $F(x, y)
+        out!.x -= x.x
+    else
+        out!.x -= y.x
+        y.g += out!.g
+    end
+end
+end
+
 @i @inline function :(-=)(atan)(out!::GVar{T}, y::GVar, x::GVar) where T
     out!.x -= atan(y.x, x.x)
     @routine @invcheckoff begin
@@ -229,7 +259,7 @@ end
     x.g += out!.g * x.x
 end
 
-for op in [:*, :/, :^, :+, :-, :atan]
+for op in [:*, :/, :^, :+, :-, :atan, :max, :min]
     @eval @nograd :(-=)($op)(out!::GVar, x::Real, y::Real)
     @eval @nograd :(-=)($op)(out!::Real, x::Real, y::GVar)
     @eval @nograd :(-=)($op)(out!::Real, x::GVar, y::GVar)
