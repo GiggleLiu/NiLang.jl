@@ -77,12 +77,14 @@ end
 end
 
 @i function bennett!(step, state::Dict{Int,T}, k::Int, base, len, args...; logger, do_uncomputing, kwargs...) where T
-    @safe logger.depth[] += 1
+    @safe logger !== nothing && (logger.depth[] += 1)
     @invcheckoff if len == 1
         state[base+1] ← _zero(state[base])
-        @safe logger.peak_mem[] = max(logger.peak_mem[], length(state))
+        @safe logger !== nothing && (logger.peak_mem[] = max(logger.peak_mem[], length(state)))
         getf(step, base)(state[base+1], state[base], args...; kwargs...)
-        logfcall(logger, (@const base+1), (@const getf(step, base)))
+        if logger !== nothing
+            logfcall(logger, (@const base+1), (@const getf(step, base)))
+        end
     else
         @routine begin
             @zeros Int nstep n
