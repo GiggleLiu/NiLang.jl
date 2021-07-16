@@ -22,14 +22,13 @@ end
 
 x = randn(20)
 pyramid!(0.0, zeros(20, 20), x)</code></pre><pre class="documenter-example-output">(-0.010618394532601997, [1.4671719570894426 -1.626180975105141 … 0.3419857363105622 0.7882672874753519; -0.055059395030910285 -0.8624971874861554 … 0.23645292362962064 0.0; … ; -0.010860754711728664 -0.211562528274379 … 0.0 0.0; -0.010618394532601997 0.0 … 0.0 0.0], [1.4671719570894426, -1.626180975105141, -0.5279894662751727, -0.3812823788068205, 0.49554599563100077, 0.48419132115656277, 0.3025952188334156, 0.4883428892232996, 0.042401012769215075, -0.2724942711720755, -0.5487958439613173, 0.19604051833826122, -1.1603345154729623, -0.30856147489145336, -0.6548141575048698, -0.888342627534566, 1.1929802901682263, 0.39883016197266746, 0.3419857363105622, 0.7882672874753519])</pre><p>Let&#39; compare our implementation with those in the book <img src="pyramid-benchmark.png" alt/></p><pre><code class="language-julia">using BenchmarkTools
-@benchmark gradient(Val(1), pyramid!, (0.0, zeros(20, 20), $x))</code></pre><pre class="documenter-example-output">BenchmarkTools.Trial: 
-  memory estimate:  13.72 KiB
-  allocs estimate:  11
-  --------------
-  minimum time:     17.800 μs (0.00% GC)
-  median time:      19.700 μs (0.00% GC)
-  mean time:        24.040 μs (4.82% GC)
-  maximum time:     6.192 ms (99.62% GC)
-  --------------
-  samples:          10000
-  evals/sample:     1</pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../fib/">« Computing Fibonacci Numbers</a><a class="docs-footer-nextpage" href="../besselj/">Bessel function »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Monday 28 June 2021 00:33">Monday 28 June 2021</span>. Using Julia version 1.6.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+@benchmark gradient(Val(1), pyramid!, (0.0, zeros(20, 20), $x))</code></pre><pre class="documenter-example-output">BechmarkTools.Trial: 10000 samples with 1 evaluations.
+ Range (min … max):  21.400 μs …  5.368 ms  ┊ GC (min … max): 0.00% … 97.84%
+ Time  (median):     22.201 μs              ┊ GC (median):    0.00%
+ Time  (mean ± σ):   24.300 μs ± 75.700 μs  ┊ GC (mean ± σ):  4.30% ±  1.38%
+
+  ▂▆▇█▆▂▁▂▄▃▁▂▁▁▂▁▁                                           ▂
+  █████████████████▇▆▇▄▅▂▄▄▄▄▄▄▅▃▄▅▃▃▄▅▄▄▄▃▂▄▃▅▅▆▇▅▆▅▅▄▅▅▄▄▆▆ █
+  21.4 μs      Histogram: log(frequency) by time      36.8 μs &lt;
+
+ Memory estimate: 13.72 KiB, allocs estimate: 11.</pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../fib/">« Computing Fibonacci Numbers</a><a class="docs-footer-nextpage" href="../besselj/">Bessel function »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.3 on <span class="colophon-date" title="Friday 16 July 2021 05:22">Friday 16 July 2021</span>. Using Julia version 1.6.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
