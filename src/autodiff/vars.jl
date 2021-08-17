@@ -3,8 +3,41 @@
     GVar{T,GT} <: IWrapper{T}
     GVar(x)
 
-Attach a gradient field to `x`.
-The gradient type `GT` can be a `GVar` for storing second order gradients, the `AutoBcast` type for broadcasting or the same type of `x`.
+Add gradient information to variable `x`, where `x` can be a real number or a general structure.
+If it is a non-integer real number, it will wrap the element with a gradient field,
+otherwise it will propagate into the type and wrap the elements with `GVar`.
+Runing a program backward will update the gradient fields of `GVar`s. The following is a toy using case.
+
+### Example
+
+```jldoctest; setup=:(using NiLang)
+julia> using NiLang.AD: GVar, grad
+
+julia> struct A{T}
+           x::T
+       end
+
+julia> GVar(A(2.0+3im), A(3.0+3im))
+A{Complex{GVar{Float64, Float64}}}(GVar(2.0, 3.0) + GVar(3.0, 3.0)*im)
+
+julia> @i function f(a::A, b::A)
+           a.x += log(b.x)
+       end
+
+julia> outputs = f(A(2.0+3im), A(2.0-1im))  # forward pass
+(A{ComplexF64}(2.8047189562170503 + 2.536352390999194im), A{ComplexF64}(2.0 - 1.0im))
+
+julia> outputs_with_gradients = (GVar(outputs[1], A(3.0+3im)), GVar(outputs[2]))  # wrap `GVar`
+(A{Complex{GVar{Float64, Float64}}}(GVar(2.8047189562170503, 3.0) + GVar(2.536352390999194, 3.0)*im), A{Complex{GVar{Float64, Float64}}}(GVar(2.0, 0.0) - GVar(1.0, -0.0)*im))
+
+julia> inputs_with_gradients = (~f)(outputs_with_gradients...)  # backward pass
+(A{Complex{GVar{Float64, Float64}}}(GVar(2.0, 3.0) + GVar(3.0, 3.0)*im), A{Complex{GVar{Float64, Float64}}}(GVar(2.0, 1.8) - GVar(1.0, -0.6000000000000002)*im))
+
+julia> grad(inputs_with_gradients)
+(A{ComplexF64}(3.0 + 3.0im), A{ComplexF64}(1.8 + 0.6000000000000002im))
+```
+
+The outputs of `~f` are gradients for input variables, one can use `grad` to take the gradient fields recursively.
 """
 struct GVar{T,GT} <: IWrapper{T}
     x::T
