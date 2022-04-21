@@ -49,23 +49,23 @@ end</code></pre><p>Here, the key point is using a \texttt{branch_keeper} vector 
 a = sprand(1000, 1000, 0.01);
 b = sprand(1000, 1000, 0.01);
 @benchmark SparseArrays.dot($a, $b)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">BenchmarkTools.Trial: 10000 samples with 1 evaluation.
- Range (min … max):  81.300 μs … 144.000 μs  ┊ GC (min … max): 0.00% … 0.00%
- Time  (median):     83.100 μs               ┊ GC (median):    0.00%
- Time  (mean ± σ):   83.228 μs ±   1.391 μs  ┊ GC (mean ± σ):  0.00% ± 0.00%
+ Range (min … max):  65.299 μs …  4.070 ms  ┊ GC (min … max): 0.00% … 0.00%
+ Time  (median):     82.100 μs              ┊ GC (median):    0.00%
+ Time  (mean ± σ):   90.430 μs ± 55.310 μs  ┊ GC (mean ± σ):  0.00% ± 0.00%
 
-           ▃ █▁▁▆                                               
-  ▂▂▂▂▃▃▃▇▆██████▆█▄▃▄▂▂▂▂▂▂▂▂▂▂▂▂▂▁▂▂▁▁▁▁▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂ ▃
-  81.3 μs         Histogram: frequency by time         89.8 μs &lt;
+     ▄▆▄▃█▆ ▁  ▁                                               
+  ▂▄███████▅█▅▄█▄▄▄▄▃▃▃▃▃▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁ ▃
+  65.3 μs         Histogram: frequency by time         181 μs &lt;
 
  Memory estimate: 0 bytes, allocs estimate: 0.</code></pre><p>To compute the gradients, we wrap each matrix element with <code>GVar</code>, and send them to the reversible backward pass</p><pre><code class="language-julia hljs">out! = SparseArrays.dot(a, b)
 @benchmark (~idot)($(GVar(out!, 1.0)),
         $(GVar.(a)), $(GVar.(b)))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">BenchmarkTools.Trial: 10000 samples with 1 evaluation.
- Range (min … max):  146.400 μs …  9.451 ms  ┊ GC (min … max): 0.00% … 89.78%
- Time  (median):     147.900 μs              ┊ GC (median):    0.00%
- Time  (mean ± σ):   149.396 μs ± 93.154 μs  ┊ GC (mean ± σ):  0.57% ±  0.90%
+ Range (min … max):  140.398 μs …   8.244 ms  ┊ GC (min … max): 0.00% … 0.00%
+ Time  (median):     166.598 μs               ┊ GC (median):    0.00%
+ Time  (mean ± σ):   177.512 μs ± 131.219 μs  ┊ GC (mean ± σ):  0.00% ± 0.00%
 
-     ▃▆▇█▆▅▄▂▁                                                  
-  ▁▂▆█████████▇▅▅▄▃▃▂▂▁▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁ ▂
-  146 μs          Histogram: frequency by time          158 μs &lt;
+     ▁ █ ▁  ▂                                                    
+  ▂▃▃█▃█▃█▄▄█▄▄▄▃▄▃▂▂▃▂▂▂▂▂▂▂▂▁▂▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁ ▂
+  140 μs           Histogram: frequency by time          304 μs &lt;
 
- Memory estimate: 8.67 KiB, allocs estimate: 5.</code></pre><p>The time used for computing backward pass is approximately 1.6 times Julia&#39;s native forward pass. Here, we have turned off the reversibility check off to achieve better performance. By writing sparse matrix multiplication and other sparse matrix operations reversibly, we will have a differentiable sparse matrix library with proper performance.</p><p>See my another blog post for <a href="https://nextjournal.com/giggle/how-to-write-a-program-differentiably">reversible sparse matrix multiplication</a>.</p><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../besselj/">« Bessel function</a><a class="docs-footer-nextpage" href="../lognumber/">Logarithmic number system »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.16 on <span class="colophon-date" title="Thursday 21 April 2022 21:19">Thursday 21 April 2022</span>. Using Julia version 1.7.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+ Memory estimate: 8.67 KiB, allocs estimate: 5.</code></pre><p>The time used for computing backward pass is approximately 1.6 times Julia&#39;s native forward pass. Here, we have turned off the reversibility check off to achieve better performance. By writing sparse matrix multiplication and other sparse matrix operations reversibly, we will have a differentiable sparse matrix library with proper performance.</p><p>See my another blog post for <a href="https://nextjournal.com/giggle/how-to-write-a-program-differentiably">reversible sparse matrix multiplication</a>.</p><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../besselj/">« Bessel function</a><a class="docs-footer-nextpage" href="../lognumber/">Logarithmic number system »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.16 on <span class="colophon-date" title="Thursday 21 April 2022 21:21">Thursday 21 April 2022</span>. Using Julia version 1.7.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
