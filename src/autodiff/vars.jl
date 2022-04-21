@@ -58,7 +58,12 @@ end
 
 # `GVar` and `~GVar` on composite types
 @generated function GVar(x::Type{T}) where T
-    :($(getfield(T.name.module, nameof(T))){$(GVar.(T.parameters)...)})
+    ps = GVar.(T.parameters)
+    if length(ps) == 0
+        :($(getfield(T.name.module, nameof(T))))
+    else
+        :($(getfield(T.name.module, nameof(T))){$(ps...)})
+    end
 end
 @generated function GVar(x::Type{T}, y::Type{T}) where T
     :($(getfield(T.name.module, nameof(T))){$(GVar.(T.parameters, T.parameters)...)})
@@ -146,7 +151,12 @@ typegrad(x) = x
     if isprimitivetype(T)
         T
     else
-        :($(getfield(T.name.module, nameof(T))){$(typegrad.(T.parameters)...)})
+        ps = typegrad.(T.parameters)
+        if length(ps) == 0
+            :($(getfield(T.name.module, nameof(T))))
+        else
+            :($(getfield(T.name.module, nameof(T))){$(ps...)})
+        end
     end
 end
 typegrad(::Type{GVar{ET,GT}}) where {ET,GT} = ET
