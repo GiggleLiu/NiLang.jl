@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Box-Muller method to Generate normal distribution · NiLang.jl</title><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.044/juliamono.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.11/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">NiLang.jl</a></span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../why/">What and Why</a></li><li><span class="tocitem">Tutorial</span><ul><li><a class="tocitem" href="../../tutorial/">My first NiLang program</a></li><li><a class="tocitem" href="../port_zygote/">How to port NiLang to Zygote</a></li><li><a class="tocitem" href="../port_chainrules/">How to port NiLang to ChainRules</a></li></ul></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../fib/">Computing Fibonacci Numbers</a></li><li><a class="tocitem" href="../pyramid/">Pyramid example</a></li><li><a class="tocitem" href="../besselj/">Bessel function</a></li><li><a class="tocitem" href="../sparse/">Sparse matrices</a></li><li><a class="tocitem" href="../lognumber/">Logarithmic number system</a></li><li><a class="tocitem" href="../unitary/">Unitary matrix operations without allocation</a></li><li><a class="tocitem" href="../nice/">NICE network</a></li><li><a class="tocitem" href="../realnvp/">RealNVP network</a></li><li><a class="tocitem" href="../qr/">A simple QR decomposition</a></li><li class="is-active"><a class="tocitem" href>Box-Muller method to Generate normal distribution</a><ul class="internal"><li><a class="tocitem" href="#Check-the-probability-distribution-function"><span>Check the probability distribution function</span></a></li><li><a class="tocitem" href="#To-obtaining-Jacobian-a-simpler-approach"><span>To obtaining Jacobian - a simpler approach</span></a></li></ul></li></ul></li><li><span class="tocitem">API &amp; Manual</span><ul><li><a class="tocitem" href="../../instructions/">Instruction Reference</a></li><li><a class="tocitem" href="../../extend/">How to extend</a></li><li><a class="tocitem" href="../sharedwrite/">The shared write problem on GPU</a></li><li><a class="tocitem" href="../../api/">API Manual</a></li><li><a class="tocitem" href="../../faq/">-</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Box-Muller method to Generate normal distribution</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Box-Muller method to Generate normal distribution</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/GiggleLiu/NiLang.jl/blob/master/examples/boxmuller.jl" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Box-Muller-method-to-Generate-normal-distribution"><a class="docs-heading-anchor" href="#Box-Muller-method-to-Generate-normal-distribution">Box-Muller method to Generate normal distribution</a><a id="Box-Muller-method-to-Generate-normal-distribution-1"></a><a class="docs-heading-anchor-permalink" href="#Box-Muller-method-to-Generate-normal-distribution" title="Permalink"></a></h1><pre><code class="language-julia hljs">using NiLang</code></pre><p>In this tutorial, we introduce using Box-Muller method to transform a uniform distribution to a normal distribution. The transformation and inverse transformation of <code>Box-Muller</code> method could be found in <a href="https://mathworld.wolfram.com/Box-MullerTransformation.html">this blog</a></p><pre><code class="language-julia hljs">@i function boxmuller(x::T, y::T) where T
+    @routine @invcheckoff begin
+        @zeros T θ logx _2logx
+        θ += 2π * y
+        logx += log(x)
+        _2logx += -2 * logx
+    end
+
+    # store results
+    z1 ← zero(T)
+    z2 ← zero(T)
+    z1 += _2logx ^ 0.5
+    ROT(z1, z2, θ)
+    ~@routine
+
+    SWAP(x, z1)
+    SWAP(y, z2)
+
+    # arithmetic uncomputing: recomputing the original values of `x` and `y` to deallocate z1 and z2
+    @routine @invcheckoff begin
+        @zeros T at sq _halfsq
+        at += atan(y, x)
+        if (y &lt; 0, ~)
+            at += T(2π)
+        end
+        sq += x ^ 2
+        sq += y ^ 2
+        _halfsq -= sq / 2
+    end
+    z1 -= exp(_halfsq)
+    z2 -= at / (2π)
+    @invcheckoff z1 → zero(T)
+    @invcheckoff z2 → zero(T)
+    ~@routine
+end</code></pre><p>One may wonder why this implementation is so long, should&#39;t NiLang generate the inverse for user? The fact is, although Box-Muller is arithmetically reversible. It is not finite precision reversible. Hence we need to &quot;uncompute&quot; it manually, this trick may introduce reversibility error.</p><pre><code class="language- hljs">using Plots
+N = 5000
+x = rand(2*N)
+
+Plots.histogram(x, bins = -3:0.1:3, label=&quot;uniform&quot;,
+    legendfontsize=16, xtickfontsize=16, ytickfontsize=16)</code></pre><p>forward</p><pre><code class="language- hljs">@instr boxmuller.(x[1:N], x[N+1:end])
+Plots.histogram(x, bins = -3:0.1:3, label=&quot;normal&quot;,
+    legendfontsize=16, xtickfontsize=16, ytickfontsize=16)</code></pre><p>backward</p><pre><code class="language- hljs">@instr (~boxmuller).(x[1:N], x[N+1:end])
+Plots.histogram(x, bins = -3:0.1:3, label=&quot;uniform&quot;,
+    legendfontsize=16, xtickfontsize=16, ytickfontsize=16)</code></pre><h2 id="Check-the-probability-distribution-function"><a class="docs-heading-anchor" href="#Check-the-probability-distribution-function">Check the probability distribution function</a><a id="Check-the-probability-distribution-function-1"></a><a class="docs-heading-anchor-permalink" href="#Check-the-probability-distribution-function" title="Permalink"></a></h2><pre><code class="language-julia hljs">using LinearAlgebra, Test
+
+normalpdf(x) = sqrt(1/2π)*exp(-x^2/2)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">normalpdf (generic function with 1 method)</code></pre><p>obtain <code>log(abs(det(jacobians)))</code></p><pre><code class="language-julia hljs">@i function f(x::Vector)
+    boxmuller(x[1], x[2])
+end
+jac = NiLang.AD.jacobian(f, [0.5, 0.5], iin=1)
+ladj = log(abs(det(jac)))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">2.5310242469692907</code></pre><p>check if it matches the <code>log(p/q)</code>.</p><pre><code class="language-julia hljs">z1, z2 = boxmuller(0.5, 0.5)
+@test ladj ≈ log(1.0 / (normalpdf(z1) * normalpdf(z2)))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Test Passed
+  Expression: ladj ≈ log(1.0 / (normalpdf(z1) * normalpdf(z2)))
+   Evaluated: 2.5310242469692907 ≈ 2.5310242469692907</code></pre><h2 id="To-obtaining-Jacobian-a-simpler-approach"><a class="docs-heading-anchor" href="#To-obtaining-Jacobian-a-simpler-approach">To obtaining Jacobian - a simpler approach</a><a id="To-obtaining-Jacobian-a-simpler-approach-1"></a><a class="docs-heading-anchor-permalink" href="#To-obtaining-Jacobian-a-simpler-approach" title="Permalink"></a></h2><p>We can define a function that exactly reversible from the instruction level, but costs more space for storing output.</p><pre><code class="language-julia hljs">@i function boxmuller2(x1::T, x2::T, z1::T, z2::T) where T
+    @routine @invcheckoff begin
+        @zeros T θ logx _2logx
+
+        θ += 2π * x2
+        logx += log(x1)
+        _2logx += -2 * logx
+    end
+
+    # store results
+    z1 += _2logx ^ 0.5
+    ROT(z1, z2, θ)
+    ~@routine
+end</code></pre><p>However, this is not a bijector from that maps <code>x</code> to <code>z</code>, because computing the backward just erases the content in <code>z</code>. However, this function can be used to obtain <code>log(abs(det(jacobians)))</code></p><pre><code class="language-julia hljs">@i function f2(x::Vector, z::Vector)
+    boxmuller2(x[1], x[2], z[1], z[2])
+end
+jac = NiLang.AD.jacobian(f2, [0.5, 0.5], [0.0, 0.0], iin=1, iout=2)
+ladj = log(abs(det(jac)))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">2.5310242469692907</code></pre><p>check if it matches the <code>log(p/q)</code>.</p><pre><code class="language-julia hljs">_, _, z1, z2 = boxmuller2(0.5, 0.5, 0.0, 0.0)
+@test ladj ≈ log(1.0 / (normalpdf(z1) * normalpdf(z2)))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Test Passed
+  Expression: ladj ≈ log(1.0 / (normalpdf(z1) * normalpdf(z2)))
+   Evaluated: 2.5310242469692907 ≈ 2.5310242469692907</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../qr/">« A simple QR decomposition</a><a class="docs-footer-nextpage" href="../../instructions/">Instruction Reference »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.16 on <span class="colophon-date" title="Thursday 21 April 2022 21:34">Thursday 21 April 2022</span>. Using Julia version 1.7.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
