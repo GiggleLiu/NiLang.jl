@@ -1,7 +1,7 @@
 name = "NiLang"
 uuid = "ab4ef3a6-0b42-11ea-31f6-e34652774712"
 authors = ["JinGuo Liu", "thautwarm"]
-version = "0.9.2"
+version = "0.9.3"
 
 [deps]
 FixedPointNumbers = "53c48c17-4a7d-5ca2-90c5-79b7896eea93"
