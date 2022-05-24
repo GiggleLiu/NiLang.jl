@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>NICE network · NiLang.jl</title><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.044/juliamono.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.11/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">NiLang.jl</a></span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../why/">What and Why</a></li><li><span class="tocitem">Tutorial</span><ul><li><a class="tocitem" href="../../tutorial/">My first NiLang program</a></li><li><a class="tocitem" href="../port_zygote/">How to port NiLang to Zygote</a></li><li><a class="tocitem" href="../port_chainrules/">How to port NiLang to ChainRules</a></li></ul></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../fib/">Computing Fibonacci Numbers</a></li><li><a class="tocitem" href="../pyramid/">Pyramid example</a></li><li><a class="tocitem" href="../besselj/">Bessel function</a></li><li><a class="tocitem" href="../sparse/">Sparse matrices</a></li><li><a class="tocitem" href="../lognumber/">Logarithmic number system</a></li><li><a class="tocitem" href="../unitary/">Unitary matrix operations without allocation</a></li><li class="is-active"><a class="tocitem" href>NICE network</a><ul class="internal"><li><a class="tocitem" href="#Model-definition"><span>Model definition</span></a></li><li><a class="tocitem" href="#Parameter-management"><span>Parameter management</span></a></li><li><a class="tocitem" href="#Loss-function"><span>Loss function</span></a></li><li><a class="tocitem" href="#Training"><span>Training</span></a></li></ul></li><li><a class="tocitem" href="../realnvp/">RealNVP network</a></li><li><a class="tocitem" href="../qr/">A simple QR decomposition</a></li><li><a class="tocitem" href="../boxmuller/">Box-Muller method to Generate normal distribution</a></li></ul></li><li><span class="tocitem">API &amp; Manual</span><ul><li><a class="tocitem" href="../../instructions/">Instruction Reference</a></li><li><a class="tocitem" href="../../extend/">How to extend</a></li><li><a class="tocitem" href="../sharedwrite/">The shared write problem on GPU</a></li><li><a class="tocitem" href="../../api/">API Manual</a></li><li><a class="tocitem" href="../../faq/">-</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>NICE network</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>NICE network</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/GiggleLiu/NiLang.jl/blob/master/examples/nice.jl" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="NICE-network"><a class="docs-heading-anchor" href="#NICE-network">NICE network</a><a id="NICE-network-1"></a><a class="docs-heading-anchor-permalink" href="#NICE-network" title="Permalink"></a></h1><p>For the definition of this network and concepts of normalizing flow, please refer this nice blog: https://lilianweng.github.io/lil-log/2018/10/13/flow-based-deep-generative-models.html, and the pytorch notebook: https://github.com/GiggleLiu/marburg/blob/master/notebooks/nice.ipynb</p><pre><code class="language- hljs">using NiLang, NiLang.AD
+using LinearAlgebra
+using DelimitedFiles
+using Plots</code></pre><p><code>include</code> the optimizer, you can find it under the <code>Adam.jl</code> file in the <code>examples/</code> folder.</p><pre><code class="language-julia hljs">include(NiLang.project_relative_path(&quot;examples&quot;, &quot;Adam.jl&quot;))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">gclip! (generic function with 1 method)</code></pre><h2 id="Model-definition"><a class="docs-heading-anchor" href="#Model-definition">Model definition</a><a id="Model-definition-1"></a><a class="docs-heading-anchor-permalink" href="#Model-definition" title="Permalink"></a></h2><p>First, define the single layer transformation and its behavior under <code>GVar</code> - the gradient wrapper.</p><pre><code class="language-julia hljs">struct NiceLayer{T}
+    W1::Matrix{T}
+    b1::Vector{T}
+    W2::Matrix{T}
+    b2::Vector{T}
+    y1::Vector{T}
+    y1a::Vector{T}
+end
+
+&quot;&quot;&quot;Apply a single NICE transformation.&quot;&quot;&quot;
+@i function nice_layer!(x::AbstractVector{T}, layer::NiceLayer{T},
+                y!::AbstractVector{T}) where T
+    @routine @invcheckoff begin
+        i_affine!(layer.y1, layer.W1, layer.b1, x)
+        @inbounds for i=1:length(layer.y1)
+            if (layer.y1[i] &gt; 0, ~)
+                layer.y1a[i] += layer.y1[i]
+            end
+        end
+    end
+    i_affine!(y!, layer.W2, layer.b2, layer.y1a)
+    ~@routine
+    # clean up accumulated rounding error, since this memory is reused.
+    @safe layer.y1 .= zero(T)
+end</code></pre><p>Here, in each layer, we use the information in <code>x</code> to update <code>y!</code>. During computing, we use the <code>y1</code> and <code>y1a</code> fields of the network as ancilla space, both of them can be uncomputed at the end of the function. However, we need to erase small numbers to make sure the rounding error does not accumulate.</p><p>A nice network always transforms inputs reversibly. We update one half of <code>x!</code> a time, so that input and output memory space do not clash.</p><pre><code class="language-julia hljs">const NiceNetwork{T} = Vector{NiceLayer{T}}
+
+&quot;&quot;&quot;Apply a the whole NICE network.&quot;&quot;&quot;
+@i function nice_network!(x!::AbstractVector{T}, network::NiceNetwork{T}) where T
+    @invcheckoff for i=1:length(network)
+        np ← length(x!)
+        if (i%2==0, ~)
+            @inbounds nice_layer!(x! |&gt; subarray(np÷2+1:np), network[i], x! |&gt; subarray(1:np÷2))
+        else
+            @inbounds nice_layer!(x! |&gt; subarray(1:np÷2), network[i], x! |&gt; subarray(np÷2+1:np))
+        end
+        np → length(x!)
+    end
+end
+
+function random_nice_network(nparams::Int, nhidden::Int, nlayer::Int; scale=0.1)
+    random_nice_network(Float64, nparams, nhidden, nlayer; scale=scale)
+end
+
+function random_nice_network(::Type{T}, nparams::Int, nhidden::Int, nlayer::Int; scale=0.1) where T
+    nin = nparams÷2
+    scale = T(scale)
+    y1 = zeros(T, nhidden)
+    NiceLayer{T}[NiceLayer(randn(T, nhidden, nin)*scale, randn(T, nhidden)*scale,
+            randn(T, nin, nhidden)*scale, randn(T, nin)*scale, y1, zero(y1)) for _ = 1:nlayer]
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">random_nice_network (generic function with 2 methods)</code></pre><h2 id="Parameter-management"><a class="docs-heading-anchor" href="#Parameter-management">Parameter management</a><a id="Parameter-management-1"></a><a class="docs-heading-anchor-permalink" href="#Parameter-management" title="Permalink"></a></h2><pre><code class="language-julia hljs">nparameters(n::NiceLayer) = length(n.W1) + length(n.b1) + length(n.W2) + length(n.b2)
+nparameters(n::NiceNetwork) = sum(nparameters, n)
+
+&quot;&quot;&quot;collect parameters in the `layer` into a vector `out`.&quot;&quot;&quot;
+function collect_params!(out, layer::NiceLayer)
+    a, b, c, d = length(layer.W1), length(layer.b1), length(layer.W2), length(layer.b2)
+    out[1:a] .= vec(layer.W1)
+    out[a+1:a+b] .= layer.b1
+    out[a+b+1:a+b+c] .= vec(layer.W2)
+    out[a+b+c+1:end] .= layer.b2
+    return out
+end
+
+&quot;&quot;&quot;dispatch vectorized parameters `out` into the `layer`.&quot;&quot;&quot;
+function dispatch_params!(layer::NiceLayer, out)
+    a, b, c, d = length(layer.W1), length(layer.b1), length(layer.W2), length(layer.b2)
+    vec(layer.W1) .= out[1:a]
+    layer.b1 .= out[a+1:a+b]
+    vec(layer.W2) .= out[a+b+1:a+b+c]
+    layer.b2 .= out[a+b+c+1:end]
+    return layer
+end
+
+function collect_params(n::NiceNetwork{T}) where T
+    out = zeros(T, nparameters(n))
+    k = 0
+    for layer in n
+        np = nparameters(layer)
+        collect_params!(view(out, k+1:k+np), layer)
+        k += np
+    end
+    return out
+end
+
+function dispatch_params!(network::NiceNetwork, out)
+    k = 0
+    for layer in network
+        np = nparameters(layer)
+        dispatch_params!(layer, view(out, k+1:k+np))
+        k += np
+    end
+    return network
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">dispatch_params! (generic function with 2 methods)</code></pre><h2 id="Loss-function"><a class="docs-heading-anchor" href="#Loss-function">Loss function</a><a id="Loss-function-1"></a><a class="docs-heading-anchor-permalink" href="#Loss-function" title="Permalink"></a></h2><p>To obtain the log-probability of a data.</p><pre><code class="language-julia hljs">@i function logp!(out!::T, x!::AbstractVector{T}, network::NiceNetwork{T}) where T
+    (~nice_network!)(x!, network)
+    @invcheckoff for i = 1:length(x!)
+        @routine begin
+            xsq ← zero(T)
+            @inbounds xsq += x![i]^2
+        end
+        out! -= 0.5 * xsq
+        ~@routine
+    end
+end</code></pre><p>The negative-log-likelihood loss function</p><pre><code class="language-julia hljs">@i function nice_nll!(out!::T, cum!::T, xs!::Matrix{T}, network::NiceNetwork{T}) where T
+    @invcheckoff for i=1:size(xs!, 2)
+        @inbounds logp!(cum!, xs! |&gt; subarray(:,i), network)
+    end
+    out! -= cum!/(@const size(xs!, 2))
+end</code></pre><h2 id="Training"><a class="docs-heading-anchor" href="#Training">Training</a><a id="Training-1"></a><a class="docs-heading-anchor-permalink" href="#Training" title="Permalink"></a></h2><pre><code class="language-julia hljs">function train(x_data, model; num_epochs = 800)
+    num_vars = size(x_data, 1)
+    params = collect_params(model)
+    optimizer = Adam(; lr=0.01)
+    for epoch = 1:num_epochs
+        loss, a, b, c = nice_nll!(0.0, 0.0, copy(x_data), model)
+        if epoch % 50 == 1
+            println(&quot;epoch = $epoch, loss = $loss&quot;)
+            display(showmodel(x_data, model))
+        end
+        _, _, _, gmodel = (~nice_nll!)(GVar(loss, 1.0), GVar(a), GVar(b), GVar(c))
+        g = grad.(collect_params(gmodel))
+        update!(params, grad.(collect_params(gmodel)), optimizer)
+        dispatch_params!(model, params)
+    end
+    return model
+end
+
+function showmodel(x_data, model; nsamples=2000)
+    scatter(x_data[1,1:nsamples], x_data[2,1:nsamples]; xlims=(-5,5), ylims=(-5,5))
+    zs = randn(2, nsamples)
+    for i=1:nsamples
+        nice_network!(view(zs, :, i), model)
+    end
+    scatter!(zs[1,:], zs[2,:])
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">showmodel (generic function with 1 method)</code></pre><p>you can find the training data in <code>examples/</code> folder</p><pre><code class="language-julia hljs">x_data = Matrix(readdlm(NiLang.project_relative_path(&quot;examples&quot;, &quot;train.dat&quot;))&#39;)
+
+import Random; Random.seed!(22)
+model = random_nice_network(Float64, size(x_data, 1), 10, 4; scale=0.1)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">4-element Vector{Main.NiceLayer{Float64}}:
+ Main.NiceLayer{Float64}([0.10365283655905022; 0.12832890997547838; … ; 0.10237515285351262; 0.04561278390444176;;], [0.011932671083999709, -0.019461834760040552, 0.09841074615805545, -0.049932719417439035, 0.046770637156686626, 0.094738950442398, -0.07072722954885365, -0.14442322991493425, -0.04050736246766045, 0.0161302098597473], [-0.09076531278487276 -0.08893617376065133 … 0.17688969929809442 0.03332683434777908], [-0.05466360224358683], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+ Main.NiceLayer{Float64}([0.04778285245528021; 0.002073152425026603; … ; 0.08114267515467105; 0.03446269262358759;;], [0.015323637584496678, -0.030552214751628316, 0.013764716144273565, 0.3100695796150575, -0.261192567636749, 0.2497349959460083, 0.028594287515553797, 0.027736168629672472, 0.09212377303866616, -0.023160843492401398], [-0.07950664144707173 0.06607646105462771 … -0.06372020403545663 -0.01468114678613847], [-0.05369268305611946], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+ Main.NiceLayer{Float64}([-0.01994222941233885; -0.12354790135192664; … ; 0.0914829134828038; 0.05468284490890261;;], [0.099984884595698, 0.035003360565331286, -0.01215996827091547, -0.012953387260835123, 0.07587204372806554, -0.023394565668740614, -0.0102036220459518, 0.06005046391996989, -0.14314572987011717, 0.13861740098537687], [0.10258920416705185 -0.009778532190417643 … 0.0669491035775922 -0.17052131152319536], [0.03905158369614853], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+ Main.NiceLayer{Float64}([-0.08079652822924399; -0.012018109547847596; … ; -0.0030313328377010503; -0.1035614822693211;;], [0.001980495005703741, -0.21924945243644256, 0.03722989450292816, -0.28291833693177126, 0.135309838967398, -0.021263453632266387, -0.11186250420913675, -0.08763936642038139, 0.06871598760276267, -0.0008703720158541838], [0.04464510169137048 -0.05871256825097563 … 0.13781815631646493 0.08481594857843244], [-0.029644007854268524], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])</code></pre><p>Before training, the distribution looks like <img src="../../asset/nice_before.png" alt="before"/></p><pre><code class="language- hljs">model = train(x_data, model; num_epochs=800)</code></pre><p>After training, the distribution looks like <img src="../../asset/nice_after.png" alt="before"/></p><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../unitary/">« Unitary matrix operations without allocation</a><a class="docs-footer-nextpage" href="../realnvp/">RealNVP network »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.17 on <span class="colophon-date" title="Tuesday 24 May 2022 16:56">Tuesday 24 May 2022</span>. Using Julia version 1.7.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
