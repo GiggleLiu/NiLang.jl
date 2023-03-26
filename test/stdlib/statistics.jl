@@ -6,7 +6,14 @@ using Distributions
 @testset "statistics" begin
     x = randn(100)
     y = randn(100)
-    @test i_mean_sum(0.0, 0.0, x)[1] ≈ Statistics.mean(x)
+
+    @test check_inv(i_mean_sum, (0.0, 0.0, x))
+    @test all(i_mean_sum(0.0, 0.0, x) .≈ (Statistics.mean(x), sum(x), x))
+    @test check_inv(i_sum, (0.0, x))
+    @test i_sum(0.0, x)[1] ≈ sum(x)
+    @test check_inv(i_mean, (0.0, x))
+    @test i_mean(0.0, x)[1] ≈ mean(x)
+
     info = VarianceInfo(Float64)
     @test almost_same(i_var_mean_sum(info, copy(x))[1], VarianceInfo(Statistics.var(x), Statistics.var(x)*99, Statistics.mean(x), sum(x)))
     @test almost_same((~i_var_mean_sum)(i_var_mean_sum(info, copy(x))...), (info, x))
