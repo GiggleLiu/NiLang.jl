@@ -1,6 +1,5 @@
 using NiLang, NiLang.AD
 using Test, Random
-using ForwardDiff
 using NiLangCore: default_constructor
 
 @testset "basic instructions, ULogarithmic" begin

@@ -28,9 +28,4 @@ export AD
 
 project_relative_path(xs...) = normpath(joinpath(dirname(dirname(pathof(@__MODULE__))), xs...))
 
-if Base.VERSION >= v"1.4.2"
-    include("precompile.jl")
-    _precompile_()
-end
-
 end # module
