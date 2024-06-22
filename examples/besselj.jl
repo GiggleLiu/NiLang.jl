@@ -16,6 +16,10 @@ function Base.convert(::Type{Dual{T,V,N}}, x::ULogarithmic) where {T,V,N}
 	Dual{T,V,N}(exp(x.log))
 end
 
+function Base.exp(::Type{ULogarithmic{Dual{T,V,N}}}, d::Dual) where {T,V,N}
+    invoke(Base.exp, Tuple{Type{ULogarithmic{T}}, T} where T<:Real, ULogarithmic{Dual{T,V,N}}, d)
+end
+
 @i function ibesselj(y!::T, ν, z::T; atol=1e-8) where T
 	if z == 0
 		if v == 0
