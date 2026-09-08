@@ -12,6 +12,7 @@ NiLang features:
 * reversible logarithmic number system
 
 ![CI](https://github.com/GiggleLiu/NiLang.jl/workflows/CI/badge.svg)
+![Agent maintained](https://img.shields.io/badge/maintenance-agent%20maintained-blue)
 [![codecov](https://codecov.io/gh/GiggleLiu/NiLang.jl/branch/master/graph/badge.svg?token=th86D4USSX)](https://codecov.io/gh/GiggleLiu/NiLang.jl)
 
 The main docs can be found here:
