@@ -9,3 +9,4 @@ Manifest.toml
 /docs/src/examples/
 _local/
 *.swp
+.vscode/

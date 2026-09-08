@@ -2,7 +2,7 @@ module AD
 
 using ..NiLang
 using NiLangCore
-using MatchCore, TupleTools
+using MLStyle, TupleTools
 
 import ..NiLang: ROT, IROT, SWAP,
     chfield, value, NoGrad, INC, DEC, HADAMARD,
@@ -21,10 +21,5 @@ include("ulog.jl")
 include("jacobian.jl")
 include("hessian_backback.jl")
 include("complex.jl")
-
-if Base.VERSION >= v"1.4.2"
-    include("precompile.jl")
-    _precompile_()
-end
 
 end

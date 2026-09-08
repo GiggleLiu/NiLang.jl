@@ -27,6 +27,10 @@ using Test
         @test check_grad(opm(atan), (1.0, -2.0, 1.5); verbose=true, iloss=1)
         @test check_grad(opm(convert), (Fixed43(0.5), 2.0); verbose=true, iloss=1)
         @test check_grad(opm(/), (1.0, 2.0, 2.0); verbose=true, iloss=1)
+        @test check_grad(opm(min), (1.0, 2.0, 3.0); verbose=true, iloss=1)
+        @test check_grad(opm(max), (1.0, 2.0, 3.0); verbose=true, iloss=1)
+        @test check_grad(opm(min), (1.0, 3.0, 2.0); verbose=true, iloss=1)
+        @test check_grad(opm(max), (1.0, 3.0, 2.0); verbose=true, iloss=1)
         @test_broken check_grad(opm(÷), (1.0, 2.0, 2.0); verbose=true, iloss=1)
         @test gradient(opm(sqrt), (1.0, 0.0); iloss=1)[2] == 0
     end
@@ -42,6 +46,30 @@ using Test
     @test check_grad(IROT, (1.0, 2.0, 2.0); verbose=true, iloss=2)
     @test check_grad(HADAMARD, (3.0, 2.0); verbose=true, iloss=1)
     @test check_grad(HADAMARD, (3.0, 2.0); verbose=true, iloss=2)
+end
+
+@testset "partial gvar" begin
+    @i function testf1(f, a, b)
+	f(a, b, 2.0)
+    end
+    @i function testf2(f, a, b)
+	f(a, 2.0, b)
+    end
+    for testf in [testf1, testf2]
+    	for opm in [PlusEq, MinusEq]
+            @test check_grad(testf, (opm(*), 1.0, 2.0); verbose=true, iloss=2)
+            @test check_grad(testf, (opm(+), 1.0, 2.0); verbose=true, iloss=2)
+            @test check_grad(testf, (opm(-), 1.0, 2.0); verbose=true, iloss=2)
+            @test check_grad(testf, (opm(^), 1.0, 2.0); verbose=true, iloss=2)
+            @test check_grad(testf, (opm(atan), 1.0, -2.0); verbose=true, iloss=2)
+            @test check_grad(testf, (opm(/), 1.0, 2.0); verbose=true, iloss=2)
+	end
+    end
+    @test check_grad(testf1, (ROT, 1.0, 2.0); verbose=true, iloss=2)
+    @test check_grad(testf1, (ROT, 1.0, 2.0); verbose=true, iloss=3)
+    @test check_grad(testf1, (IROT, 1.0, 2.0); verbose=true, iloss=2)
+    @test check_grad(testf1, (IROT, 1.0, 2.0); verbose=true, iloss=3)
+    # ROT and HADAMARD does not allow different types of rotation elements
 end
 
 @testset "sincos" begin
@@ -114,4 +142,17 @@ end
         z += sin(x |> INV)
     end
     @test check_grad(f, (0.2, 0.5, 0.8); iloss=1)
+end
+
+@testset "additive identity" begin
+    struct TestAdd2{T}
+        x::T
+        y::Vector{T}
+    end
+    x = TestAdd2(GVar(1.0, 2.0), [GVar(2.0, 1.2)])
+    y = TestAdd2(GVar(6.0, 3.0), [GVar(4.0, 4.1)])
+    @test getfield.(MinusEq(identity)(x, y), :x) == getfield.((TestAdd2(GVar(-5.0, 2.0), [GVar(-2.0, 1.2)]), TestAdd2(GVar(6.0, 5.0), [GVar(4.0, 5.3)])), :x)
+    x = TestAdd2(GVar(1.0, 2.0), [GVar(2.0, 1.2)])
+    y = TestAdd2(GVar(6.0, 3.0), [GVar(4.0, 4.1)])
+    @test getfield.(MinusEq(identity)(x, y), :y) == getfield.((TestAdd2(GVar(-5.0, 2.0), [GVar(-2.0, 1.2)]), TestAdd2(GVar(6.0, 5.0), [GVar(4.0, 5.3)])), :y)
 end

@@ -67,3 +67,6 @@ for F3 in [:ROT, :IROT, :((inf::PlusEq)), :((inf::MinusEq)), :((inf::XorEq))]
         a, b, c
     end
 end
+
+(f::PlusEq{typeof(identity)})(x::T, y::T) where T<:AutoBcast = invoke(f, Tuple{T,T} where T, x, y)
+(f::MinusEq{typeof(identity)})(x::T, y::T) where T<:AutoBcast = invoke(f, Tuple{T,T} where T, x, y)

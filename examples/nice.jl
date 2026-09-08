@@ -181,8 +181,8 @@ import Random; Random.seed!(22)
 model = random_nice_network(Float64, size(x_data, 1), 10, 4; scale=0.1)
 
 # Before training, the distribution looks like
-# ![before](../../asset/nice_before.png)
+# ![before](../asset/nice_before.png)
 model = train(x_data, model; num_epochs=800)
 
 # After training, the distribution looks like
-# ![before](../../asset/nice_after.png)
+# ![before](../asset/nice_after.png)

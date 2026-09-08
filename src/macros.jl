@@ -1,4 +1,4 @@
-using MatchCore, NiLang
+using MLStyle, NiLang
 export alloc, @auto_alloc, @auto_expand
 
 """
@@ -13,7 +13,7 @@ macro auto_alloc(ex)
 end
 
 function auto_alloc(ex)
-    @smatch ex begin
+    @match ex begin
         :($f($out, $(args...))) => begin
             Expr(:block, :($out ← $alloc($f, $(args...))), ex)
         end
@@ -48,10 +48,10 @@ function auto_expand(ex)
 end
 
 function auto_expand!(ex, exprs, sym=nothing, addnew=true)
-    @smatch ex begin
+    @match ex begin
         :($f($(args...))) => begin
             for (i, arg) in enumerate(args)
-                @smatch arg begin
+                @match arg begin
                     :($_{$(_...)}($(_...))) => begin
                         auto_expand!(arg, exprs, nothing, false)
                     end

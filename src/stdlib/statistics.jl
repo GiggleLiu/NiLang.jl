@@ -37,14 +37,14 @@ end
 
 @i function i_var_mean_sum(var!, varsum!, mean!, sum!, v::AbstractVector{T}) where T
     i_mean_sum(mean!, sum!, v)
-     for i=1:length(v)
+    for i=1:length(v)
         @routine @invcheckoff begin
             x ← zero(T)
             x += v[i] - mean!
         end
         varsum! += x ^ 2
         ~@routine
-     end
+    end
     var! += varsum! / (@const length(v)-1)
  end
 
@@ -75,7 +75,6 @@ end
 get Pearson correlation and covariance of two vectors `a` and `b` 
 
 """
-
 @i function i_cor_cov(rho!::T, cov!::T, a::AbstractVector{T}, b::AbstractVector{T}) where T
     @safe @assert length(a) == length(b)
     @routine  @invcheckoff begin

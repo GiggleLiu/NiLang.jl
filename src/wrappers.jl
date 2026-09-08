@@ -26,7 +26,7 @@ Unwrap a wrapper instance (recursively) to get the content value.
 unwrap(x::IWrapper) = unwrap(value(x))
 unwrap(x) = x
 
-for op in [:>, :<, :>=, :<=, :isless, :(==)]
+for op in [:>, :<, :>=, :<=, :isless, :(==), :≈]
     @eval Base.$op(a::IWrapper, b::IWrapper) = $op(unwrap(a), unwrap(b))
     @eval Base.$op(a::IWrapper, b::Real) = $op(unwrap(a), b)
     @eval Base.$op(a::IWrapper, b::AbstractFloat) = $op(unwrap(a), b)

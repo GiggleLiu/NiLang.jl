@@ -115,3 +115,12 @@ end
         @test x ≈ 2.0 + op(0.5, 0.8)
     end
 end
+
+@testset "additive identity" begin
+    struct TestAdd{T}
+        x::T
+        y::Vector{T}
+    end
+    @test getfield.(PlusEq(identity)(TestAdd(1, [2]), TestAdd(10, [2])), :x) == (TestAdd(11, [4]).x, TestAdd(10, [2]).x)
+    @test getfield.(PlusEq(identity)(TestAdd(1, [2]), TestAdd(10, [2])), :y) == (TestAdd(11, [4]).y, TestAdd(10, [2]).y)
+end

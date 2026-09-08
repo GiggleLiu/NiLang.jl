@@ -49,13 +49,13 @@ end
 function wrap_bcastgrad(::Type{AutoBcast{T,N}}, x::XT) where {T,N,XT}
     GVar(x, zero(AutoBcast{XT,N}))
 end
-function wrap_bcastgrad(::Type{AutoBcast{T,N}}, x::Union{Integer, Function}) where {T,N,XT}
+function wrap_bcastgrad(::Type{AutoBcast{T,N}}, x::Union{Integer, Function}) where {T,N}
     x
 end
-function wrap_bcastgrad(::Type{AutoBcast{T,N}}, x::NoGrad) where {T,N,XT}
+function wrap_bcastgrad(::Type{AutoBcast{T,N}}, x::NoGrad) where {T,N}
     (~NoGrad)(x)
 end
-function wrap_bcastgrad(::Type{AutoBcast{T,N}}, x::Union{Tuple,AbstractArray}) where {T,N,XT}
+function wrap_bcastgrad(::Type{AutoBcast{T,N}}, x::Union{Tuple,AbstractArray}) where {T,N}
     wrap_bcastgrad.(AutoBcast{T,N}, x)
 end
 

@@ -833,7 +833,7 @@ end
 ", md"
 ```julia
 @from !(condition2) while !(condition1)
-	...
+    ~(...)
 end
 ```
 ")
