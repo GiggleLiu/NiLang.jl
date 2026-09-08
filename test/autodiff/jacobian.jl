@@ -25,19 +25,19 @@ end
 
 @testset "jacobians" begin
     for op in [PlusEq(*), PlusEq(/), PlusEq(^), ROT]
-        j1 = jacobian(asarrayfunc, [0.3, 0.4, 2.0]; iin=1, f=op)
+        j1 = NiLang.AD.jacobian(asarrayfunc, [0.3, 0.4, 2.0]; iin=1, f=op)
         j2 = NiLang.AD.jacobian_repeat(asarrayfunc, [0.3, 0.4, 2.0]; iin=1, f=op)
         @test j1 ≈ j2
     end
 
     for op in [PlusEq(identity), PlusEq(abs), SWAP, PlusEq(exp), PlusEq(log), PlusEq(sin), PlusEq(cos)]
-        j1 = jacobian(asarrayfunc, [0.3, 0.4]; iin=1, f=op)
+        j1 = NiLang.AD.jacobian(asarrayfunc, [0.3, 0.4]; iin=1, f=op)
         j2 = NiLang.AD.jacobian_repeat(asarrayfunc, [0.3, 0.4]; iin=1, f=op)
         @test j1 ≈ j2
     end
 
     for op in [-, NEG]
-        j1 = jacobian(asarrayfunc, [0.3]; iin=1, f=op)
+        j1 = NiLang.AD.jacobian(asarrayfunc, [0.3]; iin=1, f=op)
         j2 = NiLang.AD.jacobian_repeat(asarrayfunc, [0.3]; iin=1, f=op)
         @test j1 ≈ j2
     end

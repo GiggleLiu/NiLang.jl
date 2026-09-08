@@ -3,8 +3,41 @@
     GVar{T,GT} <: IWrapper{T}
     GVar(x)
 
-Attach a gradient field to `x`.
-The gradient type `GT` can be a `GVar` for storing second order gradients, the `AutoBcast` type for broadcasting or the same type of `x`.
+Add gradient information to variable `x`, where `x` can be a real number or a general structure.
+If it is a non-integer real number, it will wrap the element with a gradient field,
+otherwise it will propagate into the type and wrap the elements with `GVar`.
+Runing a program backward will update the gradient fields of `GVar`s. The following is a toy using case.
+
+### Example
+
+```jldoctest; setup=:(using NiLang)
+julia> using NiLang.AD: GVar, grad
+
+julia> struct A{T}
+           x::T
+       end
+
+julia> GVar(A(2.0+3im), A(3.0+3im))
+A{Complex{GVar{Float64, Float64}}}(GVar(2.0, 3.0) + GVar(3.0, 3.0)*im)
+
+julia> @i function f(a::A, b::A)
+           a.x += log(b.x)
+       end
+
+julia> outputs = f(A(2.0+3im), A(2.0-1im))  # forward pass
+(A{ComplexF64}(2.8047189562170503 + 2.536352390999194im), A{ComplexF64}(2.0 - 1.0im))
+
+julia> outputs_with_gradients = (GVar(outputs[1], A(3.0+3im)), GVar(outputs[2]))  # wrap `GVar`
+(A{Complex{GVar{Float64, Float64}}}(GVar(2.8047189562170503, 3.0) + GVar(2.536352390999194, 3.0)*im), A{Complex{GVar{Float64, Float64}}}(GVar(2.0, 0.0) - GVar(1.0, -0.0)*im))
+
+julia> inputs_with_gradients = (~f)(outputs_with_gradients...)  # backward pass
+(A{Complex{GVar{Float64, Float64}}}(GVar(2.0, 3.0) + GVar(3.0, 3.0)*im), A{Complex{GVar{Float64, Float64}}}(GVar(2.0, 1.8) - GVar(1.0, -0.6000000000000002)*im))
+
+julia> grad(inputs_with_gradients)
+(A{ComplexF64}(3.0 + 3.0im), A{ComplexF64}(1.8 + 0.6000000000000002im))
+```
+
+The outputs of `~f` are gradients for input variables, one can use `grad` to take the gradient fields recursively.
 """
 struct GVar{T,GT} <: IWrapper{T}
     x::T
@@ -15,8 +48,8 @@ struct GVar{T,GT} <: IWrapper{T}
     function GVar(x::T, g::T) where T<:Real
         new{T,T}(x, g)
     end
-    function GVar{T,GT}(x::T) where {T, GT}
-        new{T,GT}(x, zero(GT))
+    function GVar{T,GT}(x::T2) where {T,T2,GT}
+        new{T,GT}(T(x), zero(GT))
     end
     function GVar(x::T, g::GT) where {T,GT}
         new{T,GT}(x, g)
@@ -25,7 +58,12 @@ end
 
 # `GVar` and `~GVar` on composite types
 @generated function GVar(x::Type{T}) where T
-    :($(getfield(T.name.module, nameof(T))){$(GVar.(T.parameters)...)})
+    ps = GVar.(T.parameters)
+    if length(ps) == 0
+        :($(getfield(T.name.module, nameof(T))))
+    else
+        :($(getfield(T.name.module, nameof(T))){$(ps...)})
+    end
 end
 @generated function GVar(x::Type{T}, y::Type{T}) where T
     :($(getfield(T.name.module, nameof(T))){$(GVar.(T.parameters, T.parameters)...)})
@@ -113,7 +151,12 @@ typegrad(x) = x
     if isprimitivetype(T)
         T
     else
-        :($(getfield(T.name.module, nameof(T))){$(typegrad.(T.parameters)...)})
+        ps = typegrad.(T.parameters)
+        if length(ps) == 0
+            :($(getfield(T.name.module, nameof(T))))
+        else
+            :($(getfield(T.name.module, nameof(T))){$(ps...)})
+        end
     end
 end
 typegrad(::Type{GVar{ET,GT}}) where {ET,GT} = ET
@@ -148,7 +191,7 @@ Base.show(io::IO, ::MIME"plain/text", gv::GVar) = Base.show(io, gv)
 Base.isfinite(x::GVar) = isfinite(x.x)
 # interfaces
 
-_replace_opmx_callable(ex) = @smatch ex begin
+_replace_opmx_callable(ex) = @match ex begin
     :(:+=($f)) => :(PlusEq($f))
     :(:-=($f)) => :(MinusEq($f))
     :(:*=($f)) => :(MulEq($f))
@@ -163,12 +206,12 @@ end
 Mark `f(args...)` as having no gradients.
 """
 macro nograd(ex)
-    @smatch ex begin
+    @match ex begin
         :($f($(args...))) => begin
             f2 = _replace_opmx_callable(f)
             newargs = []
             for arg in args
-                push!(newargs, @smatch arg begin
+                push!(newargs, @match arg begin
                     :($x::GVar) => :($x.x)
                     :($x::VecGVar) => :($x.x)
                     :($x::GVar{$tp}) => :($x.x)

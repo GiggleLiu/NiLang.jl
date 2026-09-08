@@ -115,6 +115,26 @@ for F1 in [:(Base.:-), :NEG, :(ac::AddConst), :(sc::SubConst)]
     end
 end
 
+for (OP, F, f) in [(:(PlusEq{typeof(identity)}), :(PlusEq(identity)), :+), (:(MinusEq{typeof(identity)}), :(MinusEq(identity)), :-)]
+    @eval @inline @generated function (::$OP)(x::T, y::T) where T
+        if isprimitivetype(T)
+            Expr(:tuple, Expr(:call, $f, :x, :y), :y)
+        else
+            res = gensym("results")
+            computes = Any[:($($F)(x.$field, y.$field)) for field in fieldnames(T)]
+            comp = Expr(:(=), res, Expr(:tuple, computes...))
+            res1 = Expr(:new, T, [:($res[$i][1]) for i=1:length(computes)]...)
+            res2 = Expr(:new, T, [:($res[$i][2]) for i=1:length(computes)]...)
+            quote
+                $comp
+                ($res1, $res2)
+            end
+        end
+    end
+    @eval (f::$OP)(x::T, y::T) where T<:Tuple = invoke(f, Tuple{T,T} where T, x, y)
+    @eval (f::$OP)(x::T, y::T) where T<:Real = $f(x, y), y
+end
+
 for F2 in [:SWAP, :HADAMARD, :((inf::PlusEq)), :((inf::MinusEq)), :((inf::XorEq))]
     @eval @inline function $F2(a::NullType, b::Real)
         @instr $(NiLangCore.get_argname(F2))(a |> value, b)
@@ -216,4 +236,13 @@ end
 
 @i @inline function COPYPOP!(st, x)
     @invcheckoff st[end] → x
+end
+
+# accumulation on arrays: initially for Bennett algorithm
+# TODO: also define it for composite types. or maybe a macro for it.
+@i function :(+=)(identity)(target::AbstractArray, source::AbstractArray)
+    @safe @assert length(target) == length(source)
+    @inbounds for i=1:length(target)
+        target[i] += source[i]
+    end
 end

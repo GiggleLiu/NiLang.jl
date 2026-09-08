@@ -21,8 +21,6 @@ Also see blog posts
 
 ## Documentation
 
-[Pluto notebook](notebooks/documentation.html)
-
 ## Examples
 ```@contents
 Pages = [

@@ -173,6 +173,7 @@ end
         else
             @inbounds onelayer!(x! |> subarray(1:np÷2), network[i], x! |> subarray(np÷2+1:np), logjacobian!; islast=i==length(network))
         end
+        np → length(x!)
     end
 end
 
@@ -235,8 +236,8 @@ import Random; Random.seed!(22)
 model = random_realnvp(Float64, size(x_data, 1), 10, 10, 4; scale=0.1)
 
 # Before training, the distribution looks like
-# ![before](../../asset/nice_before.png)
+# ![before](../asset/nice_before.png)
 model = train(x_data, model; num_epochs=800)
 
 # After training, the distribution looks like
-# ![before](../../asset/realnvp_after.png)
+# ![before](../asset/realnvp_after.png)

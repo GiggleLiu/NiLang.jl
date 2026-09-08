@@ -26,7 +26,6 @@ end
 x = randn(20)
 pyramid!(0.0, zeros(20, 20), x)
 
-# Let' compare our implementation with those in the book
-# ![](pyramid-benchmark.png)
+# Let's benchmark the gradient of the pyramid function
 using BenchmarkTools
 @benchmark gradient(Val(1), pyramid!, (0.0, zeros(20, 20), $x))
