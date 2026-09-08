@@ -57,31 +57,19 @@ Some functions and variables in NiLang will ends with `!`. This is a Julia conve
 that `r_axpy!` is an in-place function which modifies the input, and that input `y!` and `out!`
 will be modified.
 
-Perhaps surprisingly, you can't write an explicit `return` in `@i`. This is because NiLang's
-reversible programming requires a complete "compute–copy–uncompute" paradigm. NiLang is sometimes
-smart enough to infer the copy and uncompute stage so you won't need to manually write it. A
-complete version of `r_axpy!` is:
+Perhaps surprisingly, you can't write an explicit `return` in `@i`. NiLang returns all input
+arguments, including their updated values. The `r_axpy!` definition above is already complete:
 
 ```julia
 @i function r_axpy!(a::T, x::AbstractVector{T}, y!::AbstractVector{T}) where T
     @safe @assert length(x) == length(y!)
-    # compute
-    @routine begin
-        for i=1:length(x)
-            y![i] += a * x[i]
-        end
+    for i=1:length(x)
+        y![i] += a * x[i]
     end
-
-    # no copy operation here
-
-    # uncompute
-    ~@routine
-
-    # `@i` forces returning all input variables as outputs, i.e.,
-    # return a, x, y!
-    # and you can't override this
 end
 ```
+
+`@i` generates the equivalent of `return a, x, y!` and its inverse automatically.
 
 Functions do not have return statements, they return all input arguments instead.
 Hence `r_loss` defines a 5 variable to 5 variable bijection.
@@ -242,7 +230,7 @@ Of course, reversibility check takes time, and the overhead and be quite signifi
 take our previous `i_wsqeuclidean` as an example, `length(X)` reversible checks are applied here.
 
 ```julia
-using Benchmark
+using BenchmarkTools
 
 X, Y, W = rand(5, 5), rand(5, 5), rand(5, 5)
 @btime i_wsqeuclidean(0.0, X, Y, W)[1]
