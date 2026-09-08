@@ -11,30 +11,24 @@ Runing a program backward will update the gradient fields of `GVar`s. The follow
 ### Example
 
 ```jldoctest; setup=:(using NiLang)
-julia> using NiLang.AD: GVar, grad
+using NiLang.AD: GVar, grad
 
-julia> struct A{T}
-           x::T
-       end
+GVar(Ref(2.0+3im), Ref(3.0+3im))
 
-julia> GVar(A(2.0+3im), A(3.0+3im))
-A{Complex{GVar{Float64, Float64}}}(GVar(2.0, 3.0) + GVar(3.0, 3.0)*im)
+@i function f(a::Ref, b::Ref)
+    a[] += log(b[])
+end
 
-julia> @i function f(a::A, b::A)
-           a.x += log(b.x)
-       end
+outputs = f(Ref(2.0+3im), Ref(2.0-1im))  # forward pass
 
-julia> outputs = f(A(2.0+3im), A(2.0-1im))  # forward pass
-(A{ComplexF64}(2.8047189562170503 + 2.536352390999194im), A{ComplexF64}(2.0 - 1.0im))
+outputs_with_gradients = (GVar(outputs[1], Ref(3.0+3im)), GVar(outputs[2]))  # wrap `GVar`
 
-julia> outputs_with_gradients = (GVar(outputs[1], A(3.0+3im)), GVar(outputs[2]))  # wrap `GVar`
-(A{Complex{GVar{Float64, Float64}}}(GVar(2.8047189562170503, 3.0) + GVar(2.536352390999194, 3.0)*im), A{Complex{GVar{Float64, Float64}}}(GVar(2.0, 0.0) - GVar(1.0, -0.0)*im))
+inputs_with_gradients = (~f)(outputs_with_gradients...)  # backward pass
 
-julia> inputs_with_gradients = (~f)(outputs_with_gradients...)  # backward pass
-(A{Complex{GVar{Float64, Float64}}}(GVar(2.0, 3.0) + GVar(3.0, 3.0)*im), A{Complex{GVar{Float64, Float64}}}(GVar(2.0, 1.8) - GVar(1.0, -0.6000000000000002)*im))
+grad(inputs_with_gradients)
 
-julia> grad(inputs_with_gradients)
-(A{ComplexF64}(3.0 + 3.0im), A{ComplexF64}(1.8 + 0.6000000000000002im))
+# output
+(Base.RefValue{ComplexF64}(3.0 + 3.0im), Base.RefValue{ComplexF64}(1.8 + 0.6000000000000002im))
 ```
 
 The outputs of `~f` are gradients for input variables, one can use `grad` to take the gradient fields recursively.
@@ -60,26 +54,26 @@ end
 @generated function GVar(x::Type{T}) where T
     ps = GVar.(T.parameters)
     if length(ps) == 0
-        :($(getfield(T.name.module, nameof(T))))
+        QuoteNode(T)
     else
-        :($(getfield(T.name.module, nameof(T))){$(ps...)})
+        QuoteNode(T.name.wrapper{ps...})
     end
 end
 @generated function GVar(x::Type{T}, y::Type{T}) where T
-    :($(getfield(T.name.module, nameof(T))){$(GVar.(T.parameters, T.parameters)...)})
+    QuoteNode(T.name.wrapper{GVar.(T.parameters, T.parameters)...})
 end
 @generated function (_::Type{Inv{GVar}})(x::Type{T}) where T
-    :($(getfield(T.name.module, nameof(T))){$((~GVar).(T.parameters)...)})
+    QuoteNode(T.name.wrapper{(~GVar).(T.parameters)...})
 end
 # `GVar` and `~GVar` on composite vars
 @generated function GVar(x::T) where T
-    Expr(:new, GVar(T), [:(GVar(x.$NAME)) for NAME in fieldnames(T)]...)
+    Expr(:new, QuoteNode(GVar(T)), [:(GVar(x.$NAME)) for NAME in fieldnames(T)]...)
 end
 @generated function GVar(x::T, g::T) where T
-    Expr(:new, GVar(T, T), [:(GVar(x.$NAME, g.$NAME)) for NAME in fieldnames(T)]...)
+    Expr(:new, QuoteNode(GVar(T, T)), [:(GVar(x.$NAME, g.$NAME)) for NAME in fieldnames(T)]...)
 end
 @generated function (_::Type{Inv{GVar}})(x::T) where T
-    Expr(:new, (~GVar)(T), [:((~GVar)(x.$NAME)) for NAME in fieldnames(T)]...)
+    Expr(:new, QuoteNode((~GVar)(T)), [:((~GVar)(x.$NAME)) for NAME in fieldnames(T)]...)
 end
 
 for T in [:Real]
