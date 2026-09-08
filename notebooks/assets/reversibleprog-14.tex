@@ -1,0 +1,384 @@
+\documentclass[tikz,border=2pt]{standalone}
+\usepackage{tikz}
+\begin{document}
+\begin{tikzpicture}[scale=1.0]
+
+\def\y{0}
+\node at (-1, -0.7*\y) {step \y};
+\foreach \x in {0,...,16}{
+    \draw (0.5*\x-0.25, -0.7*\y-0.25) rectangle (0.5*\x+0.25, -0.7*\y+0.25);
+}
+\foreach \x in {0}{
+    \fill (0.5*\x, -0.7*\y) ellipse (0.2 and 0.15);
+}
+
+\def\y{1}
+\node at (-1, -0.7*\y) {step \y};
+\foreach \x in {0,...,16}{
+    \draw (0.5*\x-0.25, -0.7*\y-0.25) rectangle (0.5*\x+0.25, -0.7*\y+0.25);
+}
+\foreach \x in {0,1}{
+    \fill (0.5*\x, -0.7*\y) ellipse (0.2 and 0.15);
+}
+
+\def\y{2}
+\node at (-1, -0.7*\y) {step \y};
+\foreach \x in {0,...,16}{
+    \draw (0.5*\x-0.25, -0.7*\y-0.25) rectangle (0.5*\x+0.25, -0.7*\y+0.25);
+}
+\foreach \x in {0,1,2}{
+    \fill (0.5*\x, -0.7*\y) ellipse (0.2 and 0.15);
+}
+
+\def\y{3}
+\node at (-1, -0.7*\y) {step \y};
+\foreach \x in {0,...,16}{
+    \draw (0.5*\x-0.25, -0.7*\y-0.25) rectangle (0.5*\x+0.25, -0.7*\y+0.25);
+}
+\foreach \x in {0,2}{
+    \fill (0.5*\x, -0.7*\y) ellipse (0.2 and 0.15);
+}
+
+\def\y{4}
+\node at (-1, -0.7*\y) {step \y};
+\foreach \x in {0,...,16}{
+    \draw (0.5*\x-0.25, -0.7*\y-0.25) rectangle (0.5*\x+0.25, -0.7*\y+0.25);
+}
+\foreach \x in {0,2,3}{
+    \fill (0.5*\x, -0.7*\y) ellipse (0.2 and 0.15);
+}
+
+\def\y{5}
+\node at (-1, -0.7*\y) {step \y};
+\foreach \x in {0,...,16}{
+    \draw (0.5*\x-0.25, -0.7*\y-0.25) rectangle (0.5*\x+0.25, -0.7*\y+0.25);
+}
+\foreach \x in {0,2,3,4}{
+    \fill (0.5*\x, -0.7*\y) ellipse (0.2 and 0.15);
+}
+
+\def\y{6}
+\node at (-1, -0.7*\y) {step \y};
+\foreach \x in {0,...,16}{
+    \draw (0.5*\x-0.25, -0.7*\y-0.25) rectangle (0.5*\x+0.25, -0.7*\y+0.25);
+}
+\foreach \x in {0,2,4}{
+    \fill (0.5*\x, -0.7*\y) ellipse (0.2 and 0.15);
+}
+
+\def\y{7}
+\node at (-1, -0.7*\y) {step \y};
+\foreach \x in {0,...,16}{
+    \draw (0.5*\x-0.25, -0.7*\y-0.25) rectangle (0.5*\x+0.25, -0.7*\y+0.25);
+}
+\foreach \x in {0,1,2,4}{
+    \fill (0.5*\x, -0.7*\y) ellipse (0.2 and 0.15);
+}
+
+\def\y{8}
+\node at (-1, -0.7*\y) {step \y};
+\foreach \x in {0,...,16}{
+    \draw (0.5*\x-0.25, -0.7*\y-0.25) rectangle (0.5*\x+0.25, -0.7*\y+0.25);
+}
+\foreach \x in {0,1,4}{
+    \fill (0.5*\x, -0.7*\y) ellipse (0.2 and 0.15);
+}
+
+\def\y{9}
+\node at (-1, -0.7*\y) {step \y};
+\foreach \x in {0,...,16}{
+    \draw (0.5*\x-0.25, -0.7*\y-0.25) rectangle (0.5*\x+0.25, -0.7*\y+0.25);
+}
+\foreach \x in {0,4}{
+    \fill (0.5*\x, -0.7*\y) ellipse (0.2 and 0.15);
+}
+
+\def\y{10}
+\node at (-1, -0.7*\y) {step \y};
+\foreach \x in {0,...,16}{
+    \draw (0.5*\x-0.25, -0.7*\y-0.25) rectangle (0.5*\x+0.25, -0.7*\y+0.25);
+}
+\foreach \x in {0,4,5}{
+    \fill (0.5*\x, -0.7*\y) ellipse (0.2 and 0.15);
+}
+
+\def\y{11}
+\node at (-1, -0.7*\y) {step \y};
+\foreach \x in {0,...,16}{
+    \draw (0.5*\x-0.25, -0.7*\y-0.25) rectangle (0.5*\x+0.25, -0.7*\y+0.25);
+}
+\foreach \x in {0,4,5,6}{
+    \fill (0.5*\x, -0.7*\y) ellipse (0.2 and 0.15);
+}
+
+\def\y{12}
+\node at (-1, -0.7*\y) {step \y};
+\foreach \x in {0,...,16}{
+    \draw (0.5*\x-0.25, -0.7*\y-0.25) rectangle (0.5*\x+0.25, -0.7*\y+0.25);
+}
+\foreach \x in {0,4,6}{
+    \fill (0.5*\x, -0.7*\y) ellipse (0.2 and 0.15);
+}
+
+\def\y{13}
+\node at (-1, -0.7*\y) {step \y};
+\foreach \x in {0,...,16}{
+    \draw (0.5*\x-0.25, -0.7*\y-0.25) rectangle (0.5*\x+0.25, -0.7*\y+0.25);
+}
+\foreach \x in {0,4,6,7}{
+    \fill (0.5*\x, -0.7*\y) ellipse (0.2 and 0.15);
+}
+
+\def\y{14}
+\node at (-1, -0.7*\y) {step \y};
+\foreach \x in {0,...,16}{
+    \draw (0.5*\x-0.25, -0.7*\y-0.25) rectangle (0.5*\x+0.25, -0.7*\y+0.25);
+}
+\foreach \x in {0,4,6,7,8}{
+    \fill (0.5*\x, -0.7*\y) ellipse (0.2 and 0.15);
+}
+
+\def\y{15}
+\node at (-1, -0.7*\y) {step \y};
+\foreach \x in {0,...,16}{
+    \draw (0.5*\x-0.25, -0.7*\y-0.25) rectangle (0.5*\x+0.25, -0.7*\y+0.25);
+}
+\foreach \x in {0,4,6,8}{
+    \fill (0.5*\x, -0.7*\y) ellipse (0.2 and 0.15);
+}
+
+\def\y{16}
+\node at (-1, -0.7*\y) {step \y};
+\foreach \x in {0,...,16}{
+    \draw (0.5*\x-0.25, -0.7*\y-0.25) rectangle (0.5*\x+0.25, -0.7*\y+0.25);
+}
+\foreach \x in {0,4,5,6,8}{
+    \fill (0.5*\x, -0.7*\y) ellipse (0.2 and 0.15);
+}
+
+\def\y{17}
+\node at (-1, -0.7*\y) {step \y};
+\foreach \x in {0,...,16}{
+    \draw (0.5*\x-0.25, -0.7*\y-0.25) rectangle (0.5*\x+0.25, -0.7*\y+0.25);
+}
+\foreach \x in {0,4,5,8}{
+    \fill (0.5*\x, -0.7*\y) ellipse (0.2 and 0.15);
+}
+
+\def\y{18}
+\node at (-1, -0.7*\y) {step \y};
+\foreach \x in {0,...,16}{
+    \draw (0.5*\x-0.25, -0.7*\y-0.25) rectangle (0.5*\x+0.25, -0.7*\y+0.25);
+}
+\foreach \x in {0,4,8}{
+    \fill (0.5*\x, -0.7*\y) ellipse (0.2 and 0.15);
+}
+
+\def\y{19}
+\node at (-1, -0.7*\y) {step \y};
+\foreach \x in {0,...,16}{
+    \draw (0.5*\x-0.25, -0.7*\y-0.25) rectangle (0.5*\x+0.25, -0.7*\y+0.25);
+}
+\foreach \x in {0,1,4,8}{
+    \fill (0.5*\x, -0.7*\y) ellipse (0.2 and 0.15);
+}
+
+\def\y{20}
+\node at (-1, -0.7*\y) {step \y};
+\foreach \x in {0,...,16}{
+    \draw (0.5*\x-0.25, -0.7*\y-0.25) rectangle (0.5*\x+0.25, -0.7*\y+0.25);
+}
+\foreach \x in {0,1,2,4,8}{
+    \fill (0.5*\x, -0.7*\y) ellipse (0.2 and 0.15);
+}
+
+\def\y{21}
+\node at (-1, -0.7*\y) {step \y};
+\foreach \x in {0,...,16}{
+    \draw (0.5*\x-0.25, -0.7*\y-0.25) rectangle (0.5*\x+0.25, -0.7*\y+0.25);
+}
+\foreach \x in {0,2,4,8}{
+    \fill (0.5*\x, -0.7*\y) ellipse (0.2 and 0.15);
+}
+
+\def\y{22}
+\node at (-1, -0.7*\y) {step \y};
+\foreach \x in {0,...,16}{
+    \draw (0.5*\x-0.25, -0.7*\y-0.25) rectangle (0.5*\x+0.25, -0.7*\y+0.25);
+}
+\foreach \x in {0,2,3,4,8}{
+    \fill (0.5*\x, -0.7*\y) ellipse (0.2 and 0.15);
+}
+
+\def\y{23}
+\node at (-1, -0.7*\y) {step \y};
+\foreach \x in {0,...,16}{
+    \draw (0.5*\x-0.25, -0.7*\y-0.25) rectangle (0.5*\x+0.25, -0.7*\y+0.25);
+}
+\foreach \x in {0,2,3,8}{
+    \fill (0.5*\x, -0.7*\y) ellipse (0.2 and 0.15);
+}
+
+\def\y{24}
+\node at (-1, -0.7*\y) {step \y};
+\foreach \x in {0,...,16}{
+    \draw (0.5*\x-0.25, -0.7*\y-0.25) rectangle (0.5*\x+0.25, -0.7*\y+0.25);
+}
+\foreach \x in {0,2,8}{
+    \fill (0.5*\x, -0.7*\y) ellipse (0.2 and 0.15);
+}
+
+\def\y{25}
+\node at (-1, -0.7*\y) {step \y};
+\foreach \x in {0,...,16}{
+    \draw (0.5*\x-0.25, -0.7*\y-0.25) rectangle (0.5*\x+0.25, -0.7*\y+0.25);
+}
+\foreach \x in {0,1,2,8}{
+    \fill (0.5*\x, -0.7*\y) ellipse (0.2 and 0.15);
+}
+
+\def\y{26}
+\node at (-1, -0.7*\y) {step \y};
+\foreach \x in {0,...,16}{
+    \draw (0.5*\x-0.25, -0.7*\y-0.25) rectangle (0.5*\x+0.25, -0.7*\y+0.25);
+}
+\foreach \x in {0,1,8}{
+    \fill (0.5*\x, -0.7*\y) ellipse (0.2 and 0.15);
+}
+
+\def\y{27}
+\node at (-1, -0.7*\y) {step \y};
+\foreach \x in {0,...,16}{
+    \draw (0.5*\x-0.25, -0.7*\y-0.25) rectangle (0.5*\x+0.25, -0.7*\y+0.25);
+}
+\foreach \x in {0,8}{
+    \fill (0.5*\x, -0.7*\y) ellipse (0.2 and 0.15);
+}
+
+\def\y{28}
+\node at (-1, -0.7*\y) {step \y};
+\foreach \x in {0,...,16}{
+    \draw (0.5*\x-0.25, -0.7*\y-0.25) rectangle (0.5*\x+0.25, -0.7*\y+0.25);
+}
+\foreach \x in {0,8,9}{
+    \fill (0.5*\x, -0.7*\y) ellipse (0.2 and 0.15);
+}
+
+\def\y{29}
+\node at (-1, -0.7*\y) {step \y};
+\foreach \x in {0,...,16}{
+    \draw (0.5*\x-0.25, -0.7*\y-0.25) rectangle (0.5*\x+0.25, -0.7*\y+0.25);
+}
+\foreach \x in {0,8,9,10}{
+    \fill (0.5*\x, -0.7*\y) ellipse (0.2 and 0.15);
+}
+
+\def\y{30}
+\node at (-1, -0.7*\y) {step \y};
+\foreach \x in {0,...,16}{
+    \draw (0.5*\x-0.25, -0.7*\y-0.25) rectangle (0.5*\x+0.25, -0.7*\y+0.25);
+}
+\foreach \x in {0,8,10}{
+    \fill (0.5*\x, -0.7*\y) ellipse (0.2 and 0.15);
+}
+
+\def\y{31}
+\node at (-1, -0.7*\y) {step \y};
+\foreach \x in {0,...,16}{
+    \draw (0.5*\x-0.25, -0.7*\y-0.25) rectangle (0.5*\x+0.25, -0.7*\y+0.25);
+}
+\foreach \x in {0,8,10,11}{
+    \fill (0.5*\x, -0.7*\y) ellipse (0.2 and 0.15);
+}
+
+\def\y{32}
+\node at (-1, -0.7*\y) {step \y};
+\foreach \x in {0,...,16}{
+    \draw (0.5*\x-0.25, -0.7*\y-0.25) rectangle (0.5*\x+0.25, -0.7*\y+0.25);
+}
+\foreach \x in {0,8,10,11,12}{
+    \fill (0.5*\x, -0.7*\y) ellipse (0.2 and 0.15);
+}
+
+\def\y{33}
+\node at (-1, -0.7*\y) {step \y};
+\foreach \x in {0,...,16}{
+    \draw (0.5*\x-0.25, -0.7*\y-0.25) rectangle (0.5*\x+0.25, -0.7*\y+0.25);
+}
+\foreach \x in {0,8,10,12}{
+    \fill (0.5*\x, -0.7*\y) ellipse (0.2 and 0.15);
+}
+
+\def\y{34}
+\node at (-1, -0.7*\y) {step \y};
+\foreach \x in {0,...,16}{
+    \draw (0.5*\x-0.25, -0.7*\y-0.25) rectangle (0.5*\x+0.25, -0.7*\y+0.25);
+}
+\foreach \x in {0,8,9,10,12}{
+    \fill (0.5*\x, -0.7*\y) ellipse (0.2 and 0.15);
+}
+
+\def\y{35}
+\node at (-1, -0.7*\y) {step \y};
+\foreach \x in {0,...,16}{
+    \draw (0.5*\x-0.25, -0.7*\y-0.25) rectangle (0.5*\x+0.25, -0.7*\y+0.25);
+}
+\foreach \x in {0,8,9,12}{
+    \fill (0.5*\x, -0.7*\y) ellipse (0.2 and 0.15);
+}
+
+\def\y{36}
+\node at (-1, -0.7*\y) {step \y};
+\foreach \x in {0,...,16}{
+    \draw (0.5*\x-0.25, -0.7*\y-0.25) rectangle (0.5*\x+0.25, -0.7*\y+0.25);
+}
+\foreach \x in {0,8,12}{
+    \fill (0.5*\x, -0.7*\y) ellipse (0.2 and 0.15);
+}
+
+\def\y{37}
+\node at (-1, -0.7*\y) {step \y};
+\foreach \x in {0,...,16}{
+    \draw (0.5*\x-0.25, -0.7*\y-0.25) rectangle (0.5*\x+0.25, -0.7*\y+0.25);
+}
+\foreach \x in {0,8,12,13}{
+    \fill (0.5*\x, -0.7*\y) ellipse (0.2 and 0.15);
+}
+
+\def\y{38}
+\node at (-1, -0.7*\y) {step \y};
+\foreach \x in {0,...,16}{
+    \draw (0.5*\x-0.25, -0.7*\y-0.25) rectangle (0.5*\x+0.25, -0.7*\y+0.25);
+}
+\foreach \x in {0,8,12,13,14}{
+    \fill (0.5*\x, -0.7*\y) ellipse (0.2 and 0.15);
+}
+
+\def\y{39}
+\node at (-1, -0.7*\y) {step \y};
+\foreach \x in {0,...,16}{
+    \draw (0.5*\x-0.25, -0.7*\y-0.25) rectangle (0.5*\x+0.25, -0.7*\y+0.25);
+}
+\foreach \x in {0,8,12,14}{
+    \fill (0.5*\x, -0.7*\y) ellipse (0.2 and 0.15);
+}
+
+\def\y{40}
+\node at (-1, -0.7*\y) {step \y};
+\foreach \x in {0,...,16}{
+    \draw (0.5*\x-0.25, -0.7*\y-0.25) rectangle (0.5*\x+0.25, -0.7*\y+0.25);
+}
+\foreach \x in {0,8,12,14,15}{
+    \fill (0.5*\x, -0.7*\y) ellipse (0.2 and 0.15);
+}
+
+\def\y{41}
+\node at (-1, -0.7*\y) {step \y};
+\foreach \x in {0,...,16}{
+    \draw (0.5*\x-0.25, -0.7*\y-0.25) rectangle (0.5*\x+0.25, -0.7*\y+0.25);
+}
+\foreach \x in {0,8,12,14,15,16}{
+    \fill (0.5*\x, -0.7*\y) ellipse (0.2 and 0.15);
+}
+\end{tikzpicture}
+\end{document}

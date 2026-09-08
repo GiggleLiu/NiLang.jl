@@ -15,7 +15,7 @@ end
 
 # ╔═╡ f3e235e7-76b9-4c39-bc70-038539838ff4
 begin
-	using Revise, Viznet, Compose, PlutoUI, Random, TikzPictures
+	using Revise, Viznet, Compose, PlutoUI, Random
 	function leftright(a, b; width=600, leftcellwidth=0.5)
 		HTML("""
 <style>
@@ -160,22 +160,7 @@ function find_maximum(x::AbstractVector)
 end
 
 # ╔═╡ dcf53d46-e259-4101-8530-9621094ee586
-TikzPicture(L"""
-\draw [black, thick,->] (0, 0) -- (1, 0);
-\draw [black, thick,->,dashed] (1, 0) .. controls (1.5, 0.5) .. (2, 0);
-\node at (1.5, 0.5) {goto $\ldots$};
-\draw [black, thick,->] (2, 0) -- (3, 0);
-       
-\def\x{4};
-\draw [black, thick,<-] (\x, 0) -- (\x+1, 0);
-\draw [black, thick,<-,dashed] (\x+1, 0) .. controls (\x+1.5, 0.5) .. (\x+2, 0);
-\draw [black, thick,<-,dashed] (\x+1, 0) -- (\x+2, 0);
-\node at (\x+1.5, 0.5) {comefrom?};
-\draw [black, thick,<-] (\x+2, 0) -- (\x+3, 0);
-       
-\node at (1.5, -0.2) {call};
-\node at (\x+1.5, -0.2) {uncall};
-""", options="scale=2.0", preamble="")
+LocalResource(joinpath(@__DIR__, "assets", "reversibleprog-01.svg"))
 
 # ╔═╡ 6a88d26c-c895-4852-ab4f-37297b848731
 md"""
@@ -377,34 +362,7 @@ end
 ")
 
 # ╔═╡ 97e0bae1-69ac-4cbf-b9d9-6b38180edd78
-TikzPicture(L"""
-\node [test] (pre) {precondition};
-\node [proc, it] (st1) [right=of pre] {statements 1};
-\node [proc, it] (st2) {statements 2};	
-\node [test] (post1) [right=of st1] {postcondition};
-\node [test] (post2) [right=of st2] {postcondition};
-\node [proc,red] (err1) [above=of post1] {invertibility error};
-\node [proc,red] (err2) [below=of post2] {invertibility error};
-\draw [->,black] (pre.east) -- (st1) node[midway,above] {T};
-\draw [->,black] (pre.south) |- (st2) node[midway,below] {F};
-\draw [->,black] (-2.5, 0.0) -- (pre.west);
-\draw [->,black] (st1) -- (post1);
-\draw [->,black] (st2) -- (post2);
-\draw [->,red] (post1) -- (err1) node[midway,right] {F};
-\draw [->,red] (post2) -- (err2) node[midway,right] {T};
-\draw [->,black] (post1.east) -- (12, 0) node[midway,above] {T};
-\draw [black] (post2.east) -| (11, 0) node[midway,right] {F};
-""", options=raw"    font=\sffamily\small,
-    >={Triangle[]},
-    */.tip={Circle[]},
-    start chain=going below,
-    node distance=18mm and 40mm,
-    every join/.style={norm},
-    base/.style={draw, on chain, on grid, align=center, minimum height=4ex, inner color=black!50!gray!10, outer color=black!50!gray!15},
-    proc/.style={base, rectangle, text width=8em},
-    test/.style={base, diamond, text centered, aspect=2.6,inner sep=-0ex},
-    norm/.style={->, draw, black},
-    it/.style={font={\sffamily\small\itshape}}", preamble=raw"\usetikzlibrary{shapes.geometric,arrows.meta,chains,positioning,quotes}")
+LocalResource(joinpath(@__DIR__, "assets", "reversibleprog-02.svg"))
 
 # ╔═╡ 355ba831-6be0-456a-8f94-36acd2365f17
 md"Example: obtaining the absolute value ``x \mapsto |x|``"
@@ -449,32 +407,7 @@ end
 ")
 
 # ╔═╡ 75d8283a-b331-4648-84a8-489e168e33f9
-TikzPicture(L"""
-\node [test] (c1) {condition 1};
-\node [test] (c2) [right=of c1]  {condition 2};
-\node [test] (c3) [right=of c2]  {condition 1};
-\node [proc, it] (st1) [above=of c2] {statements};
-\node [proc,red] (err1) [below=of c1] {invertibility error};
-\node [proc,red] (err2) [right=of c3] {invertibility error};
-\draw [->,black] (c2) -- (st1) node[midway,right] {T};
-\draw [->,black] (st1) -| (c3);
-\draw [->,black] (-2.5, 0.0) -- (c1.west);
-\draw [->,black] (c1) -- (c2) node[midway,above] {T};
-\draw [->,black] (c3) -- (c2) node[midway,above] {F};
-\draw [->,red] (c1) -- (err1) node[midway,right] {F};
-\draw [->,red] (c3) -- (err2) node[midway,above] {T};
-\draw [->,black] (c2.south) |- (11, -2) node[midway,below] {F};
-""", options=raw"    font=\sffamily\small,
-    >={Triangle[]},
-    */.tip={Circle[]},
-    start chain=going below,
-    node distance=18mm and 40mm,
-    every join/.style={norm},
-    base/.style={draw, on chain, on grid, align=center, minimum height=4ex, inner color=black!50!gray!10, outer color=black!50!gray!15},
-    proc/.style={base, rectangle, text width=8em},
-    test/.style={base, diamond, text centered, aspect=2.6,inner sep=-0ex},
-    norm/.style={->, draw, black},
-    it/.style={font={\sffamily\small\itshape}}", preamble=raw"\usetikzlibrary{shapes.geometric,arrows.meta,chains,positioning,quotes}")
+LocalResource(joinpath(@__DIR__, "assets", "reversibleprog-03.svg"))
 
 # ╔═╡ 2207c2fb-4a52-4766-8dd3-03872744aa74
 md"example: computing Fibonacci numbers"
@@ -576,23 +509,7 @@ end
 md"""Bennett, Charles H. "Logical reversibility of computation." (1973)."""
 
 # ╔═╡ 962b204c-8195-4938-944c-b7c4a52e70bd
-TikzPicture(L"""
-\def\r{0.15};
-\foreach \x in {1,...,5}{
-	\fill[fill=black] (\x, 0) circle [radius=\r];
-	\node[white] at (\x, 0) {$s_{\x}$};
-}
-\fill[fill=white] (5.5, 0) circle [radius=\r];
-\foreach \x in {1,...,4}{
-	\draw [black, thick, ->] (\x+\r, \r) .. controls (\x+0.5, 0.3) .. (\x+1-\r, \r);
-	\node at (\x+0.5, 0.4) {\x};
-	}
-\foreach[evaluate={\y=int(8-\x)}] \x in {1,...,3}{
-	\draw [red, thick, <-] (\x+\r, -\r) .. controls (\x+0.5, -0.3) .. (\x+1-\r, -\r);
-	\node at (\x+0.5, -0.4) {\y};
-	}
-"""
-, options="scale=2.0", preamble="")
+LocalResource(joinpath(@__DIR__, "assets", "reversibleprog-04.svg"))
 
 # ╔═╡ af58a0f8-e3fd-465f-b1ae-6fbd94123c91
 @i function clog_v2(y::Complex{T}, x::Complex{T}) where T
@@ -781,94 +698,27 @@ md"## Case 1: differentiating a linear program"
 md"Imagine we have a very long linear program that intrinsically irreversible"
 
 # ╔═╡ 3aa99be5-6747-4163-9bb6-ed8cd5ce19f6
-TikzPicture(L"""
-\def\r{0.15};
-\def\n{10};
-\foreach \x in {\n}{
-       \fill[fill=black] (\x, 0) circle [radius=\r];
-       \node[white] at (\x, 0) {$s_{\x}$};
-}
-\foreach \x in {1,...,9}{
-       \draw (\x, 0) circle [radius=\r];
-       \node[black] at (\x, 0) {$s_{\x}$};
-}
-\fill[fill=white] (\n+0.5, 0) circle [radius=\r];
-\foreach \x/\t in {1/1,2/2,3/3,4/4,5/5,6/6,7/7,8/8,9/9}{
-       \draw [black, thick, ->] (\x+\r, \r) .. controls (\x+0.5, 0.3) .. (\x+1-\r, \r);
-       \node[black] at (\x+0.5, 0.4) {\t};
-       }
-"""
-, options="scale=2.0", preamble="")
+LocalResource(joinpath(@__DIR__, "assets", "reversibleprog-05.svg"))
 
 
 # ╔═╡ 2f0263f5-2ace-4d4b-8d71-cee26c03122e
 md"The accumulative version"
 
 # ╔═╡ 03a21468-c2fe-4df7-ae8a-38b28a0efe2f
-TikzPicture(L"""
-\def\r{0.15};
-\def\n{10};
-\foreach \x in {1,...,\n}{
-       \fill[fill=black] (\x, 0) circle [radius=\r];
-       \node[white] at (\x, 0) {$s_{\x}$};
-}
-\fill[fill=white] (\n+0.5, 0) circle [radius=\r];
-\foreach \x/\t in {1/1,2/2,3/3,4/4,5/5,6/6,7/7,8/8,9/9}{
-       \draw [black, thick, ->] (\x+\r, \r) .. controls (\x+0.5, 0.3) .. (\x+1-\r, \r);
-       \node[black] at (\x+0.5, 0.4) {\t};
-       }
-"""
-, options="scale=2.0", preamble="")
+LocalResource(joinpath(@__DIR__, "assets", "reversibleprog-06.svg"))
 
 
 # ╔═╡ f326d8e5-7117-4eed-b30d-0f64e5974426
 md"With uncomputing"
 
 # ╔═╡ b9af3db6-5725-4190-b96c-f3fa41f07c93
-TikzPicture(L"""
-\def\r{0.15};
-\def\n{10};
-\foreach \x in {1,4,7,10}{
-       \fill[fill=black] (\x, 0) circle [radius=\r];
-       \node[white] at (\x, 0) {$s_{\x}$};
-}
-\foreach \x in {2,3,5,6,8,9}{
-       \draw (\x, 0) circle [radius=\r];
-       \node[black] at (\x, 0) {$s_{\x}$};
-}
-\fill[fill=white] (\n+0.5, 0) circle [radius=\r];
-\foreach \x/\t in {1/1,2/2,3/3,4/6,5/7,6/8,7/11,8/12,9/13}{
-       \draw [black, thick, ->] (\x+\r, \r) .. controls (\x+0.5, 0.3) .. (\x+1-\r, \r);
-       \node[black] at (\x+0.5, 0.4) {\t};
-       }
-\foreach \x/\t in {1/5,2/4,4/10,5/9,7/15,8/14}{
-       \draw [black, thick, <-] (\x+\r, -\r) .. controls (\x+0.5, -0.3) .. (\x+1-\r, -\r);
-       \node[black] at (\x+0.5, -0.4) {\t};
-}
-"""
-, options="scale=2.0", preamble="")
+LocalResource(joinpath(@__DIR__, "assets", "reversibleprog-07.svg"))
 
 # ╔═╡ 47cf7e85-c49f-4618-9689-e0de789625f6
 md"With uncomputing: the coarser grain"
 
 # ╔═╡ 2fcf48fd-bedc-41d9-a433-68efd5dd0d20
-TikzPicture(L"""
-\def\r{0.15};
-\def\n{10};
-\foreach \x in {1,4,7,10}{
-       \fill[fill=black] (\x, 0) circle [radius=\r];
-       \node[white] at (\x, 0) {$s_{\x}$};
-}
-
-\fill[fill=white] (\n+0.5, 0) circle [radius=\r];
-\foreach \x in {1,4,7}{
-       \draw [black, thick, ->] (\x+\r, \r) .. controls (\x+1.5, 0.6) .. (\x+3-\r, \r);
-       }
-\foreach \x in {1,4}{
-       \draw [black, thick, <-] (\x+\r, -\r) .. controls (\x+1.5, -0.6) .. (\x+3-\r, -\r);
-}
-"""
-, options="scale=2.0", preamble="")
+LocalResource(joinpath(@__DIR__, "assets", "reversibleprog-08.svg"))
 
 # ╔═╡ 5060f5bb-8430-42aa-b61d-c88249edb323
 md"## Pebble game"
@@ -877,56 +727,13 @@ md"## Pebble game"
 md"The optimal time-space tradeoff corresponds to the optimal solution to the pebble game."
 
 # ╔═╡ c62a9f94-457f-496b-bee0-bb0db02aca5d
-TikzPicture(L"""
-\def\y{0}
-\node at (4, \y-1) {initial configuration};
-\foreach \x in {0,...,16}{
-	\draw (0.5*\x-0.25, 0.5*\y-0.25) rectangle (0.5*\x+0.25, 0.5*\y+0.25);
-	\ifnum \x > 0
-		\node at (0.5*\x, 0.5*\y) {\x};
-	\fi
-}
-\fill (0, 0)  ellipse (0.2 and 0.15);
-\def\dx{11}
-\foreach \a/\b in {-0.1/0.3, 0.2/0.5, -0.5/0.4, 0.1/0.24, 0.6/0.1, -0.3/-0.3}
-	\fill (\dx+\a, \y+\b)  ellipse (0.2 and 0.15);
-\node at (11, -1) {free pool of pebbles};
-\node at (13, -1) {};
-\node (goal) at (9, \y+1) {goal};
-\draw[<-,thick] (8, \y+0.3) .. controls (8.2, \y+0.7) .. (goal);
-""", options="scale=1.0")
+LocalResource(joinpath(@__DIR__, "assets", "reversibleprog-09.svg"))
 
 # ╔═╡ bccadcb5-6d9f-4a70-b7c4-74e0e3d5f8c8
-TikzPicture(L"""
-\def\y{0}
-\node at (4, \y-1) {put rule (if and only if the previous grid is occupied)};
-\foreach \x in {0,...,16}
-	\draw (0.5*\x-0.25, 0.5*\y-0.25) rectangle (0.5*\x+0.25, 0.5*\y+0.25);
-\fill (0, 0)  ellipse (0.2 and 0.15);
-\fill (2, 0)  ellipse (0.2 and 0.15);
-\draw[dashed] (2.5, 0)  ellipse (0.2 and 0.15);
-\def\dx{11}
-\foreach \a/\b in {-0.1/0.3, 0.2/0.5, -0.5/0.4, 0.1/0.24, 0.6/0.1, -0.3/-0.3}
-	\fill (\dx+\a, \y+\b)  ellipse (0.2 and 0.15);
-\node at (13, -1) {};
-\draw[<-,thick] (2.5, \y+0.3) .. controls (2.8, \y+1) and (8.0, \y+1) .. (10, 0.5);
-""", options="scale=1.0")
+LocalResource(joinpath(@__DIR__, "assets", "reversibleprog-10.svg"))
 
 # ╔═╡ b308ecb0-070e-4ad8-8009-dc60e75bbe01
-TikzPicture(L"""
-\def\y{0}
-\node at (4, \y-1) {remove rule (if and only if the previous grid is occupied)};
-\foreach \x in {0,...,16}
-	\draw (0.5*\x-0.25, 0.5*\y-0.25) rectangle (0.5*\x+0.25, 0.5*\y+0.25);
-\fill (0, 0)  ellipse (0.2 and 0.15);
-\fill (2, 0)  ellipse (0.2 and 0.15);
-\fill (2.5, 0)  ellipse (0.2 and 0.15);
-\def\dx{11}
-\foreach \a/\b in {-0.1/0.3, 0.2/0.5, -0.5/0.4, 0.1/0.24, 0.6/0.1, -0.3/-0.3}
-	\fill (\dx+\a, \y+\b)  ellipse (0.2 and 0.15);
-\node at (13, -1) {};
-\draw[->,thick] (2.5, \y+0.3) .. controls (2.8, \y+1) and (8.0, \y+1) .. (10, 0.5);
-""", options="scale=1.0")
+LocalResource(joinpath(@__DIR__, "assets", "reversibleprog-11.svg"))
 
 # ╔═╡ 9123e669-19c7-47c1-a924-0c618b4a9c1f
 md"
@@ -1004,15 +811,7 @@ md"""
 
 # ╔═╡ 33a0bda1-c943-4792-bc3d-fbf1adf16d0a
 let
-	img = TikzPicture(L"""
-\draw[->,thick] (0, 0) -- (1, 1);
-\draw[->,thick] (0, 0) -- ({sqrt(2)}, 0);
-\draw[thick,dashed] (0, 0) -- (1.5, {1.5*tan(22.5)});
-\node at (1.5, 0) {$e$};
-\node at (1.1, 1.1) {$x$};
-\node at (1.4, {1.6*tan(22.5)}) {$v$};
-\node at (2.6, 0.5) {$v = x-\|x\|_2 e$};
-""", options="scale=2.0", preamble="")
+	img = LocalResource(joinpath(@__DIR__, "assets", "reversibleprog-12.svg"))
 	HTML("""<div align=center>$(html(img))</div>""")
 end
 
@@ -1268,20 +1067,7 @@ md"""
 md"# Removed"
 
 # ╔═╡ c3b730a4-d5b4-471e-bd06-30ace6e8b8fe
-let
-	nodes_list = [[0], [0,1], [0,1,2], [0,2], [0,2,3], [0,2,3,4], [0,2,4], [0,1,2,4], [0,1,4], [0,4], [0,4,5], [0,4,5,6], [0,4,6], [0,4,6,7], [0,4,6,7,8], [0,4,6,8], [0,4,5,6,8], [0,4,5,8], [0,4,8],  [0,1,4,8], [0,1,2,4,8], [0,2,4,8], [0,2,3,4,8], [0,2,3,8], [0,2,8], [0,1,2,8], [0,1,8], [0,8],[0,8,9], [0,8,9,10], [0,8,10], [0,8,10,11], [0,8,10,11,12], [0,8,10,12], [0,8,9,10,12], [0,8,9,12], [0,8,12], [0,8,12,13], [0,8,12,13,14], [0,8,12,14], [0,8,12,14,15], [0,8,12,14,15,16]]
-	s = join([raw"""
-	\def\y{"""*string(j-1)*raw"""}
-	\node at (-1, -0.7*\y) {step \y};
-	\foreach \x in {0,...,16}{
-		\draw (0.5*\x-0.25, -0.7*\y-0.25) rectangle (0.5*\x+0.25, -0.7*\y+0.25);
-	}
-	\foreach \x in {"""*join(nodes, ",")*raw"""}{
-		\fill (0.5*\x, -0.7*\y)  ellipse (0.2 and 0.15);
-	}
-""" for (j, nodes) in enumerate(nodes_list)], "\n")
-	TikzPicture(LaTeXString(s), options="scale=1.0")
-end
+LocalResource(joinpath(@__DIR__, "assets", "reversibleprog-14.svg"))
 
 # ╔═╡ 98f42f60-7870-4813-b0c1-728285c25f01
 md"## Finding maximum, the reversible programming implementation"
@@ -1361,17 +1147,7 @@ md"""
 """
 
 # ╔═╡ 0367be06-4185-4add-a04b-f696c5a43638
-TikzPicture(L"""
-\foreach[evaluate={\j=int(16-\y)}] \y in {0,...,16}{
-	\node at (-1, 0.7*\y) {step \j};
-	\foreach \x in {0,...,16}{
-		\draw (0.5*\x-0.25, 0.7*\y-0.25) rectangle (0.5*\x+0.25, 0.7*\y+0.25);
-	}
-	\foreach \x in {0,...,\j}{
-		\fill (0.5*\x, 0.7*\y)  ellipse (0.2 and 0.15);
-	}
-}
-""", options="scale=1.0")
+LocalResource(joinpath(@__DIR__, "assets", "reversibleprog-13.svg"))
 
 # ╔═╡ c79e7651-975b-407c-8c8c-d0c5653ec570
 md"

@@ -15,7 +15,7 @@ end
 
 # ╔═╡ f3e235e7-76b9-4c39-bc70-038539838ff4
 begin
-	using Revise, Viznet, Compose, PlutoUI, Random, TikzPictures
+	using Revise, Viznet, Compose, PlutoUI, Random
 	function leftright(a, b; width=600, leftcellwidth=0.5)
 		HTML("""
 <style>
@@ -167,21 +167,7 @@ Case 1: we know nothing about the system. The gas does work
 
 # ╔═╡ 2fe7c298-4c5d-464c-980b-6cd9a537ac1e
 let
-	img = TikzPicture(L"""
-	\draw (-1.05, -1.05) rectangle (1.1,1.1);
-	\foreach[evaluate={\a=rand; \b=rand;\c=rand;\d=rand;}] \x in {1,...,20}{
-		\fill (\a, \b) circle [radius=0.05];
-		\draw[->,thick] (\a, \b) -- (\a+\c*0.2, \b+\d*0.2);
-	}
-\node[draw, single arrow, minimum height=10mm, minimum width=3mm,
-              single arrow head extend=2mm, rotate=90] at (0.0,1.3) {presure};
-\node[draw, single arrow, minimum height=10mm, minimum width=3mm,
-              single arrow head extend=2mm, rotate=-90] at (0.0,-1.3) {presure};
-\node[draw, single arrow, minimum height=10mm, minimum width=3mm,
-              single arrow head extend=2mm, rotate=0] at (1.3,0.0) {presure};
-\node[draw, single arrow, minimum height=10mm, minimum width=3mm,
-              single arrow head extend=2mm, rotate=180] at (-1.3,0.0) {presure};
-"""; options="scale=2.0", preamble=raw"\usetikzlibrary{shapes.arrows}")
+	img = LocalResource(joinpath(@__DIR__, "assets", "feynman-01.svg"))
 	leftright(img, md"the microscopic explaination of the presure
 		
 ``kT \sim \text{average kinetic energy}``")
@@ -585,22 +571,7 @@ end
 md"proved by constructing a NAND gate (a classical univeral gate)"
 
 # ╔═╡ a2f4975d-eeee-4a2d-97dd-dd0cfd29d665
-TikzPicture(L"""
-\draw (0,0) rectangle (2,3);
-\draw (-0.5,0.5) -- (0.0, 0.5);
-\node at (-0.8, 0.5) {1};
-\draw (-0.5,1.5) -- (0.0, 1.5);
-\node at (-0.8, 1.5) {B};
-\draw (-0.5,2.5) -- (0.0, 2.5);
-\node at (-0.8, 2.5) {A};
-\draw (2.5,0.5) -- (2.0, 0.5);
-\node at (3.1, 0.5) {$\overline{A\land B}$};
-\draw (2.5,1.5) -- (2.0, 1.5);
-\node at (2.8, 1.5) {B};
-\draw (2.5,2.5) -- (2.0, 2.5);
-\node at (2.8, 2.5) {A};
-\node at (1.0, 1.5) {Toffoli};
-""")
+LocalResource(joinpath(@__DIR__, "assets", "feynman-02.svg"))
 
 # ╔═╡ 32d411e9-b01d-4ad2-b4aa-2f091034e6c0
 md"Fredkin gate is universal"
@@ -634,38 +605,8 @@ md"prove by constructing an AND gate and NOT gate"
 
 # ╔═╡ 6cd60f7d-d7ce-4189-a2dd-e47ce6825741
 let
-	img1 = TikzPicture(L"""
-\draw (0,0) rectangle (2,3);
-\draw (-0.5,0.5) -- (0.0, 0.5);
-\node at (-0.8, 0.5) {$C$};
-\draw (-0.5,1.5) -- (0.0, 1.5);
-\node at (-0.8, 1.5) {$0$};
-\draw (-0.5,2.5) -- (0.0, 2.5);
-\node at (-0.8, 2.5) {$A$};
-\draw (2.5,0.5) -- (2.0, 0.5);
-\node at (3.1, 0.5) {$\overline{A}\land C$};
-\draw (2.5,1.5) -- (2.0, 1.5);
-\node at (3.1, 1.5) {$A\land C$};
-\draw (2.5,2.5) -- (2.0, 2.5);
-\node at (2.8, 2.5) {$A$};
-\node at (1.0, 1.5) {Fredkin};
-""")
-	img2 = TikzPicture(L"""
-\draw (0,0) rectangle (2,3);
-\draw (-0.5,0.5) -- (0.0, 0.5);
-\node at (-0.8, 0.5) {$1$};
-\draw (-0.5,1.5) -- (0.0, 1.5);
-\node at (-0.8, 1.5) {$0$};
-\draw (-0.5,2.5) -- (0.0, 2.5);
-\node at (-0.8, 2.5) {$A$};
-\draw (2.5,0.5) -- (2.0, 0.5);
-\node at (2.8, 0.5) {$\overline{A}$};
-\draw (2.5,1.5) -- (2.0, 1.5);
-\node at (2.8, 1.5) {$A$};
-\draw (2.5,2.5) -- (2.0, 2.5);
-\node at (2.8, 2.5) {$A$};
-\node at (1.0, 1.5) {Fredkin};
-""")
+	img1 = LocalResource(joinpath(@__DIR__, "assets", "feynman-03.svg"))
+	img2 = LocalResource(joinpath(@__DIR__, "assets", "feynman-04.svg"))
 	leftright(img1, img2)
 end
 
@@ -728,55 +669,13 @@ new variable at each branch, and assign a unique value to this variable for each
 choice at a branch point. You might like to work this through in detail."""
 
 # ╔═╡ 6b4c180c-9a12-4e3d-9336-1431e7c5875a
-TikzPicture(L"""
-\draw [black, thick,->] (0, 0) -- (1, 0);
-\draw [black, thick,->,dashed] (1, 0) .. controls (1.5, 0.5) .. (2, 0);
-\node at (1.5, 0.5) {goto $\ldots$};
-\draw [black, thick,->] (2, 0) -- (3, 0);
-       
-\def\x{4};
-\draw [black, thick,<-] (\x, 0) -- (\x+1, 0);
-\draw [black, thick,<-,dashed] (\x+1, 0) .. controls (\x+1.5, 0.5) .. (\x+2, 0);
-\draw [black, thick,<-,dashed] (\x+1, 0) -- (\x+2, 0);
-\node at (\x+1.5, 0.5) {comefrom?};
-\draw [black, thick,<-] (\x+2, 0) -- (\x+3, 0);
-       
-\node at (1.5, -0.2) {call};
-\node at (\x+1.5, -0.2) {uncall};
-""", options="scale=2.0", preamble="")
+LocalResource(joinpath(@__DIR__, "assets", "feynman-05.svg"))
 
 # ╔═╡ 0eb66cc9-93c0-4f07-b31b-a9bf9000260e
 md"Reversible branching statement"
 
 # ╔═╡ 85bf9f92-30f1-4e05-8d07-d8e481f20ccb
-TikzPicture(L"""
-\node [test] (pre) {precondition};
-\node [proc, it] (st1) [right=of pre] {statements 1};
-\node [proc, it] (st2) {statements 2};	
-\node [test] (post1) [right=of st1] {postcondition};
-\node [test] (post2) [right=of st2] {postcondition};
-\node [proc,red] (err1) [above=of post1] {invertibility error};
-\node [proc,red] (err2) [below=of post2] {invertibility error};
-\draw [->,black] (pre.east) -- (st1) node[midway,above] {T};
-\draw [->,black] (pre.south) |- (st2) node[midway,below] {F};
-\draw [->,black] (-2.5, 0.0) -- (pre.west);
-\draw [->,black] (st1) -- (post1);
-\draw [->,black] (st2) -- (post2);
-\draw [->,red] (post1) -- (err1) node[midway,right] {F};
-\draw [->,red] (post2) -- (err2) node[midway,right] {T};
-\draw [->,black] (post1.east) -- (12, 0) node[midway,above] {T};
-\draw [black] (post2.east) -| (11, 0) node[midway,right] {F};
-""", options=raw"    font=\sffamily\small,
-    >={Triangle[]},
-    */.tip={Circle[]},
-    start chain=going below,
-    node distance=18mm and 40mm,
-    every join/.style={norm},
-    base/.style={draw, on chain, on grid, align=center, minimum height=4ex, inner color=black!50!gray!10, outer color=black!50!gray!15},
-    proc/.style={base, rectangle, text width=8em},
-    test/.style={base, diamond, text centered, aspect=2.6,inner sep=-0ex},
-    norm/.style={->, draw, black},
-    it/.style={font={\sffamily\small\itshape}}", preamble=raw"\usetikzlibrary{shapes.geometric,arrows.meta,chains,positioning,quotes}")
+LocalResource(joinpath(@__DIR__, "assets", "feynman-06.svg"))
 
 # ╔═╡ fbba0a91-9f48-4d91-90e7-f6a7df3227f9
 md"## Bennett's compute copy uncompute scheme"
@@ -828,73 +727,16 @@ end
 i_find_maximum_v2(0, 3, 2, 8, 1)
 
 # ╔═╡ a267ea5f-8bd5-4ee0-9c8d-47e2d3b81692
-TikzPicture(L"""
-\def\r{0.15};
-\foreach \x in {1,4}{
-	\fill[fill=black] (\x, 0) circle [radius=\r];
-	\node[white] at (\x, 0) {$s_{\x}$};
-}
-\foreach \x in {2,3}{
-	\draw (\x, 0) circle [radius=\r];
-	\node[black] at (\x, 0) {$s_{\x}$};
-}
-\fill[fill=white] (5.5, 0) circle [radius=\r];
-\foreach \x in {1,...,3}{
-	\draw [black, thick, ->] (\x+\r, \r) .. controls (\x+0.5, 0.3) .. (\x+1-\r, \r);
-	\node at (\x+0.5, 0.4) {\x};
-	}
-\foreach[evaluate={\y=int(6-\x)}] \x in {1,...,2}{
-	\draw [red, thick, <-] (\x+\r, -\r) .. controls (\x+0.5, -0.3) .. (\x+1-\r, -\r);
-	\node at (\x+0.5, -0.4) {\y};
-	}
-"""
-, options="scale=1.8", preamble="")
+LocalResource(joinpath(@__DIR__, "assets", "feynman-07.svg"))
 
 # ╔═╡ c02520a3-3375-4d83-a0dc-1aeac2aa7d5f
 md"Recursively apply Bennett's time space tradeoff scheme"
 
 # ╔═╡ 2e18fc92-4185-493b-9ce8-cca63dad7d2d
-TikzPicture(L"""
-\def\r{0.15};
-\def\n{10};
-\foreach \x in {1,4,7,10}{
-       \fill[fill=black] (\x, 0) circle [radius=\r];
-       \node[white] at (\x, 0) {$s_{\x}$};
-}
-\foreach \x in {2,3,5,6,8,9}{
-       \draw (\x, 0) circle [radius=\r];
-       \node[black] at (\x, 0) {$s_{\x}$};
-}
-\fill[fill=white] (\n+0.5, 0) circle [radius=\r];
-\foreach \x/\t in {1/1,2/2,3/3,4/6,5/7,6/8,7/11,8/12,9/13}{
-       \draw [black, thick, ->] (\x+\r, \r) .. controls (\x+0.5, 0.3) .. (\x+1-\r, \r);
-       \node[black] at (\x+0.5, 0.4) {\t};
-       }
-\foreach \x/\t in {1/5,2/4,4/10,5/9,7/15,8/14}{
-       \draw [black, thick, <-] (\x+\r, -\r) .. controls (\x+0.5, -0.3) .. (\x+1-\r, -\r);
-       \node[black] at (\x+0.5, -0.4) {\t};
-}
-"""
-, options="scale=2.0", preamble="")
+LocalResource(joinpath(@__DIR__, "assets", "feynman-08.svg"))
 
 # ╔═╡ acc7b185-e4df-4aca-aa42-554215065384
-TikzPicture(L"""
-\def\r{0.15};
-\def\n{10};
-\foreach \x in {1,4,7,10}{
-       \fill[fill=black] (\x, 0) circle [radius=\r];
-       \node[white] at (\x, 0) {$s_{\x}$};
-}
-
-\fill[fill=white] (\n+0.5, 0) circle [radius=\r];
-\foreach \x in {1,4,7}{
-       \draw [black, thick, ->] (\x+\r, \r) .. controls (\x+1.5, 0.6) .. (\x+3-\r, \r);
-       }
-\foreach \x in {1,4}{
-       \draw [black, thick, <-] (\x+\r, -\r) .. controls (\x+1.5, -0.6) .. (\x+3-\r, -\r);
-}
-"""
-, options="scale=2.0", preamble="")
+LocalResource(joinpath(@__DIR__, "assets", "feynman-09.svg"))
 
 # ╔═╡ 00c9e973-7e06-4483-bf4c-be7374707118
 md"
