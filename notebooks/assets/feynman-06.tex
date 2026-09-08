@@ -1,0 +1,35 @@
+\documentclass[tikz,border=2pt]{standalone}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric,arrows.meta,chains,positioning,quotes}
+\begin{document}
+\begin{tikzpicture}[    font=\sffamily\small,
+    >={Triangle[]},
+    */.tip={Circle[]},
+    start chain=going below,
+    node distance=18mm and 40mm,
+    every join/.style={norm},
+    base/.style={draw, on chain, on grid, align=center, minimum height=4ex, inner color=black!50!gray!10, outer color=black!50!gray!15},
+    proc/.style={base, rectangle, text width=8em},
+    test/.style={base, diamond, text centered, aspect=2.6,inner sep=-0ex},
+    norm/.style={->, draw, black},
+    it/.style={font={\sffamily\small\itshape}}]
+
+\node [test] (pre) {precondition};
+\node [proc, it] (st1) [right=of pre] {statements 1};
+\node [proc, it] (st2) {statements 2};
+\node [test] (post1) [right=of st1] {postcondition};
+\node [test] (post2) [right=of st2] {postcondition};
+\node [proc,red] (err1) [above=of post1] {invertibility error};
+\node [proc,red] (err2) [below=of post2] {invertibility error};
+\draw [->,black] (pre.east) -- (st1) node[midway,above] {T};
+\draw [->,black] (pre.south) |- (st2) node[midway,below] {F};
+\draw [->,black] (-2.5, 0.0) -- (pre.west);
+\draw [->,black] (st1) -- (post1);
+\draw [->,black] (st2) -- (post2);
+\draw [->,red] (post1) -- (err1) node[midway,right] {F};
+\draw [->,red] (post2) -- (err2) node[midway,right] {T};
+\draw [->,black] (post1.east) -- (12, 0) node[midway,above] {T};
+\draw [black] (post2.east) -| (11, 0) node[midway,right] {F};
+
+\end{tikzpicture}
+\end{document}

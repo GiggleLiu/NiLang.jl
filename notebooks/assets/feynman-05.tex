@@ -1,0 +1,23 @@
+\documentclass[tikz,border=2pt]{standalone}
+\usepackage{tikz}
+
+\begin{document}
+\begin{tikzpicture}[scale=2.0]
+
+\draw [black, thick,->] (0, 0) -- (1, 0);
+\draw [black, thick,->,dashed] (1, 0) .. controls (1.5, 0.5) .. (2, 0);
+\node at (1.5, 0.5) {goto $\ldots$};
+\draw [black, thick,->] (2, 0) -- (3, 0);
+
+\def\x{4};
+\draw [black, thick,<-] (\x, 0) -- (\x+1, 0);
+\draw [black, thick,<-,dashed] (\x+1, 0) .. controls (\x+1.5, 0.5) .. (\x+2, 0);
+\draw [black, thick,<-,dashed] (\x+1, 0) -- (\x+2, 0);
+\node at (\x+1.5, 0.5) {comefrom?};
+\draw [black, thick,<-] (\x+2, 0) -- (\x+3, 0);
+
+\node at (1.5, -0.2) {call};
+\node at (\x+1.5, -0.2) {uncall};
+
+\end{tikzpicture}
+\end{document}

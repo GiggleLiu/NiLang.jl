@@ -1,0 +1,16 @@
+\documentclass[tikz,border=2pt]{standalone}
+\usepackage{tikz}
+
+\begin{document}
+\begin{tikzpicture}[scale=2.0]
+
+\draw[->,thick] (0, 0) -- (1, 1);
+\draw[->,thick] (0, 0) -- ({sqrt(2)}, 0);
+\draw[thick,dashed] (0, 0) -- (1.5, {1.5*tan(22.5)});
+\node at (1.5, 0) {$e$};
+\node at (1.1, 1.1) {$x$};
+\node at (1.4, {1.6*tan(22.5)}) {$v$};
+\node at (2.6, 0.5) {$v = x-\|x\|_2 e$};
+
+\end{tikzpicture}
+\end{document}
