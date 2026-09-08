@@ -1,16 +1,78 @@
-export i_mean_sum, i_var_mean_sum, i_normal_logpdf, i_cor_cov
+export i_mean_sum, i_mean, i_sum, i_var_mean_sum, i_normal_logpdf, i_cor_cov
 export VarianceInfo
 
 """
-    i_mean_sum(out!, sum!, x)
+    i_mean_sum(mean_val, sum_val, x)
 
-get the `mean` and `sum` of `x`.
+Get the `mean` and `sum` of `x` in one routine.
+
+```jldoctest; setup=:(using NiLang)
+x = rand(64, 64)
+m, s, x = i_mean_sum(0.0, 0.0, x)
+(m, s) .≈ (mean(x), sum(x))
+
+# output
+(true, true)
+```
+
+See also: [`i_mean`](@ref), [`i_sum`](@ref)
 """
-@i function i_mean_sum(out!, sum!, x)
-    for i=1:length(x)
-        sum! += x[i]
+@i function i_mean_sum(mean_val, sum_val, x)
+    @inbounds @simd for i in 1:length(x)
+        sum_val += x[i]
     end
-    out! += sum!/(@const length(x))
+    mean_val += sum_val/(@const length(x))
+end
+
+"""
+    i_sum(sum_val, x)
+
+Get the `sum` of `x`.
+
+```jldoctest; setup=:(using NiLang)
+x = rand(64, 64)
+i_sum(0.0, x)[1] ≈ sum(x)
+
+# output
+true
+```
+
+!!! tip
+    If you need both `mean` and `sum` of `x`, then you can use a more
+    performant version [`i_mean_sum`](@ref).
+"""
+@i function i_sum(sum_val, x)
+    @inbounds @simd for i in 1:length(x)
+        sum_val += x[i]
+    end
+end
+
+"""
+    i_mean(mean_val, x)
+
+Get the `mean` of `x`.
+
+```jldoctest; setup=:(using NiLang)
+x = rand(64, 64)
+i_mean(0.0, x)[1] ≈ Statistics.mean(x)
+
+# output
+true
+```
+
+!!! tip
+    If you need both `mean` and `sum` of `x`, then you can use a more
+    performant version [`i_mean_sum`](@ref).
+"""
+@i function i_mean(mean_val, x::AbstractArray)
+    @routine @invcheckoff begin
+        sum_val ← zero(eltype(x))
+        @inbounds @simd for i in 1:length(x)
+            sum_val += x[i]
+        end
+    end
+    mean_val += sum_val/(@const length(x))
+    ~@routine
 end
 
 struct VarianceInfo{T}
