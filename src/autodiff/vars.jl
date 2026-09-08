@@ -54,26 +54,26 @@ end
 @generated function GVar(x::Type{T}) where T
     ps = GVar.(T.parameters)
     if length(ps) == 0
-        :($(getfield(T.name.module, nameof(T))))
+        QuoteNode(T)
     else
-        :($(getfield(T.name.module, nameof(T))){$(ps...)})
+        QuoteNode(T.name.wrapper{ps...})
     end
 end
 @generated function GVar(x::Type{T}, y::Type{T}) where T
-    :($(getfield(T.name.module, nameof(T))){$(GVar.(T.parameters, T.parameters)...)})
+    QuoteNode(T.name.wrapper{GVar.(T.parameters, T.parameters)...})
 end
 @generated function (_::Type{Inv{GVar}})(x::Type{T}) where T
-    :($(getfield(T.name.module, nameof(T))){$((~GVar).(T.parameters)...)})
+    QuoteNode(T.name.wrapper{(~GVar).(T.parameters)...})
 end
 # `GVar` and `~GVar` on composite vars
 @generated function GVar(x::T) where T
-    Expr(:new, GVar(T), [:(GVar(x.$NAME)) for NAME in fieldnames(T)]...)
+    Expr(:new, QuoteNode(GVar(T)), [:(GVar(x.$NAME)) for NAME in fieldnames(T)]...)
 end
 @generated function GVar(x::T, g::T) where T
-    Expr(:new, GVar(T, T), [:(GVar(x.$NAME, g.$NAME)) for NAME in fieldnames(T)]...)
+    Expr(:new, QuoteNode(GVar(T, T)), [:(GVar(x.$NAME, g.$NAME)) for NAME in fieldnames(T)]...)
 end
 @generated function (_::Type{Inv{GVar}})(x::T) where T
-    Expr(:new, (~GVar)(T), [:((~GVar)(x.$NAME)) for NAME in fieldnames(T)]...)
+    Expr(:new, QuoteNode((~GVar)(T)), [:((~GVar)(x.$NAME)) for NAME in fieldnames(T)]...)
 end
 
 for T in [:Real]
