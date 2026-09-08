@@ -76,6 +76,7 @@ end
     @test GVar(x) == ABC(1, 2, GVar(3.0))
     @test GVar(x, x) == ABC(GVar(1, 1), GVar(2, 2), GVar(3.0, 3.0))
     @test (~GVar)(ABC(1, 2, GVar(3.0))) == x
+    @test NiLang.AD.typegrad(typeof(ABC(1, 2, GVar(3.0, 2.0)))) === typeof(x)
     @test grad(ABC(1, 2, GVar(3.0, 2.0))) == ABC(0, 0, 2.0)
     @test GVar(1.0 + 2.0im , 2.0im + 4.0im) == Complex(GVar(1.0, 2.0), GVar(2.0, 4.0))
     @test GVar((1.0, 2.0im) , (2.0im, 4.0im)) == (GVar(1.0, 2.0), Complex(GVar(0.0), GVar(2.0, 4.0)))
@@ -85,6 +86,7 @@ end
         x
     end
     @test GVar(EFG) == EFG
+    @test NiLang.AD.typegrad(EFG) === EFG
     @test grad(EFG(GVar(2.0, 3.0))) == EFG(3.0)
 end
 
@@ -117,4 +119,3 @@ end
     @test a > 0.4
     @test isless(a, 0.6)
 end
-
